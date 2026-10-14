@@ -1,4 +1,5 @@
 import { haversineDistanceM, isValidLatLon, type LatLon } from '../geo/haversine';
+import { median } from '../util/median';
 
 /** A track point with a time. Same shape as an accepted GPS fix (see track/filter). */
 export interface TimedPoint extends LatLon {
@@ -68,18 +69,6 @@ function assertTrack(points: readonly TimedPoint[]): void {
     }
     previous = point.ts;
   }
-}
-
-/** Median that also handles an even count (mean of the two middle values). */
-function median(values: readonly number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = sorted.length >> 1;
-  const hi = sorted[mid];
-  const lo = sorted[mid - 1];
-  if (hi === undefined) {
-    throw new Error('median of an empty list');
-  }
-  return sorted.length % 2 === 1 || lo === undefined ? hi : (lo + hi) / 2;
 }
 
 function intervalSpeed(

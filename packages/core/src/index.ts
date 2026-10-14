@@ -16,6 +16,15 @@ export type {
   TimeRange,
   TimedPoint,
 } from './track/motion';
+export {
+  MIN_PACE_DISTANCE_M,
+  averagePaceMinPerKm,
+  currentSpeedMps,
+  paceFromSpeedMinPerKm,
+} from './track/pace';
+export { gapRanges, movingTimeAxis, positionAt } from './track/replay';
+export type { PlaybackOptions, ReplayPoint, TimeAxis } from './track/replay';
+export { median } from './util/median';
 export { smoothMedian } from './track/smooth';
 export { simplifyTrack } from './track/simplify';
 export type { SimplifyOptions } from './track/simplify';
