@@ -187,7 +187,9 @@ describe('movingTimeAxis', () => {
       fc.property(rangesArb, fc.integer({ min: 0, max: 100_000 }), (raw, t) => {
         const ranges = raw.map(([from, len]) => ({ fromTs: from, toTs: from + len }));
         const axis = movingTimeAxis(0, 100_000, ranges);
-        const inside = ranges.some((r) => t >= r.fromTs && t < r.toTs);
+        // Both edges of an excluded range share one axis position, so the inverse (left-continuous)
+        // returns the range start: the round trip is only exact strictly outside [from, to].
+        const inside = ranges.some((r) => t >= r.fromTs && t <= r.toTs);
         if (!inside) {
           expect(axis.toWall(axis.toAxis(t))).toBe(t);
         }

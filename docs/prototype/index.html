@@ -533,7 +533,7 @@ function todayHTML(){
   '<button class="card flat" data-go="frisbee" style="text-align:left;width:100%;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center"><div>'+ring(5,7,'критерий')+'</div><div><div class="eyebrow">Проект · Фризби</div><div style="font-weight:600;margin-top:2px">Ступень 4: скольжение по земле</div><div class="muted" style="font-size:12.5px;margin-top:2px">Последняя сессия: 5 ловлей из 10</div><span class="tag" style="display:inline-block;margin-top:6px">Начать сессию →</span></div></button>'+
   '<div class="card"><div class="row between"><span class="eyebrow">Цели недели</span><span class="tag">5 дней с записью</span></div>'+
     '<div class="row" style="margin-top:10px;gap:14px">'+ring(2,3,'Тренир.')+ring(5,5,'Наблюд.')+ring(0,1,'Новое место')+'</div></div>'+
-  '<div class="card flat stripe"><div class="eyebrow">Карточка дня</div><p style="margin-top:4px">Подзыв: в тихих местах 7 из 8, на оживлённых 2 из 5 <span class="muted">(14 дней, предварительно)</span></p><button class="chip sm" data-go="insights" style="margin-top:8px">Показать записи</button></div>'+
+  '<div class="card flat stripe"><div class="eyebrow">Карточка дня</div><p style="margin-top:4px">Подзыв: в тихих местах 7 из 8, на оживлённых 2 из 6 <span class="muted">(14 дней, предварительно)</span></p><button class="chip sm" data-go="insights" style="margin-top:8px">Показать записи</button></div>'+
   '<div class="card flat"><div class="eyebrow">Напоминания</div><div class="listrow"><div class="grow">Таблетка от паразитов</div><span class="tag warn">сегодня</span></div></div>'+
   '<div><div class="eyebrow" style="margin-bottom:4px">Недавнее</div>'+
     row('pin','Утро · Парк у дома','38 мин · 2,1 км · 4 события','walks')+
@@ -930,7 +930,7 @@ function journalForm(el){
 
 /* Insights */
 function rInsights(el){
-  var a=wilson(7,8), b=wilson(2,5);
+  var a=wilson(7,8), b=wilson(2,6); /* точный p перестановочного теста = 0,091: ярлык «возможное» (проверено в packages/insights) */
   var wk=[9.5,9,8,8.5,7,6.5,5.5,5], W=300,H=140,pl=30,pb=22,pt=10;
   function X(i){return pl+i*((W-pl-8)/(wk.length-1));}
   function Y(v){return pt+(12-v)/12*(H-pt-pb);}
@@ -950,7 +950,7 @@ function rInsights(el){
    '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Медианная дистанция реакции по неделям, метры">'+grid+xl+dots+'<path d="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/><circle cx="'+X(7)+'" cy="'+Y(5)+'" r="5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/></svg>'+
    '<div class="muted" style="font-size:12px">Медиана по неделям (линия) и отдельные события (точки), метры. n=26. Тренд: тест Манна–Кендалла.</div></div>'+
    '<div class="card flat stripe"><div class="eyebrow">Закономерность · предварительно</div><p style="margin:4px 0 10px">Подзыв: в тихих местах чаще получалось, чем на оживлённых.</p>'+
-   '<div class="cmp">'+cmpLine('Тихие',a,8,7)+cmpLine('Оживлённые',b,5,2)+'</div><div class="muted" style="font-size:12px;margin-top:8px">Диапазоны Уилсона 95%. Различие возможно, выборка небольшая (n=8 и 5). Найдено среди 14 проверенных сравнений.</div><div class="row" style="margin-top:8px"><button class="chip sm" data-no-toggle="1">Показать записи</button><button class="chip sm" data-no-toggle="1">Скрыть на неделю</button></div></div>'+
+   '<div class="cmp">'+cmpLine('Тихие',a,8,7)+cmpLine('Оживлённые',b,6,2)+'</div><div class="muted" style="font-size:12px;margin-top:8px">Диапазоны Уилсона 95%. Различие возможно, выборка небольшая (n=8 и 6). Найдено среди 14 проверенных сравнений.</div><div class="row" style="margin-top:8px"><button class="chip sm" data-no-toggle="1">Показать записи</button><button class="chip sm" data-no-toggle="1">Скрыть на неделю</button></div></div>'+
    '<div class="card flat stripe"><div class="eyebrow">Совпадения</div><p style="margin:4px 0">Сложные моменты отмечались чаще на вечерних прогулках: в 5 из 9 против 6 из 24.</p><div class="muted" style="font-size:12px">Совпадение, а не причина. Лифт 1,7 · n=33.</div></div>'+
    '<div class="card"><div class="eyebrow">Время восстановления</div><p style="margin:4px 0">Медиана 48 с, раньше 75 с. <span class="muted">У 30% событий время не записано (n=19).</span></p></div>'+
    '<div class="card flat"><div class="eyebrow">Вес и активность</div><p style="margin:4px 0 8px">За 12 недель вес изменился с 3,05 до 3,18 кг. В движении в среднем '+f1(avg(S.wAct)/60)+' ч в неделю, в последние 4 недели на '+Math.round((avg(S.wAct.slice(-4))/avg(S.wAct.slice(0,4))-1)*100)+'% больше, чем в первые 4. Лакомств ≈ '+Math.round(avg(S.wTreat))+' ккал в день.</p>'+dualChart(S.w,S.wAct,'Вес','В движении, мин')+'<div class="muted" style="font-size:12px;margin-top:6px">Шкалы подогнаны под график; значения: касание в приложении. n=12 недель. Совпадение рядов не означает причину. Вес обсуждайте с ветеринаром.</div></div>'+
