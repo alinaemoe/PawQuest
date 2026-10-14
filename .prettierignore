@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+pnpm-lock.yaml
+# specification documents are hand-formatted markdown with wide tables
+docs
+# the prototype is a self-contained throwaway HTML artifact
+docs/prototype

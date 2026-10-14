@@ -1,0 +1,29 @@
+# dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Expo / React Native (apps/mobile, later)
+.expo/
+apps/mobile/android/
+apps/mobile/ios/
+*.apk
+*.aab
+
+# secrets and local config (never commit)
+.env
+.env.*
+!.env.example
+
+# real user data must never reach the repository (D-04, D-23)
+exports/
+*.pawquest.json
+*.pawquest.zip
+local-data/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+*.log
