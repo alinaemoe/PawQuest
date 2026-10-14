@@ -7,6 +7,15 @@ export {
   filterTrack,
   initialTrackFilterState,
 } from './track/filter';
+export { DEFAULT_MOTION_CONFIG, analyzeMotion, pointSpeeds } from './track/motion';
+export type {
+  AnalyzeMotionOptions,
+  MotionConfig,
+  MotionSummary,
+  Stop,
+  TimeRange,
+  TimedPoint,
+} from './track/motion';
 export { smoothMedian } from './track/smooth';
 export { simplifyTrack } from './track/simplify';
 export type { SimplifyOptions } from './track/simplify';

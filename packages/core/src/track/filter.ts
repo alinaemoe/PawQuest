@@ -7,6 +7,8 @@ export interface GpsFix {
   readonly lon: number;
   /** Horizontal accuracy radius in metres, when the device reports it. */
   readonly accuracyM?: number | undefined;
+  /** Device-reported speed in m/s. Ignored by the filter; used by speed analysis (A-25). */
+  readonly speedMps?: number | undefined;
 }
 
 /** Tunable thresholds of the filter. Defaults are fixed by the spec (A-01). */
