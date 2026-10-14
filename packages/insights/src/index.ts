@@ -5,6 +5,28 @@ export { compareMedians, compareProportions, differenceLabel } from './compare';
 export type { BinaryGroup, Comparison, DifferenceLabel, MedianComparisonOptions } from './compare';
 export { mulberry32 } from './random';
 export {
+  DAILY_PAW_CAP,
+  MAX_ATTEMPT_PAWS_PER_SESSION,
+  MAX_EVENT_PAWS_PER_WALK,
+  PAW_LEVELS,
+  attemptPaws,
+  eventPaws,
+  grantPaws,
+  pawLevel,
+} from './paws';
+export type { PawLevel, PawLevelKey } from './paws';
+export { PAUSES_PER_WEEK, computeStreak, recordDays } from './streak';
+export type { StreakOptions, StreakResult } from './streak';
+export { benjaminiHochberg, coOccurrences, patternCards, patternKey } from './patterns';
+export type {
+  AnalysisUnit,
+  CoOccurrence,
+  CoOccurrenceOptions,
+  GroupCount,
+  PatternCard,
+  PatternCardOptions,
+} from './patterns';
+export {
   HIGH_LOAD_PERCENTILE,
   LOAD_WINDOW_DAYS,
   MIN_LOAD_DAYS,

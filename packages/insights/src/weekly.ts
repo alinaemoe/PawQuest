@@ -1,6 +1,6 @@
 import { median } from '@pawquest/core';
 
-import { localDay } from './time';
+import { localDay, weekOfLocalDay } from './time';
 import type { SeriesPoint } from './trend';
 
 /** One dated observation. `tzOffsetMin` is the UTC offset in minutes at the moment of recording. */
@@ -18,7 +18,7 @@ export const MIN_PER_WEEK = 3;
  * 1970-01-01 was a Thursday, hence the +3 (decision D-49).
  */
 export function weekIndex(ts: number, tzOffsetMin: number): number {
-  return Math.floor((localDay(ts, tzOffsetMin) + 3) / 7);
+  return weekOfLocalDay(localDay(ts, tzOffsetMin));
 }
 
 /**
