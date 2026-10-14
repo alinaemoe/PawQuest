@@ -7,6 +7,9 @@ export {
   filterTrack,
   initialTrackFilterState,
 } from './track/filter';
+export { smoothMedian } from './track/smooth';
+export { simplifyTrack } from './track/simplify';
+export type { SimplifyOptions } from './track/simplify';
 export type {
   DropReason,
   FilteredTrack,
