@@ -443,7 +443,8 @@ var SK=[['Подзыв','Ступень 3'],['Фризби','Проект · с�
 var CATS=[['park','Парк','tree'],['meadow','Луг','grass'],['yard','Двор','fence'],['district','Район','building'],['forest','Лес','tree'],['waterfront','Набережная','wave'],['dog_area','Площадка','paw'],['other','Другое','dots']];
 var CATLABEL={park:'Парк',meadow:'Луг',yard:'Двор',district:'Район',forest:'Лес',waterfront:'Набережная',dog_area:'Площадка',street:'Улица',vet:'Ветклиника',other:'Другое'};
 var CATICON={park:'tree',meadow:'grass',yard:'fence',district:'building',forest:'tree',waterfront:'wave',dog_area:'paw',street:'pin',vet:'heart',other:'dots'};
-var KEYS=[[/парк|сквер|park/,'park'],[/луг|поле|пустыр|meadow|field/,'meadow'],[/двор|yard/,'yard'],[/район|микрорайон|мкр|квартал|district/,'district'],[/лес|роща|рощ|forest/,'forest'],[/набереж|пруд|озер|река|реку|пляж|водоем|lake/,'waterfront'],[/площадк|dog ?park/,'dog_area'],[/улиц|проспект|бульвар|переул|street/,'street'],[/вет |клиник|^вет$|vet/,'vet']];
+/* те же корни, что в packages/core/src/places/names.ts (A-24): сужены, чтобы «парковка», «полиция», «дворец» не считались местами */
+var KEYS=[[/^(парк(?!овк|инг)|сквер|park(?!ing))/,'park'],[/^(луг|лужайк|полян|пустыр|meadow|field)|^пол(е|я|ю|ем|ях|ями)$/,'meadow'],[/^(двор(а|у|е|ом|ы|ов)?|дворик(а|у|е|ом|и|ов)?|yard)$/,'yard'],[/^(район|микрорайон|мкр$|квартал|district)/,'district'],[/^(лес|леса|лесу|лесе|лесом|лесн[а-я]*|лесок|лесопарк[а-я]*|рощ[а-я]*|forest|woods?)$/,'forest'],[/^(набереж[а-я]*|пруд[а-я]*|озер[а-я]*|рек(а|у|и|е|ой)|речк[а-я]*|пляж[а-я]*|водоем[а-я]*|lake|river|beach)$/,'waterfront'],[/^площадк[а-я]*$/,'dog_area'],[/^(улиц[а-я]*|проспект[а-я]*|бульвар[а-я]*|переул[а-я]*|street|road)$/,'street'],[/^(ветклиник[а-я]*|ветеринар[а-я]*|клиник[а-я]*|vets?)$/,'vet']];
 function tidy(raw){
   var t=raw.replace(/[^A-Za-zА-Яа-яЁё0-9 \-]+/g,' ').replace(/\s+/g,' ').trim().slice(0,40);
   if(!t) return '';
@@ -453,7 +454,8 @@ function tidy(raw){
 function normName(s){return s.toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9 ]+/g,' ').replace(/(^| )(у|возле|около|на|в|за|к)( |$)/g,' ').replace(/\s+/g,' ').trim().split(' ').sort().join(' ');}
 function trigrams(s){s='  '+s+' ';var o={},i;for(i=0;i<s.length-2;i++)o[s.substr(i,3)]=1;return o;}
 function sim(a,b){var A=trigrams(a),B=trigrams(b),i=0,u=0,k;for(k in A){u++;if(B[k])i++;}for(k in B){if(!A[k])u++;}return u?i/u:0;}
-function guessCat(raw){var l=raw.toLowerCase().replace(/ё/g,'е')+' ';for(var i=0;i<KEYS.length;i++)if(KEYS[i][0].test(l))return KEYS[i][1];return null;}
+/* тип по ПЕРВОМУ слову, содержащему известный корень (порядок слов ввода), как в A-24 */
+function guessCat(raw){var t=raw.toLowerCase().replace(/ё/g,'е').split(/[^a-zа-я0-9]+/).filter(Boolean);for(var w=0;w<t.length;w++){if(t[w]==='dog'&&t[w+1]==='park')return 'dog_area';for(var i=0;i<KEYS.length;i++)if(KEYS[i][0].test(t[w]))return KEYS[i][1];}return null;}
 function findDup(name){
   var n=normName(name); if(!n) return null, best=null;
   var best=null,bs=0;

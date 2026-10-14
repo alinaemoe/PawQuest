@@ -27,6 +27,20 @@ export type { PlaybackOptions, ReplayPoint, TimeAxis } from './track/replay';
 export { median } from './util/median';
 export { dbscan } from './geo/dbscan';
 export type { DbscanResult } from './geo/dbscan';
+export {
+  defaultPlaceName,
+  findDuplicates,
+  guessCategory,
+  nameKey,
+  nameSimilarity,
+  tidyName,
+} from './places/names';
+export type {
+  DuplicateCandidate,
+  FindDuplicatesOptions,
+  InferredCategory,
+  LibraryPlace,
+} from './places/names';
 export { suggestPlaces } from './places/suggest';
 export type { PlaceSuggestion, StopInput, SuggestPlacesOptions } from './places/suggest';
 export { smoothMedian } from './track/smooth';
