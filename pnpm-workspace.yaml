@@ -1,6 +1,10 @@
 packages:
   - 'packages/*'
   - 'apps/*'
+# Flat node_modules: with the default isolated layout the native C++ build of Expo modules on
+# Windows exceeds CMake/ninja's 250-character object path limit (verified: ninja "build.ninja
+# still dirty after 100 tries"). Expo documents hoisted as the supported fallback.
+nodeLinker: hoisted
 minimumReleaseAgeExclude:
   - '@expo/cli@57.0.30'
   - '@expo/prebuild-config@57.0.19'
