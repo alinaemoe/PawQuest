@@ -26,11 +26,15 @@ const CATEGORY_PATTERNS: readonly (readonly [InferredCategory, RegExp])[] = [
   ['vet', /^(ветклиник\p{L}*|ветеринар\p{L}*|клиник\p{L}*|vets?)$/u],
 ];
 
-const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+// A base character with its combining marks, joined into one unit across zero-width joiners
+// (emoji sequences such as family emoji). This approximates grapheme clusters without the
+// Intl segmenter API, which the Hermes engine of React Native does not implement (verified on
+// a Galaxy S23: constructing it crashed the app at start-up).
+const GRAPHEME = /\P{M}\p{M}*(?:‍\P{M}\p{M}*)*/gu;
 
-/** Splits text into user-perceived characters (an emoji with modifiers stays in one piece). */
+/** Splits text into user-perceived characters. */
 function chars(text: string): string[] {
-  return Array.from(graphemes.segment(text), (part) => part.segment);
+  return text.match(GRAPHEME) ?? [];
 }
 
 function words(raw: string): string[] {

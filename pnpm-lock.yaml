@@ -196,6 +196,9 @@ importers:
       '@pawquest/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@pawquest/insights':
+        specifier: workspace:*
+        version: link:../../packages/insights
       expo:
         specifier: ~57.0.29
         version: 57.0.29(@babel/core@7.29.7(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)

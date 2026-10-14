@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { buildReport, type SpikeReport } from './src/spike/analyze';
+import { runCoreSelfCheck, type SelfCheckItem } from './src/spike/selfCheck';
 import { clearLog, readLog, startRecording, stopRecording } from './src/spike/gpsTask';
 
 function KeepScreenOn() {
@@ -51,6 +52,7 @@ export default function App() {
   const [lastFixAt, setLastFixAt] = useState<number | null>(null);
   const [markers, setMarkers] = useState<string[]>([]);
   const [keepAwake, setKeepAwake] = useState(false);
+  const [selfCheck] = useState<SelfCheckItem[]>(() => runCoreSelfCheck());
 
   const refresh = useCallback(() => {
     const log = readLog();
@@ -114,6 +116,13 @@ export default function App() {
           }}
         />
       </View>
+
+      <Text style={styles.section}>
+        Ядро на этом телефоне ({selfCheck.filter((c) => c.ok).length} из {selfCheck.length})
+      </Text>
+      {selfCheck.map((c) => (
+        <Row key={c.name} label={`${c.ok ? '✓' : '✗'} ${c.name}`} value={c.ok ? '' : c.detail} />
+      ))}
 
       <Text style={styles.section}>Состояние</Text>
       <Row label="Последняя точка" value={lastFixAt === null ? '—' : fmtClock(lastFixAt)} />
