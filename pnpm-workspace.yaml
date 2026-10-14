@@ -13,3 +13,4 @@ minimumReleaseAgeExclude:
   - expo-modules-autolinking@57.0.16
   - expo-modules-core@57.0.23
   - expo@57.0.29
+  - '@expo/metro-runtime@57.0.17'

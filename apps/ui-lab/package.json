@@ -1,0 +1,26 @@
+{
+  "name": "@pawquest/ui-lab",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Web sandbox for building PawQuest screens with the shared React Native components.",
+  "main": "index.ts",
+  "scripts": {
+    "web": "expo start --web --port 8090",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "echo \"no ui-lab tests\""
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~57.0.17",
+    "@pawquest/rn-ui": "workspace:*",
+    "@pawquest/ui": "workspace:*",
+    "expo": "~57.0.29",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.4"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2"
+  }
+}
