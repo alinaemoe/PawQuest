@@ -25,6 +25,10 @@ export {
 export { gapRanges, movingTimeAxis, positionAt } from './track/replay';
 export type { PlaybackOptions, ReplayPoint, TimeAxis } from './track/replay';
 export { median } from './util/median';
+export { dbscan } from './geo/dbscan';
+export type { DbscanResult } from './geo/dbscan';
+export { suggestPlaces } from './places/suggest';
+export type { PlaceSuggestion, StopInput, SuggestPlacesOptions } from './places/suggest';
 export { smoothMedian } from './track/smooth';
 export { simplifyTrack } from './track/simplify';
 export type { SimplifyOptions } from './track/simplify';
