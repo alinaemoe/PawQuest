@@ -1,6 +1,6 @@
 import type { MessageKey } from '@pawquest/i18n';
 import { AppText, Button, Chip, Sheet, SwitchRow, useI18n } from '@pawquest/rn-ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 export const PLACE_KINDS = ['park', 'meadow', 'yard', 'district', 'forest', 'waterfront'] as const;
@@ -54,14 +54,23 @@ export function PreWalkSheet({
   const [gps, setGps] = useState(true);
   const [placeKind, setPlaceKind] = useState<string | null>(lastPlaceKind);
   const [placeId, setPlaceId] = useState<string | null>(suggested?.id ?? null);
+  const touched = useRef(false);
   useEffect(() => {
     if (visible) {
+      touched.current = false;
       setGps(true);
       setPlaceId(suggested?.id ?? null);
       setPlaceKind(suggested === null ? lastPlaceKind : null);
     }
     // reset only when the sheet opens
   }, [visible]);
+  // the position arrives after the sheet opens: preselect the place unless the owner already chose
+  useEffect(() => {
+    if (suggested !== null && !touched.current) {
+      setPlaceId(suggested.id);
+      setPlaceKind(null);
+    }
+  }, [suggested?.id]);
   useEffect(() => {
     if (pickedPlaceId !== null) {
       setPlaceId(pickedPlaceId);
@@ -69,6 +78,7 @@ export function PreWalkSheet({
     }
   }, [pickedPlaceId]);
   const chosen = (id: string): void => {
+    touched.current = true;
     setPlaceId(placeId === id ? null : id);
     setPlaceKind(null);
   };
@@ -107,6 +117,7 @@ export function PreWalkSheet({
               label={i18n.t(`place.${kind}` as MessageKey)}
               selected={placeKind === kind}
               onPress={() => {
+                touched.current = true;
                 setPlaceKind(placeKind === kind ? null : kind);
                 setPlaceId(null);
               }}
