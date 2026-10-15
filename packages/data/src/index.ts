@@ -149,3 +149,20 @@ export {
   type PlanWithLast,
   type VisitReason,
 } from './care';
+export {
+  appendTrackPoints,
+  computeWalkMetrics,
+  discardWalk,
+  finishWalk,
+  getActiveWalk,
+  lastTrackPoint,
+  listTrackPoints,
+  pauseWalk,
+  recoverWalk,
+  resumeWalk,
+  startWalk,
+  type RecoverAction,
+  type StartWalkInput,
+  type TrackPointInput,
+  type WalkMetrics,
+} from './recorder';

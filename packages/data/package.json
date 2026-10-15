@@ -18,7 +18,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "drizzle-orm": "0.45.4"
+    "drizzle-orm": "0.45.4",
+    "@pawquest/core": "workspace:*"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "5.0.4",
