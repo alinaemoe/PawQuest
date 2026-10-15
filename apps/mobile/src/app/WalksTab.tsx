@@ -1,6 +1,7 @@
 import {
   createManualWalk,
   getWalk,
+  getWeatherSnapshot,
   listEventTypes,
   listWalksPage,
   restore,
@@ -21,6 +22,7 @@ import {
   WalkSheet,
   type ManualWalk,
   type WalkDetailsModel,
+  weatherLine,
 } from '@pawquest/screens';
 import { useMemo, useState } from 'react';
 
@@ -66,6 +68,10 @@ export function WalksTab() {
         time: i18n.formatTime(e.ts),
       })),
       notes: open.notes,
+      weather: (() => {
+        const facts = getWeatherSnapshot(db, open.id);
+        return facts === null ? null : weatherLine(facts, i18n);
+      })(),
       manual: open.mode === 'manual',
     };
   }, [db, open, i18n]);

@@ -13,6 +13,8 @@ export interface WalkDetailsModel {
   readonly facts: readonly WalkFacts[];
   readonly events: readonly { readonly label: string; readonly time: string }[];
   readonly notes: string | null;
+  /** Weather saved at the start of the walk, as one line; null when none was saved. */
+  readonly weather?: string | null;
   readonly manual: boolean;
 }
 
@@ -44,6 +46,9 @@ export function WalkDetailsSheet({ walk, map, onClose, onEdit, onDelete }: WalkD
           </View>
         ))}
       </View>
+      {walk.weather === undefined || walk.weather === null ? null : (
+        <AppText variant="muted">{walk.weather}</AppText>
+      )}
       <View style={{ gap: 4 }}>
         <AppText variant="eyebrow">{i18n.t('walk.events')}</AppText>
         {walk.events.length === 0 ? (

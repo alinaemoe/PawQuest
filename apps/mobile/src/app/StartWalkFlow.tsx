@@ -1,8 +1,9 @@
-import { startWalk } from '@pawquest/data';
-import { PreWalkSheet, type PreWalkChoice } from '@pawquest/screens';
+import { saveWeatherSnapshot, startWalk } from '@pawquest/data';
+import { PreWalkSheet, weatherLine, type PreWalkChoice } from '@pawquest/screens';
 import { useMemo, useState } from 'react';
 
 import { useApp } from './AppContext';
+import { useWeather } from './useWeather';
 import { requestGpsPermission, startGpsUpdates } from './walkRecorder';
 
 export interface StartWalkFlowProps {
@@ -16,6 +17,7 @@ export interface StartWalkFlowProps {
 export function StartWalkFlow({ visible, onClose, onStarted }: StartWalkFlowProps) {
   const { db, ctx, dog, i18n, version, bump } = useApp();
   const [note, setNote] = useState<string | null>(null);
+  const weather = useWeather();
 
   const lastPlaceKind = useMemo(() => {
     const row = db.all(
@@ -39,12 +41,15 @@ export function StartWalkFlow({ visible, onClose, onStarted }: StartWalkFlowProp
       }
       keepAwake = permission === 'foreground-only';
     }
-    startWalk(db, ctx, {
+    const walk = startWalk(db, ctx, {
       dogId: dog.id,
       mode: choice.gps ? 'gps' : 'no_gps',
       tzOffsetMin: -new Date().getTimezoneOffset(),
       placeKind: choice.placeKind,
     });
+    if (weather.facts !== null) {
+      saveWeatherSnapshot(db, walk.id, weather.facts);
+    }
     if (choice.gps) {
       await startGpsUpdates(i18n.t('active.notifTitle'), i18n.t('active.notifBody'));
     }
@@ -58,6 +63,7 @@ export function StartWalkFlow({ visible, onClose, onStarted }: StartWalkFlowProp
       visible={visible}
       lastPlaceKind={lastPlaceKind}
       note={note}
+      weatherLine={weather.facts === null ? null : weatherLine(weather.facts, i18n)}
       onClose={() => {
         setNote(null);
         onClose();

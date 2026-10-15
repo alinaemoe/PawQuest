@@ -16,6 +16,8 @@ export interface PreWalkSheetProps {
   readonly lastPlaceKind: string | null;
   /** A note under the button: location refused, or background recording not allowed. */
   readonly note: string | null;
+  /** "8° · Мокро · …" from the weather at the dog's position; null when unknown. */
+  readonly weatherLine?: string | null;
   readonly onClose: () => void;
   readonly onStart: (choice: PreWalkChoice) => void;
 }
@@ -25,6 +27,7 @@ export function PreWalkSheet({
   visible,
   lastPlaceKind,
   note,
+  weatherLine = null,
   onClose,
   onStart,
 }: PreWalkSheetProps) {
@@ -40,6 +43,9 @@ export function PreWalkSheet({
   }, [visible]);
   return (
     <Sheet visible={visible} onClose={onClose} title={i18n.t('pre.title')}>
+      {weatherLine === null ? null : (
+        <AppText variant="muted">{i18n.t('weather.prewalk', { line: weatherLine })}</AppText>
+      )}
       <View style={{ gap: 8 }}>
         <AppText variant="eyebrow">{i18n.t('pre.where')}</AppText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
