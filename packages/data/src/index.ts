@@ -9,3 +9,63 @@ export {
   type SqlRow,
   type SqlValue,
 } from './sql';
+export {
+  createDog,
+  getDog,
+  listDogs,
+  updateDog,
+  type Dog,
+  type DogInput,
+  type DogSize,
+  type Sex,
+} from './dogs';
+export {
+  countIncompleteEvents,
+  createEvent,
+  getEvent,
+  listEvents,
+  listEventTypes,
+  panelEventTypes,
+  type BehaviorEvent,
+  type DistanceBucket,
+  type EventInput,
+  type EventKind,
+  type EventType,
+} from './events';
+export { recentFeed, type FeedItem } from './feed';
+export { createCtx, fromIso, toIso, uuidv7, type Ctx } from './ids';
+export {
+  DEFAULT_SETTINGS,
+  GOAL_KEYS,
+  PALETTE_KEYS,
+  getSettings,
+  setSetting,
+  type AppSettings,
+  type GoalKey,
+  type PaletteKey,
+} from './settings';
+export {
+  TRASH_DAYS,
+  emptyTrash,
+  listTrash,
+  purgeExpiredTrash,
+  restore,
+  softDelete,
+  type TrashItem,
+  type TrashTable,
+} from './trash';
+export {
+  createManualWalk,
+  getWalk,
+  lastCompletedWalk,
+  listWalks,
+  type ManualWalkInput,
+  type Walk,
+} from './walks';
+export {
+  addWeight,
+  isWeightDue,
+  latestWeight,
+  type WeighConditions,
+  type WeightEntry,
+} from './weights';

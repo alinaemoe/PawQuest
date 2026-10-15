@@ -12,6 +12,7 @@ export default defineConfig({
         'src/index.ts',
         'src/adapters/expo.ts',
         'src/migrations.generated.ts',
+        'src/test-utils.ts',
       ],
       reporter: ['text'],
       thresholds: { lines: 95, functions: 95, branches: 90, statements: 95 },

@@ -53,7 +53,11 @@ describe('migration files', () => {
 describe('migrate', () => {
   it('builds the full schema on an empty database', () => {
     const result = migrate(db, MIGRATIONS, now);
-    expect(result).toEqual({ from: 0, to: MIGRATIONS.length, applied: [1, 2] });
+    expect(result).toEqual({
+      from: 0,
+      to: MIGRATIONS.length,
+      applied: MIGRATIONS.map((m) => m.version),
+    });
     // 28 tables of 0001 (incl. schema_migrations) + project, project_stage, food_item, food_log,
     // prompt_state, rest_day from 0002.
     expect(tableNames()).toHaveLength(34);
@@ -61,14 +65,17 @@ describe('migrate', () => {
       expect.arrayContaining(['dog', 'track_point', 'food_log', 'rest_day']),
     );
     expect(db.all('SELECT version, applied_at FROM schema_migrations ORDER BY version')).toEqual([
-      { version: 1, applied_at: NOW },
-      { version: 2, applied_at: NOW },
+      ...MIGRATIONS.map((m) => ({ version: m.version, applied_at: NOW })),
     ]);
   });
 
   it('is idempotent: a second run applies nothing', () => {
     migrate(db, MIGRATIONS, now);
-    expect(migrate(db, MIGRATIONS, now)).toEqual({ from: 2, to: 2, applied: [] });
+    expect(migrate(db, MIGRATIONS, now)).toEqual({
+      from: MIGRATIONS.length,
+      to: MIGRATIONS.length,
+      applied: [],
+    });
   });
 
   it('refuses a database newer than the app', () => {
@@ -85,14 +92,16 @@ describe('migrate', () => {
     const bad: Migration[] = [
       ...MIGRATIONS,
       {
-        version: 3,
+        version: MIGRATIONS.length + 1,
         name: 'broken',
         sql: 'CREATE TABLE half_done (id INTEGER); INSERT INTO no_such_table VALUES (1);',
       },
     ];
     expect(() => migrate(db, bad, now)).toThrow();
     expect(tableNames()).not.toContain('half_done');
-    expect(db.all('SELECT MAX(version) AS v FROM schema_migrations')[0]?.['v']).toBe(2);
+    expect(db.all('SELECT MAX(version) AS v FROM schema_migrations')[0]?.['v']).toBe(
+      MIGRATIONS.length,
+    );
     // the app can still start with the known migrations afterwards
     expect(migrate(db, MIGRATIONS, now).applied).toEqual([]);
   });
@@ -102,7 +111,7 @@ describe('migrate', () => {
     const bad: Migration[] = [
       ...MIGRATIONS,
       {
-        version: 3,
+        version: MIGRATIONS.length + 1,
         name: 'dangling',
         // foreign keys are enforced per statement, so switch them off the way a table-rebuild would
         sql: "PRAGMA defer_foreign_keys = ON; INSERT INTO walk_dog (walk_id, dog_id) VALUES ('missing-walk', 'missing-dog');",
@@ -110,7 +119,9 @@ describe('migrate', () => {
     ];
     expect(() => migrate(db, bad, now)).toThrow(/broken foreign keys|FOREIGN KEY/);
     expect(db.all('SELECT * FROM walk_dog')).toEqual([]);
-    expect(db.all('SELECT MAX(version) AS v FROM schema_migrations')[0]?.['v']).toBe(2);
+    expect(db.all('SELECT MAX(version) AS v FROM schema_migrations')[0]?.['v']).toBe(
+      MIGRATIONS.length,
+    );
   });
 
   it('0002 keeps data written under version 1 and adds the new columns as NULL', () => {
@@ -136,7 +147,7 @@ describe('migrate', () => {
       [NOW, NOW, NOW],
     );
 
-    expect(migrate(db, MIGRATIONS, now).applied).toEqual([2]);
+    expect(migrate(db, MIGRATIONS, now).applied).toEqual(MIGRATIONS.slice(1).map((m) => m.version));
 
     expect(db.all('SELECT name FROM dog')).toEqual([{ name: 'Луна' }]);
     expect(db.all('SELECT project_id, engagement FROM training_session')).toEqual([
