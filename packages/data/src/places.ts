@@ -20,24 +20,25 @@ function mustGet(db: SqlDb, id: string): Place {
 }
 import type { SqlDb, SqlRow, SqlValue } from './sql';
 
+/** In the order shown to the owner: big green places first, errands and bases after, "other" last. */
 export const PLACE_CATEGORIES = [
   'park',
-  'meadow',
-  'yard',
-  'district',
   'forest',
   'waterfront',
+  'square',
+  'meadow',
+  'alley',
+  'yard',
   'dog_area',
+  'district',
   'quiet_street',
   'busy_street',
-  'vet',
-  'other',
-  'square',
-  'alley',
   'shop',
+  'vet',
   'grooming',
   'home',
   'guests',
+  'other',
 ] as const;
 
 export type PlaceCategory = (typeof PLACE_CATEGORIES)[number];
