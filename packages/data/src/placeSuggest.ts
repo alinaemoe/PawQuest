@@ -81,8 +81,8 @@ export function proposePlaces(
   }
   const stops = walkIds.flatMap((id) => stopsOfWalk(db, id, now));
   const saved = db
-    .all('SELECT lat, lon FROM place WHERE deleted_at IS NULL')
-    .map((r) => ({ lat: Number(r['lat']), lon: Number(r['lon']) }));
+    .all('SELECT lat, lon, radius_m FROM place WHERE deleted_at IS NULL')
+    .map((r) => ({ lat: Number(r['lat']), lon: Number(r['lon']), radiusM: Number(r['radius_m']) }));
   return suggestPlaces(stops, saved).map((s) => ({
     lat: s.lat,
     lon: s.lon,

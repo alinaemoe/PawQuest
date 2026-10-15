@@ -685,6 +685,12 @@ export const ru = {
   'place.suggest.name': 'Назвать',
   'place.suggest.later': 'Не сейчас',
   'place.suggest.never': 'Не предлагать здесь',
+
+  'place.radius.title': 'Размер места (радиус)',
+  'place.radius.hint':
+    'Парк большой, полянка маленькая: так приложение не станет предлагать новые места внутри большого парка.',
+  'place.radius.less': 'Меньше',
+  'place.radius.more': 'Больше',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof ru;

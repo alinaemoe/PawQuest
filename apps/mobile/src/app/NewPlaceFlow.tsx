@@ -57,13 +57,14 @@ export function NewPlaceFlow({ visible, onClose, at, initialCategory, onDone }: 
         })[0];
         return match === undefined ? null : { id: match.place.id, name: match.place.name };
       }}
-      onSave={({ category, name }) => {
+      onSave={({ category, name, radiusM }) => {
         if (position === null) {
           return;
         }
         const place = createPlace(db, ctx, {
           category,
           name,
+          radiusM,
           label: categoryLabel(category, i18n),
           lat: position.lat,
           lon: position.lon,

@@ -169,7 +169,10 @@ export {
 } from './recorder';
 export { getWeatherSnapshot, saveWeatherSnapshot } from './weather';
 export {
+  MAX_PLACE_RADIUS_M,
+  MIN_PLACE_RADIUS_M,
   PLACE_CATEGORIES,
+  PLACE_DEFAULT_RADIUS_M,
   addAlias,
   createPlace,
   findSimilarPlaces,

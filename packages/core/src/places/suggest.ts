@@ -18,6 +18,11 @@ export interface PlaceSuggestion extends LatLon {
   readonly stopIndices: readonly number[];
 }
 
+/** A saved place; its radius says how far it reaches (a park is far larger than a clearing). */
+export interface SavedPlace extends LatLon {
+  readonly radiusM?: number;
+}
+
 export interface SuggestPlacesOptions {
   /** Shortest stop that counts. Default 180 s. */
   readonly minStopS?: number;
@@ -34,14 +39,14 @@ export interface SuggestPlacesOptions {
 /**
  * Suggests new places from repeated long stops (spec A-12, decision D-51): clusters stops of all
  * walks with DBSCAN, keeps clusters that span several walks, centres them at the median position
- * and skips those that already have a saved place close by. Ordered by total stop time, longest
+ * and skips those inside a saved place (its radius, at least 60 m). Ordered by total stop time, longest
  * first (ties keep discovery order).
  *
  * @throws RangeError for invalid coordinates or durations, or invalid DBSCAN parameters.
  */
 export function suggestPlaces(
   stops: readonly StopInput[],
-  savedPlaces: readonly LatLon[],
+  savedPlaces: readonly SavedPlace[],
   options: SuggestPlacesOptions = {},
 ): PlaceSuggestion[] {
   const minStopS = options.minStopS ?? 180;
@@ -78,7 +83,13 @@ export function suggestPlaces(
       lat: median(members.map((m) => m.stop.lat)),
       lon: median(members.map((m) => m.stop.lon)),
     };
-    if (savedPlaces.some((place) => haversineDistanceM(place, centre) <= minDistanceToSavedM)) {
+    // already covered: inside a saved place's reach (its radius, at least the minimum distance)
+    if (
+      savedPlaces.some(
+        (place) =>
+          haversineDistanceM(place, centre) <= Math.max(minDistanceToSavedM, place.radiusM ?? 0),
+      )
+    ) {
       continue;
     }
     suggestions.push({

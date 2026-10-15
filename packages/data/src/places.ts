@@ -65,9 +65,25 @@ export interface CreatePlaceInput {
   readonly isDemo?: boolean;
 }
 
-const DEFAULT_RADIUS_M = 60;
-const MIN_RADIUS_M = 25;
-const MAX_RADIUS_M = 200;
+/**
+ * How far a place reaches by default, by type (D-62): a park is hundreds of meters across, a
+ * clearing or a yard tens. The owner can change it; a map outline can replace it later.
+ */
+export const PLACE_DEFAULT_RADIUS_M: Readonly<Record<PlaceCategory, number>> = {
+  park: 300,
+  forest: 250,
+  district: 400,
+  waterfront: 120,
+  meadow: 50,
+  yard: 40,
+  dog_area: 40,
+  quiet_street: 40,
+  busy_street: 40,
+  vet: 40,
+  other: 60,
+};
+export const MIN_PLACE_RADIUS_M = 15;
+export const MAX_PLACE_RADIUS_M = 1000;
 /** A grid cell of about 55 m instead of a geohash (D-51); only used to find neighbours quickly. */
 const CELL_DEG = 0.0005;
 
@@ -90,7 +106,7 @@ function toPlace(row: SqlRow): Place {
 }
 
 function clampRadius(radius: number): number {
-  return Math.min(MAX_RADIUS_M, Math.max(MIN_RADIUS_M, Math.round(radius)));
+  return Math.min(MAX_PLACE_RADIUS_M, Math.max(MIN_PLACE_RADIUS_M, Math.round(radius)));
 }
 
 /** Saves a place. The name is tidied (A-24); with no usable name it becomes the type label. */
@@ -118,7 +134,7 @@ export function createPlace(db: SqlDb, ctx: Ctx, input: CreatePlaceInput): Place
       nameKey(name),
       input.lat,
       input.lon,
-      clampRadius(input.radiusM ?? DEFAULT_RADIUS_M),
+      clampRadius(input.radiusM ?? PLACE_DEFAULT_RADIUS_M[input.category]),
       cell(input.lat, input.lon),
       input.notes ?? null,
       input.isDemo === true ? 1 : 0,

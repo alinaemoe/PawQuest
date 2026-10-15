@@ -92,6 +92,23 @@ describe('proposePlaces', () => {
     expect(proposePlaces(env.db, START + 3 * 86_400_000)).toEqual([]);
   });
 
+  it('a big saved place covers repeated stops far from its centre', () => {
+    // three walks stop about 220 m east of where the owner put the park's pin
+    const farSpot = {
+      lat: SPOT.lat,
+      lon: SPOT.lon + 220 / (111_320 * Math.cos((SPOT.lat * Math.PI) / 180)),
+    };
+    for (const day of [0, 1, 2]) {
+      recordWalk(farSpot, 240, day);
+    }
+    expect(proposePlaces(env.db, START + 3 * 86_400_000)).toHaveLength(1);
+    // a park (300 m) pinned at SPOT reaches the stops; a small clearing (50 m) does not
+    const park = createPlace(env.db, env.ctx, { category: 'park', label: 'Парк', ...SPOT });
+    expect(proposePlaces(env.db, START + 3 * 86_400_000)).toEqual([]);
+    env.db.run('UPDATE place SET radius_m = 50 WHERE id = ?', [park.id]);
+    expect(proposePlaces(env.db, START + 3 * 86_400_000)).toHaveLength(1);
+  });
+
   it('ignores old walks, discarded walks and walks without a GPS track', () => {
     for (const day of [0, 1, 2]) {
       recordWalk(SPOT, 240, day);

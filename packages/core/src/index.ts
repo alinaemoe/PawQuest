@@ -42,7 +42,12 @@ export type {
   LibraryPlace,
 } from './places/names';
 export { suggestPlaces } from './places/suggest';
-export type { PlaceSuggestion, StopInput, SuggestPlacesOptions } from './places/suggest';
+export type {
+  PlaceSuggestion,
+  SavedPlace,
+  StopInput,
+  SuggestPlacesOptions,
+} from './places/suggest';
 export { smoothMedian } from './track/smooth';
 export { simplifyTrack } from './track/simplify';
 export type { SimplifyOptions } from './track/simplify';

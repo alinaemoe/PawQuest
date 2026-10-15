@@ -8,6 +8,8 @@ import {
   filterPlaces,
   groupPlaces,
   placeRow,
+  RADIUS_STEPS,
+  stepRadius,
   tidyPair,
   withQualifier,
 } from './placesModel';
@@ -119,5 +121,19 @@ describe('tidyPair', () => {
       otherId: 'b',
       text: 'Похоже на одно место: «Парк у дома» и «Парк дома»',
     });
+  });
+});
+
+describe('stepRadius', () => {
+  it('moves one listed size up or down from the nearest one', () => {
+    expect(stepRadius(60, 1)).toBe(80);
+    expect(stepRadius(60, -1)).toBe(50);
+    expect(stepRadius(326, 1)).toBe(400); // nearest listed size is 300
+    expect(stepRadius(326, -1)).toBe(200);
+  });
+  it('stays at the ends of the range', () => {
+    expect(stepRadius(15, -1)).toBe(15);
+    expect(stepRadius(1000, 1)).toBe(1000);
+    expect(RADIUS_STEPS[0]).toBe(15);
   });
 });

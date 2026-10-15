@@ -3,6 +3,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createDog, type Dog } from './dogs';
 import { createEvent } from './events';
 import {
+  MAX_PLACE_RADIUS_M,
+  MIN_PLACE_RADIUS_M,
+  PLACE_DEFAULT_RADIUS_M,
   addAlias,
   createPlace,
   findSimilarPlaces,
@@ -62,15 +65,34 @@ describe('createPlace', () => {
     expect([a.name, b.name, c.name]).toEqual(['Парк', 'Парк 2', 'Парк 3']);
   });
 
-  it('keeps the radius within 25 to 200 m and defaults to 60', () => {
-    const radius = (r?: number) =>
-      createPlace(env.db, env.ctx, {
-        category: 'meadow',
-        label: 'Луг',
-        ...HOME,
-        ...(r === undefined ? {} : { radiusM: r }),
-      }).radiusM;
-    expect([radius(), radius(5), radius(500), radius(80.4)]).toEqual([60, 25, 200, 80]);
+  it('the default radius follows the type: a park is big, a clearing small', () => {
+    const radius = (category: 'park' | 'meadow' | 'yard' | 'forest' | 'other') =>
+      createPlace(env.db, env.ctx, { category, label: 'X', ...HOME }).radiusM;
+    expect([
+      radius('park'),
+      radius('forest'),
+      radius('meadow'),
+      radius('yard'),
+      radius('other'),
+    ]).toEqual([
+      PLACE_DEFAULT_RADIUS_M.park,
+      PLACE_DEFAULT_RADIUS_M.forest,
+      PLACE_DEFAULT_RADIUS_M.meadow,
+      PLACE_DEFAULT_RADIUS_M.yard,
+      PLACE_DEFAULT_RADIUS_M.other,
+    ]);
+    expect(PLACE_DEFAULT_RADIUS_M.park).toBeGreaterThan(PLACE_DEFAULT_RADIUS_M.meadow * 4);
+  });
+
+  it('keeps a chosen radius within 15 to 1000 m', () => {
+    const radius = (r: number) =>
+      createPlace(env.db, env.ctx, { category: 'park', label: 'Парк', ...HOME, radiusM: r })
+        .radiusM;
+    expect([radius(5), radius(2000), radius(326.4)]).toEqual([
+      MIN_PLACE_RADIUS_M,
+      MAX_PLACE_RADIUS_M,
+      326,
+    ]);
   });
 
   it('rejects an impossible position', () => {

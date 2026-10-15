@@ -1,5 +1,5 @@
 import { guessCategory } from '@pawquest/core';
-import { PLACE_CATEGORIES, type PlaceCategory } from '@pawquest/data';
+import { PLACE_CATEGORIES, PLACE_DEFAULT_RADIUS_M, type PlaceCategory } from '@pawquest/data';
 import type { MessageKey } from '@pawquest/i18n';
 import {
   AppText,
@@ -21,6 +21,7 @@ import {
   categoryLabel,
   filterPlaces,
   groupPlaces,
+  stepRadius,
   withQualifier,
   type PlaceRowModel,
   type TidyPairModel,
@@ -32,6 +33,42 @@ const QUALIFIERS: readonly MessageKey[] = [
   'place.new.q.river',
   'place.new.q.new',
 ];
+
+/** "Размер места (радиус): 300 м" with smaller and larger steps. */
+function RadiusStepper({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (radiusM: number) => void;
+}) {
+  const i18n = useI18n();
+  return (
+    <View style={{ gap: 8 }}>
+      <AppText variant="eyebrow">{i18n.t('place.radius.title')}</AppText>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Chip
+          label={i18n.t('place.radius.less')}
+          onPress={() => {
+            onChange(stepRadius(value, -1));
+          }}
+        />
+        <AppText variant="numBig" style={{ fontSize: 22, minWidth: 90, textAlign: 'center' }}>
+          {i18n.formatDistance(value)}
+        </AppText>
+        <Chip
+          label={i18n.t('place.radius.more')}
+          onPress={() => {
+            onChange(stepRadius(value, 1));
+          }}
+        />
+      </View>
+      <AppText variant="muted" style={{ fontSize: 12 }}>
+        {i18n.t('place.radius.hint')}
+      </AppText>
+    </View>
+  );
+}
 
 export interface PlacesScreenProps {
   readonly rows: readonly PlaceRowModel[];
@@ -131,7 +168,7 @@ export interface NewPlaceSheetProps {
     name: string,
     category: PlaceCategory,
   ) => { readonly id: string; readonly name: string } | null;
-  readonly onSave: (input: { category: PlaceCategory; name: string }) => void;
+  readonly onSave: (input: { category: PlaceCategory; name: string; radiusM: number }) => void;
   /** "Yes, the same": use the saved place and remember the typed text as its alias. */
   readonly onUseExisting: (id: string, typed: string) => void;
 }
@@ -149,10 +186,14 @@ export function NewPlaceSheet({
   const i18n = useI18n();
   const [category, setCategory] = useState<PlaceCategory>('park');
   const [name, setName] = useState('');
+  const [radiusM, setRadiusM] = useState<number>(PLACE_DEFAULT_RADIUS_M[initialCategory]);
+  const [radiusTouched, setRadiusTouched] = useState(false);
   const [askedFor, setAskedFor] = useState<string | null>(null);
   useEffect(() => {
     if (visible) {
       setCategory(initialCategory);
+      setRadiusM(PLACE_DEFAULT_RADIUS_M[initialCategory]);
+      setRadiusTouched(false);
       setName('');
       setAskedFor(null);
     }
@@ -167,13 +208,16 @@ export function NewPlaceSheet({
 
   const typeChanged = (next: PlaceCategory): void => {
     setCategory(next);
+    if (!radiusTouched) {
+      setRadiusM(PLACE_DEFAULT_RADIUS_M[next]);
+    }
   };
   const nameChanged = (text: string): void => {
     setName(text);
     setAskedFor(null);
     const found = guessCategory(text);
     if (found !== null) {
-      setCategory(categoryFromGuess(found));
+      typeChanged(categoryFromGuess(found));
     }
   };
 
@@ -199,6 +243,13 @@ export function NewPlaceSheet({
           </AppText>
         )}
       </View>
+      <RadiusStepper
+        value={radiusM}
+        onChange={(next) => {
+          setRadiusM(next);
+          setRadiusTouched(true);
+        }}
+      />
       <View style={{ gap: 8 }}>
         <AppText variant="eyebrow">{i18n.t('place.new.name')}</AppText>
         <TextField value={name} onChangeText={nameChanged} placeholder={typeLabel} maxLength={40} />
@@ -246,7 +297,7 @@ export function NewPlaceSheet({
         label={i18n.t('place.new.save')}
         disabled={!hasPosition || asking}
         onPress={() => {
-          onSave({ category, name });
+          onSave({ category, name, radiusM });
         }}
       />
     </Sheet>
@@ -258,10 +309,14 @@ export interface PlaceSheetProps {
     readonly id: string;
     readonly name: string;
     readonly category: PlaceCategory;
+    readonly radiusM: number;
     readonly subtitle: string;
   } | null;
   readonly onClose: () => void;
-  readonly onSave: (id: string, patch: { name: string; category: PlaceCategory }) => void;
+  readonly onSave: (
+    id: string,
+    patch: { name: string; category: PlaceCategory; radiusM: number },
+  ) => void;
   readonly onDelete: (id: string) => void;
 }
 
@@ -270,10 +325,12 @@ export function PlaceSheet({ place, onClose, onSave, onDelete }: PlaceSheetProps
   const i18n = useI18n();
   const [name, setName] = useState(place?.name ?? '');
   const [category, setCategory] = useState<PlaceCategory>(place?.category ?? 'other');
+  const [radiusM, setRadiusM] = useState(place?.radiusM ?? 60);
   useEffect(() => {
     if (place !== null) {
       setName(place.name);
       setCategory(place.category);
+      setRadiusM(place.radiusM);
     }
     // refill only when another place is opened
   }, [place?.id]);
@@ -301,10 +358,11 @@ export function PlaceSheet({ place, onClose, onSave, onDelete }: PlaceSheetProps
           />
         ))}
       </View>
+      <RadiusStepper value={radiusM} onChange={setRadiusM} />
       <Button
         label={i18n.t('common.save')}
         onPress={() => {
-          onSave(place.id, { name, category });
+          onSave(place.id, { name, category, radiusM });
         }}
       />
       <Button

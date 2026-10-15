@@ -612,4 +612,10 @@ export const en = {
   'place.suggest.name': 'Name it',
   'place.suggest.later': 'Not now',
   'place.suggest.never': 'Do not suggest here',
+
+  'place.radius.title': 'Size of the place (radius)',
+  'place.radius.hint':
+    'A park is big, a clearing is small: this keeps the app from suggesting new places inside a big park.',
+  'place.radius.less': 'Smaller',
+  'place.radius.more': 'Larger',
 } as const satisfies Record<MessageKey, Message>;

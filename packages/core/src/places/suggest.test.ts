@@ -60,6 +60,15 @@ describe('suggestPlaces (A-12)', () => {
     expect(suggestPlaces(park, [justOutside])).toHaveLength(1);
   });
 
+  it('a large saved place covers stops far from its centre, a small one does not', () => {
+    // the stops are about 250 m east of the saved place centre
+    const farPark = [stop('w1', 0, 250), stop('w2', 5, 255), stop('w3', -4, 253)];
+    const centre = at(0, 0);
+    expect(suggestPlaces(farPark, [{ ...centre, radiusM: 300 }])).toEqual([]);
+    expect(suggestPlaces(farPark, [{ ...centre, radiusM: 100 }])).toHaveLength(1);
+    expect(suggestPlaces(farPark, [centre])).toHaveLength(1); // no radius: only the 60 m rule
+  });
+
   it('returns several suggestions, longest total stop time first', () => {
     const far = (w: string, n: number, e: number, d: number) => stop(w, 2000 + n, 2000 + e, d);
     const stops = [

@@ -29,6 +29,7 @@ export interface PlaceRowModel {
   readonly id: string;
   readonly name: string;
   readonly category: PlaceCategory;
+  readonly radiusM: number;
   /** "12 визитов · последний вчера" */
   readonly subtitle: string;
 }
@@ -40,7 +41,13 @@ export function placeRow(place: PlaceStats, i18n: I18n, now: number): PlaceRowMo
     place.lastVisitAt === null
       ? visits
       : `${visits} · ${i18n.t('places.last', { ago: i18n.formatAgo(place.lastVisitAt, now) })}`;
-  return { id: place.id, name: place.name, category: place.category, subtitle };
+  return {
+    id: place.id,
+    name: place.name,
+    category: place.category,
+    radiusM: place.radiusM,
+    subtitle,
+  };
 }
 
 export interface PlaceGroup {
@@ -96,4 +103,19 @@ export function tidyPair(pair: { keep: Place; other: Place }, i18n: I18n): TidyP
     otherId: pair.other.id,
     text: i18n.t('places.similar', { a: pair.keep.name, b: pair.other.name }),
   };
+}
+
+/** The sizes the owner steps through: from a yard to a big park. */
+export const RADIUS_STEPS = [15, 25, 40, 50, 60, 80, 120, 150, 200, 300, 400, 600, 1000] as const;
+
+/** One step smaller (-1) or larger (+1) from the nearest listed size; stays at the ends. */
+export function stepRadius(current: number, direction: -1 | 1): number {
+  let nearest = 0;
+  RADIUS_STEPS.forEach((value, i) => {
+    if (Math.abs(value - current) < Math.abs((RADIUS_STEPS[nearest] ?? 0) - current)) {
+      nearest = i;
+    }
+  });
+  const next = Math.min(RADIUS_STEPS.length - 1, Math.max(0, nearest + direction));
+  return RADIUS_STEPS[next] ?? current;
 }
