@@ -29,7 +29,8 @@
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "web": {
       "favicon": "./assets/favicon.png"

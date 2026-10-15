@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { buildReport, type SpikeReport } from './src/spike/analyze';
+import { runDbCheck, type DbCheckResult } from './src/spike/dbCheck';
 import { runCoreSelfCheck, type SelfCheckItem } from './src/spike/selfCheck';
 import { clearLog, readLog, startRecording, stopRecording } from './src/spike/gpsTask';
 
@@ -53,6 +54,31 @@ export default function App() {
   const [markers, setMarkers] = useState<string[]>([]);
   const [keepAwake, setKeepAwake] = useState(false);
   const [selfCheck] = useState<SelfCheckItem[]>(() => runCoreSelfCheck());
+  const [dbResult, setDbResult] = useState<DbCheckResult | null>(null);
+  const [dbBusy, setDbBusy] = useState<string | null>(null);
+
+  const runDb = useCallback((points: number) => {
+    setDbBusy(points === 0 ? 'Проверяю базу…' : `Пишу ${String(points)} точек…`);
+    setDbResult(null);
+    // let the "busy" text paint before the synchronous work blocks the JS thread
+    setTimeout(() => {
+      try {
+        setDbResult(runDbCheck(points));
+      } catch (error) {
+        setDbResult({
+          steps: [
+            {
+              name: 'сбой',
+              ok: false,
+              detail: error instanceof Error ? error.message : String(error),
+            },
+          ],
+          bench: null,
+        });
+      }
+      setDbBusy(null);
+    }, 50);
+  }, []);
 
   const refresh = useCallback(() => {
     const log = readLog();
@@ -123,6 +149,55 @@ export default function App() {
       {selfCheck.map((c) => (
         <Row key={c.name} label={`${c.ok ? '✓' : '✗'} ${c.name}`} value={c.ok ? '' : c.detail} />
       ))}
+
+      <Text style={styles.section}>Spike S4: база данных</Text>
+      <View style={styles.buttons}>
+        <Button
+          label="Проверить базу (без замера)"
+          tone="plain"
+          onPress={() => {
+            runDb(0);
+          }}
+        />
+        <Button
+          label="Замер: 100 тыс. точек"
+          tone="plain"
+          onPress={() => {
+            runDb(100_000);
+          }}
+        />
+        <Button
+          label="Замер: 1 млн точек"
+          tone="plain"
+          onPress={() => {
+            runDb(1_000_000);
+          }}
+        />
+      </View>
+      {dbBusy === null ? null : <Text style={styles.muted}>{dbBusy}</Text>}
+      {dbResult === null ? null : (
+        <View>
+          {dbResult.steps.map((st) => (
+            <Row
+              key={st.name}
+              label={`${st.ok ? '✓' : '✗'} ${st.name}`}
+              value={st.ok ? '' : st.detail}
+            />
+          ))}
+          {dbResult.bench === null ? null : (
+            <View>
+              <Row label="Точек записано" value={String(dbResult.bench.points)} />
+              <Row label="Запись, с" value={(dbResult.bench.insertMs / 1000).toFixed(1)} />
+              <Row label="Строк в запросе" value={String(dbResult.bench.rowsPerQuery)} />
+              <Row
+                label="Запрос, медиана"
+                value={`${dbResult.bench.queryMedianMs.toFixed(2)} мс`}
+              />
+              <Row label="Запрос, худший" value={`${dbResult.bench.queryMaxMs.toFixed(2)} мс`} />
+            </View>
+          )}
+        </View>
+      )}
 
       <Text style={styles.section}>Состояние</Text>
       <Row label="Последняя точка" value={lastFixAt === null ? '—' : fmtClock(lastFixAt)} />
