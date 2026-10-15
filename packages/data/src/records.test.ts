@@ -389,7 +389,7 @@ describe('trash (G-02)', () => {
 describe('recent feed (S01-T)', () => {
   const addSession = (id: string, skillId: string, ts: number, attempts: number): void => {
     env.db.run(
-      'INSERT INTO training_session (id, dog_id, skill_id, started_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO training_session (id, dog_id, skill_id, started_at, duration_s, created_at, updated_at) VALUES (?, ?, ?, ?, 120, ?, ?)',
       [id, dog.id, skillId, toIso(ts), toIso(ts), toIso(ts)],
     );
     for (let i = 0; i < attempts; i += 1) {

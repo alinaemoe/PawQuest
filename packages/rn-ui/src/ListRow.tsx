@@ -9,7 +9,7 @@ import { useTheme } from './ThemeProvider';
 export interface ListRowProps {
   readonly icon?: IconName;
   readonly title: string;
-  readonly subtitle?: string;
+  readonly subtitle?: string | undefined;
   /** Shown at the right edge, e.g. a Tag. */
   readonly right?: ReactNode;
   readonly onPress?: () => void;

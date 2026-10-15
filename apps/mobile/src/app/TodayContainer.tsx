@@ -37,12 +37,18 @@ export interface TodayContainerProps {
   /** Open the manual walk sheet right away (the "log your first walk" button of onboarding). */
   readonly autoOpenWalk: boolean;
   readonly onWalkSheetShown: () => void;
+  /** Opens the training skill picker (the "training at home" tile and the + menu). */
+  readonly onTraining: () => void;
 }
 
 type SheetId = 'add' | 'note' | 'weight' | 'walk' | null;
 
 /** Connects Today to the database: reads what the screen shows and writes what its buttons do. */
-export function TodayContainer({ autoOpenWalk, onWalkSheetShown }: TodayContainerProps) {
+export function TodayContainer({
+  autoOpenWalk,
+  onWalkSheetShown,
+  onTraining,
+}: TodayContainerProps) {
   const { db, ctx, dog, settings, i18n, version, bump } = useApp();
   const toast = useToast();
   const [sheet, setSheet] = useState<SheetId>(null);
@@ -148,7 +154,7 @@ export function TodayContainer({ autoOpenWalk, onWalkSheetShown }: TodayContaine
       setSheet('weight');
     } else {
       setSheet(null);
-      toast.show({ message: i18n.t('common.soon') });
+      onTraining();
     }
   };
 
@@ -170,9 +176,7 @@ export function TodayContainer({ autoOpenWalk, onWalkSheetShown }: TodayContaine
         onStartWalk={() => {
           setSheet('walk');
         }}
-        onTraining={() => {
-          toast.show({ message: i18n.t('common.soon') });
-        }}
+        onTraining={onTraining}
         onNote={() => {
           setSheet('note');
         }}

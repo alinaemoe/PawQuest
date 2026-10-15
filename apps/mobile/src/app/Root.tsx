@@ -1,14 +1,18 @@
 import { TabBar, useTheme, type TabItem } from '@pawquest/rn-ui';
+import { getActiveSession } from '@pawquest/data';
 import { DogScreen, OnboardingFlow, SoonScreen, type DogDraft } from '@pawquest/screens';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BackHandler, View } from 'react-native';
 
 import { DiagnosticsScreen } from '../diagnostics/DiagnosticsScreen';
 import { useApp } from './AppContext';
+import { ClickerContainer } from './ClickerContainer';
 import { TodayContainer } from './TodayContainer';
+import { TrainingFlow, type FlowState } from './TrainingFlow';
+import { TrainingTab } from './TrainingTab';
 
 type Tab = 'today' | 'walks' | 'training' | 'insights' | 'dog';
 
@@ -36,6 +40,13 @@ export function Root() {
   const [tab, setTab] = useState<Tab>('today');
   const [diagnostics, setDiagnostics] = useState(false);
   const [openWalk, setOpenWalk] = useState(false);
+  const [flow, setFlow] = useState<FlowState | null>(null);
+  const dogId = dog?.id ?? null;
+  // A session that was running when the app closed is picked up again right here (S11-9).
+  const activeSession = useMemo(
+    () => (dogId === null ? null : getActiveSession(app.db, dogId)),
+    [app.db, dogId, app.version],
+  );
 
   // Back from Diagnostics returns to the Dog tab; on the root tabs the system minimizes the app.
   useEffect(() => {
@@ -83,6 +94,15 @@ export function Root() {
     );
   }
 
+  if (activeSession !== null) {
+    return (
+      <>
+        {statusBar}
+        <ClickerContainer session={activeSession} />
+      </>
+    );
+  }
+
   if (diagnostics) {
     return (
       <>
@@ -109,14 +129,18 @@ export function Root() {
       {statusBar}
       <View style={{ flex: 1 }}>
         {tab === 'today' ? (
-          <TodayContainer autoOpenWalk={openWalk} onWalkSheetShown={onWalkSheetShown} />
+          <TodayContainer
+            autoOpenWalk={openWalk}
+            onWalkSheetShown={onWalkSheetShown}
+            onTraining={() => {
+              setFlow({ kind: 'picker' });
+            }}
+          />
         ) : null}
         {tab === 'walks' ? (
           <SoonScreen icon="pin" title={i18n.t('tab.walks')} text={i18n.t('soon.walks')} />
         ) : null}
-        {tab === 'training' ? (
-          <SoonScreen icon="target" title={i18n.t('tab.training')} text={i18n.t('soon.training')} />
-        ) : null}
+        {tab === 'training' ? <TrainingTab openFlow={setFlow} /> : null}
         {tab === 'insights' ? (
           <SoonScreen icon="chart" title={i18n.t('tab.insights')} text={i18n.t('soon.insights')} />
         ) : null}
@@ -151,6 +175,7 @@ export function Root() {
         ) : null}
       </View>
       <TabBar tabs={tabs} active={tab} onSelect={setTab} />
+      <TrainingFlow state={flow} onChange={setFlow} />
     </View>
   );
 }

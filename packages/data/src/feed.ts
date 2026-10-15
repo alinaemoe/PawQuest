@@ -72,7 +72,7 @@ export function recentFeed(
        UNION ALL
        SELECT 'session', t.id, t.started_at, (SELECT COUNT(*) FROM training_attempt a WHERE a.session_id = t.id), NULL, s.name, NULL
          FROM training_session t JOIN skill s ON s.id = t.skill_id
-         WHERE t.dog_id = ? AND t.deleted_at IS NULL
+         WHERE t.dog_id = ? AND t.deleted_at IS NULL AND t.duration_s IS NOT NULL
        UNION ALL
        SELECT 'event', e.id, e.ts, NULL, NULL, e.type_id, e.note
          FROM event e WHERE e.dog_id = ? AND e.walk_id IS NULL AND e.deleted_at IS NULL
