@@ -1,14 +1,27 @@
-import { AppText, Chip, ThemeProvider, useTheme, type SchemeMode } from '@pawquest/rn-ui';
+import { createI18n, type Locale } from '@pawquest/i18n';
+import {
+  AppText,
+  Chip,
+  I18nProvider,
+  ThemeProvider,
+  ToastProvider,
+  useTheme,
+  type SchemeMode,
+} from '@pawquest/rn-ui';
 import { PALETTE_NAMES, PALETTES, type PaletteName } from '@pawquest/ui';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StatusBar, View, useWindowDimensions } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ActiveWalkScreen } from './src/screens/ActiveWalkScreen';
 import { GalleryScreen } from './src/screens/GalleryScreen';
+import { MockOnboarding, MockToday } from './src/screens/Mocks';
 
-type ScreenId = 'active' | 'gallery';
+type ScreenId = 'today' | 'onboarding' | 'active' | 'gallery';
 
 const SCREENS: readonly { id: ScreenId; label: string }[] = [
+  { id: 'today', label: 'Сегодня (S01)' },
+  { id: 'onboarding', label: 'Онбординг (S00)' },
   { id: 'active', label: 'Идёт прогулка (S03)' },
   { id: 'gallery', label: 'Компоненты' },
 ];
@@ -49,10 +62,10 @@ function Swatch({ name }: { name: PaletteName }) {
   );
 }
 
-function Lab() {
+function Lab({ locale, setLocale }: { locale: Locale; setLocale: (l: Locale) => void }) {
   const { theme, mode, setMode } = useTheme();
   const { width } = useWindowDimensions();
-  const [screen, setScreen] = useState<ScreenId>('active');
+  const [screen, setScreen] = useState<ScreenId>('today');
   const compact = width < 560;
 
   return (
@@ -77,6 +90,18 @@ function Lab() {
               <AppText variant="eyebrow">Акцент</AppText>
               {PALETTE_NAMES.map((name) => (
                 <Swatch key={name} name={name} />
+              ))}
+              <View style={{ width: 16 }} />
+              <AppText variant="eyebrow">Язык</AppText>
+              {(['ru', 'en'] as const).map((l) => (
+                <Chip
+                  key={l}
+                  label={l.toUpperCase()}
+                  selected={locale === l}
+                  onPress={() => {
+                    setLocale(l);
+                  }}
+                />
               ))}
               <View style={{ width: 16 }} />
               <AppText variant="eyebrow">Тема</AppText>
@@ -119,7 +144,10 @@ function Lab() {
             overflow: 'hidden',
           }}
         >
-          {screen === 'active' ? <ActiveWalkScreen /> : <GalleryScreen />}
+          {screen === 'today' ? <MockToday /> : null}
+          {screen === 'onboarding' ? <MockOnboarding /> : null}
+          {screen === 'active' ? <ActiveWalkScreen /> : null}
+          {screen === 'gallery' ? <GalleryScreen /> : null}
         </View>
       </ScrollView>
     </View>
@@ -127,9 +155,17 @@ function Lab() {
 }
 
 export default function App() {
+  const [locale, setLocale] = useState<Locale>('ru');
+  const i18n = useMemo(() => createI18n({ locale, units: 'metric' }), [locale]);
   return (
-    <ThemeProvider>
-      <Lab />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <I18nProvider i18n={i18n}>
+          <ToastProvider>
+            <Lab locale={locale} setLocale={setLocale} />
+          </ToastProvider>
+        </I18nProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

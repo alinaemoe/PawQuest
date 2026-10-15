@@ -1,0 +1,30 @@
+{
+  "name": "@pawquest/screens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PawQuest screens as plain React Native components driven by view-models, shared by the web lab and the app.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@pawquest/data": "workspace:*",
+    "@pawquest/i18n": "workspace:*",
+    "@pawquest/rn-ui": "workspace:*",
+    "@pawquest/ui": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "vitest": "5.0.4"
+  }
+}

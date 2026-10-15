@@ -11,7 +11,10 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.17",
+    "@pawquest/data": "workspace:*",
+    "@pawquest/i18n": "workspace:*",
     "@pawquest/rn-ui": "workspace:*",
+    "@pawquest/screens": "workspace:*",
     "@pawquest/ui": "workspace:*",
     "expo": "~57.0.29",
     "react": "19.2.3",
