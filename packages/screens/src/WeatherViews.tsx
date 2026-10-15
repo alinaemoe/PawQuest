@@ -70,6 +70,11 @@ export function WeatherSheet({ view, onClose }: WeatherSheetProps) {
           </View>
         ))}
       </View>
+      {view.notes.map((note) => (
+        <AppText key={note} variant="muted" style={{ fontSize: 12 }}>
+          {note}
+        </AppText>
+      ))}
       <AppText variant="muted" style={{ fontSize: 12 }}>
         {view.footnote}
       </AppText>

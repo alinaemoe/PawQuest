@@ -4,6 +4,8 @@ export interface Coords {
 }
 
 export type GroundState = 'dry' | 'damp' | 'wet' | 'snow' | 'icy';
+export type RainAmount = 'none' | 'sprinkle' | 'light' | 'proper' | 'downpour';
+export type Puddles = 'none' | 'puddles' | 'mud';
 export type SurfaceHeat = 'ok' | 'warm' | 'hot';
 export type AqiLevel = 'good' | 'fair' | 'moderate' | 'poor' | 'very_poor' | 'extreme';
 export type PollenLevel = 'none' | 'low' | 'moderate' | 'high';
@@ -40,6 +42,8 @@ export interface WeatherFacts {
   readonly raining: boolean;
   /** Minutes until the next rain in the 15-minute nowcast (next 2 h), null when none expected. */
   readonly nextRainMin: number | null;
+  /** When rain last fell (0.1 mm in an hour or more, within 3 days); now while it is raining. */
+  readonly lastRainAt: number | null;
   /** Model surface temperature (0 cm) and top-soil moisture (m3/m3). */
   readonly surfaceTempC: number | null;
   readonly soilMoisture: number | null;

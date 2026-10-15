@@ -5,6 +5,8 @@ import {
   comfort,
   groundState,
   pollenLevel,
+  puddles,
+  rainAmount,
   skyKind,
   surfaceHeat,
   topPollen,
@@ -69,6 +71,15 @@ describe('parseWeather on a real Open-Meteo response', () => {
     expect(facts?.rain72hMm).toBe(manual(72));
     expect(facts?.rain72hMm ?? 0).toBeGreaterThanOrEqual(facts?.rain24hMm ?? 0);
     expect(facts?.rain24hMm ?? 0).toBeGreaterThanOrEqual(facts?.rain3hMm ?? 0);
+  });
+
+  it('knows when it last rained, from the hours of the same series', () => {
+    const nowS = NOW / 1000;
+    const ends = forecast.hourly.time
+      .map((t, i) => ({ end: t + 3600, mm: forecast.hourly.precipitation[i] ?? 0 }))
+      .filter((h) => h.end <= nowS && h.end > nowS - 72 * 3600 && h.mm >= 0.1)
+      .map((h) => h.end);
+    expect(facts?.lastRainAt).toBe(ends.length === 0 ? null : Math.max(...ends) * 1000);
   });
 
   it('takes surface temperature, moisture and UV from the current hour', () => {
@@ -152,6 +163,29 @@ describe('parseWeather on odd input', () => {
     expect(parseWeather(slot, null, HOME, nowS * 1000)?.nextRainMin).toBeNull();
   });
 
+  it('last rain: the end of the latest wet hour, now while raining, null when dry for 3 days', () => {
+    const nowS = 1_000_000;
+    const hours = (rain: number[]) => ({
+      current: { temperature_2m: 5 },
+      hourly: {
+        time: rain.map((_, i) => nowS - (rain.length - i) * 3600),
+        precipitation: rain,
+      },
+    });
+    // hours end at nowS-3h, nowS-2h, nowS-1h; the middle one is the last wet one
+    expect(parseWeather(hours([0.5, 0.2, 0.05]), null, HOME, nowS * 1000)?.lastRainAt).toBe(
+      (nowS - 3600) * 1000,
+    );
+    expect(parseWeather(hours([0, 0, 0]), null, HOME, nowS * 1000)?.lastRainAt).toBeNull();
+    const now = parseWeather(
+      { ...hours([0]), current: { temperature_2m: 5, precipitation: 0.4 } },
+      null,
+      HOME,
+      nowS * 1000,
+    );
+    expect(now?.lastRainAt).toBe(nowS * 1000);
+  });
+
   it('keeps only pollen species that are in the air', () => {
     const facts = parseWeather(
       { current: { temperature_2m: 15 } },
@@ -182,6 +216,7 @@ const facts = (extra: Partial<WeatherFacts> = {}): WeatherFacts => ({
   snow24hCm: 0,
   raining: false,
   nextRainMin: null,
+  lastRainAt: null,
   surfaceTempC: 12,
   soilMoisture: 0.2,
   uv: 1,
@@ -292,5 +327,33 @@ describe('comfort, air, pollen, sky', () => {
     for (const [code, kind] of cases) {
       expect(skyKind(code), String(code)).toBe(kind);
     }
+  });
+});
+
+describe('rainAmount and puddles', () => {
+  it('rain amount words', () => {
+    const cases: [number, string][] = [
+      [0, 'none'],
+      [0.4, 'none'],
+      [0.5, 'sprinkle'],
+      [0.9, 'sprinkle'],
+      [1, 'light'],
+      [2.9, 'light'],
+      [3, 'proper'],
+      [7.9, 'proper'],
+      [8, 'downpour'],
+    ];
+    for (const [mm, word] of cases) {
+      expect(rainAmount(mm), String(mm)).toBe(word);
+    }
+  });
+
+  it('puddles only on wet ground: 3 mm a day or 1 mm in 3 hours, mud from 8 mm', () => {
+    expect(puddles(facts())).toBe('none');
+    expect(puddles(facts({ rain24hMm: 2.9, rain3hMm: 0.4, raining: true }))).toBe('none');
+    expect(puddles(facts({ rain24hMm: 3 }))).toBe('puddles');
+    expect(puddles(facts({ rain24hMm: 1, rain3hMm: 1 }))).toBe('puddles');
+    expect(puddles(facts({ rain24hMm: 8 }))).toBe('mud');
+    expect(puddles(facts({ rain24hMm: 9, tempC: -2 }))).toBe('none'); // ice, not puddles
   });
 });

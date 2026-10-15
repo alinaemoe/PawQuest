@@ -36,7 +36,7 @@ export function getWeatherSnapshot(db: SqlDb, walkId: string): WeatherFacts | nu
   try {
     const parsed: unknown = JSON.parse(json);
     return typeof parsed === 'object' && parsed !== null && 'tempC' in parsed
-      ? (parsed as WeatherFacts)
+      ? ({ lastRainAt: null, ...parsed } as WeatherFacts) // snapshots from before 0.1 lack it
       : null;
   } catch {
     return null;

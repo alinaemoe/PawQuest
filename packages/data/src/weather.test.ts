@@ -37,6 +37,7 @@ const facts = (extra: Partial<WeatherFacts> = {}): WeatherFacts => ({
   snow24hCm: 0,
   raining: true,
   nextRainMin: null,
+  lastRainAt: null,
   surfaceTempC: 6,
   soilMoisture: 0.41,
   uv: 0.5,
@@ -74,6 +75,17 @@ describe('weather snapshot', () => {
     saveWeatherSnapshot(env.db, walkId, facts({ tempC: 9 }));
     expect(getWeatherSnapshot(env.db, walkId)?.tempC).toBe(9);
     expect(env.db.all('SELECT 1 FROM weather_snapshot', [])).toHaveLength(1);
+  });
+
+  it('reads a snapshot saved before lastRainAt existed', () => {
+    const old: Record<string, unknown> = { ...facts() };
+    delete old['lastRainAt'];
+    env.db.run('INSERT INTO weather_snapshot (walk_id, fetched_at, facts_json) VALUES (?, ?, ?)', [
+      walkId,
+      'x',
+      JSON.stringify(old),
+    ]);
+    expect(getWeatherSnapshot(env.db, walkId)?.lastRainAt).toBeNull();
   });
 
   it('returns null when nothing is saved, the JSON is missing, broken or foreign', () => {

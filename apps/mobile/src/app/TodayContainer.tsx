@@ -72,8 +72,11 @@ export function TodayContainer({
   const weather = useWeather();
   const [weatherOpen, setWeatherOpen] = useState(false);
   const weatherModel = useMemo(
-    () => (weather.facts === null ? null : weatherView(weather.facts, i18n)),
-    [weather.facts, i18n],
+    () =>
+      weather.facts === null
+        ? null
+        : weatherView(weather.facts, i18n, Math.max(now, weather.facts.at)),
+    [weather.facts, i18n, now],
   );
 
   // "4 hours ago" must not freeze: refresh the clock every minute.

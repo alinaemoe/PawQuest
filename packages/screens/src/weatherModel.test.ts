@@ -24,6 +24,7 @@ const base: WeatherFacts = {
   snow24hCm: 0,
   raining: false,
   nextRainMin: null,
+  lastRainAt: null,
   surfaceTempC: null,
   soilMoisture: null,
   uv: null,
@@ -35,6 +36,7 @@ const base: WeatherFacts = {
   pm25: null,
   pollen: [],
 };
+const HOUR = 3_600_000;
 const ids = (f: Partial<WeatherFacts>): string[] =>
   weatherView({ ...base, ...f }, ru).chips.map((c) => c.id);
 
@@ -47,9 +49,41 @@ describe('weatherView chips', () => {
   });
 
   it('wet ground is flagged and recent rain is worded as a fact', () => {
-    const view = weatherView({ ...base, rain3hMm: 1, rain24hMm: 4.2 }, ru);
-    expect(view.chips[0]).toEqual({ id: 'ground', text: 'Мокро', tone: 'warn' });
-    expect(view.chips[1]?.text).toBe('За сутки 4,2 мм осадков');
+    const view = weatherView(
+      { ...base, rain3hMm: 1, rain24hMm: 4.2, rain72hMm: 5, lastRainAt: AT - 2 * HOUR },
+      ru,
+    );
+    expect(view.chips[0]).toEqual({ id: 'ground', text: 'Мокро, лужи', tone: 'warn' });
+    expect(view.chips[1]?.text).toBe('Дождь был 2 часа назад');
+  });
+
+  it('wet without puddles, then puddles, then mud', () => {
+    const text = (extra: Partial<WeatherFacts>): string | undefined =>
+      weatherView({ ...base, ...extra }, ru).chips[0]?.text;
+    expect(text({ rain3hMm: 0.4 })).toBe('Мокро');
+    expect(text({ rain24hMm: 3 })).toBe('Мокро, лужи');
+    expect(text({ rain24hMm: 8 })).toBe('Мокро, лужи и грязь');
+    expect(text({ rain24hMm: 8 })).not.toBe(text({ rain24hMm: 3 }));
+  });
+
+  it('the rain chip names the strength by the period that matters', () => {
+    const chip = (extra: Partial<WeatherFacts>): string | undefined =>
+      weatherView({ ...base, ...extra }, ru).chips.find((c) => c.id === 'rain')?.text;
+    // within a day the 24 h sum counts; older rain is judged by the 3-day sum
+    expect(chip({ lastRainAt: AT - 5 * HOUR, rain24hMm: 0.7, rain72hMm: 0.7 })).toBe(
+      'Накрапывало 5 часов назад',
+    );
+    expect(chip({ lastRainAt: AT - 5 * HOUR, rain24hMm: 2, rain72hMm: 2 })).toBe(
+      'Лёгкий дождь 5 часов назад',
+    );
+    expect(chip({ lastRainAt: AT - 5 * HOUR, rain24hMm: 9, rain72hMm: 9 })).toBe(
+      'Ливень был 5 часов назад',
+    );
+    expect(chip({ lastRainAt: AT - 30 * HOUR, rain24hMm: 0, rain72hMm: 4 })).toBe(
+      'Дождь был вчера',
+    );
+    expect(chip({ lastRainAt: AT - 30 * HOUR, rain24hMm: 0, rain72hMm: 0.3 })).toBeUndefined();
+    expect(chip({ lastRainAt: null, rain72hMm: 4 })).toBeUndefined();
   });
 
   it('rain now beats the nowcast, the nowcast beats the 24 h sum', () => {
@@ -97,7 +131,12 @@ describe('weatherView chips', () => {
   it('good air shows nothing, moderate air shows plainly', () => {
     expect(ids({ aqi: 15 })).toEqual(['ground']);
     const moderate = weatherView({ ...base, aqi: 50 }, ru).chips[1];
-    expect(moderate).toEqual({ id: 'air', text: 'Воздух: умеренный', tone: 'plain' });
+    expect(moderate).toEqual({ id: 'air', text: 'Воздух так себе · 50', tone: 'plain' });
+    expect(weatherView({ ...base, aqi: 64 }, ru).chips[1]).toEqual({
+      id: 'air',
+      text: 'Воздух пыльный · 64',
+      tone: 'warn',
+    });
   });
 
   it('feels-like is shown only when it differs by 2 degrees or more', () => {
@@ -107,17 +146,24 @@ describe('weatherView chips', () => {
 });
 
 describe('weatherView rows and footnote', () => {
-  it('lists rain sums and skips values the model did not give', () => {
-    const rows = weatherView({ ...base, rain24hMm: 4.2, rain72hMm: 9 }, ru).rows;
+  it('lists rain in words with the number, and skips values the model did not give', () => {
+    const rows = weatherView(
+      { ...base, rain24hMm: 4.2, rain72hMm: 9, lastRainAt: AT - 3 * HOUR },
+      ru,
+    ).rows;
     expect(rows.map((r) => r.label)).toEqual([
       'Земля',
+      'Последний дождь',
       'Осадки за 3 часа',
       'Осадки за сутки',
       'Осадки за 3 суток',
       'Ветер',
     ]);
-    expect(rows[2]?.value).toBe('4,2 мм');
-    expect(rows[4]?.value).toBe('2 м/с');
+    expect(rows[1]?.value).toBe('3 часа назад');
+    expect(rows[2]?.value).toBe('не было');
+    expect(rows[3]?.value).toBe('приличный дождь (4,2 мм)');
+    expect(rows[4]?.value).toBe('ливень (9 мм)');
+    expect(rows[5]?.value).toBe('2 м/с');
   });
 
   it('full data: soil, surface, gusts, UV, sun times, air and pollen', () => {
@@ -143,8 +189,8 @@ describe('weatherView rows and footnote', () => {
     expect(by['УФ-индекс']).toBe('2,3');
     expect(by['Рассвет']).toBe('08:00');
     expect(by['Закат']).toBe('18:00');
-    expect(by['Качество воздуха (AQI)']).toBe('31');
-    expect(by['Частицы PM2.5']).toBe('9,3');
+    expect(by['Воздух (индекс)']).toBe('31 — нормальный');
+    expect(by['Мелкая пыль и дым']).toBe('9,3');
     expect(by['Пыльца']).toBe('средне');
   });
 
@@ -153,6 +199,11 @@ describe('weatherView rows and footnote', () => {
       weatherView({ ...base, aqi: 20 }, en).rows.map((r) => [r.label, r.value]),
     );
     expect(by['Pollen']).toBe('none');
+  });
+
+  it('explains how to read the air index only when there is one', () => {
+    expect(weatherView(base, ru).notes).toEqual([]);
+    expect(weatherView({ ...base, aqi: 64 }, ru).notes[0]).toContain('чем меньше, тем чище');
   });
 
   it('the footnote is honest about the model grid distance', () => {
@@ -168,6 +219,6 @@ describe('weatherLine', () => {
       { ...base, rain3hMm: 1, raining: true, daylightLeftMin: 60, surfaceTempC: 50 },
       ru,
     );
-    expect(line).toBe('12° · Мокро · Идёт дождь · Светло ещё 1 ч 00 мин');
+    expect(line).toBe('12° · Мокро, лужи · Идёт дождь · Светло ещё 1 ч 00 мин');
   });
 });

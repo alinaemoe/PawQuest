@@ -4,8 +4,12 @@ import {
   comfort,
   groundState,
   pollenLevel,
+  puddles,
+  rainAmount,
   surfaceHeat,
   topPollen,
+  type GroundState,
+  type Puddles,
   type WeatherFacts,
 } from '@pawquest/weather';
 
@@ -26,29 +30,47 @@ export interface WeatherView {
   readonly feels: string | null;
   readonly chips: readonly WeatherChip[];
   readonly rows: readonly WeatherRow[];
+  /** Plain explanations shown under the rows (how to read the air index). */
+  readonly notes: readonly string[];
   /** Says plainly that this is a model estimate for a nearby point. */
   readonly footnote: string;
   readonly updated: string;
 }
 
+function groundText(ground: GroundState, wet: Puddles, i18n: I18n): string {
+  if (ground === 'wet' && wet !== 'none') {
+    return i18n.t(wet === 'mud' ? 'weather.ground.wetMud' : 'weather.ground.wetPuddles');
+  }
+  return i18n.t(`weather.ground.${ground}`);
+}
+
 const round1 = (n: number): number => Math.round(n * 10) / 10;
 
 /** The facts of the moment as short chips for Today and a table for the detail sheet. */
-export function weatherView(f: WeatherFacts, i18n: I18n): WeatherView {
+export function weatherView(f: WeatherFacts, i18n: I18n, now: number = f.at): WeatherView {
   const deg = (n: number): string =>
     i18n.t('weather.temp', { t: i18n.formatNumber(Math.round(n)) });
-  const mm = (n: number): string => i18n.t('weather.detail.mm', { n: i18n.formatNumber(n, 1) });
+  /** "приличный дождь (4,2 мм)": words first, the number for those who want it. */
+  const amountText = (mmValue: number): string => {
+    const amount = rainAmount(mmValue);
+    const word = i18n.t(`weather.amount.${amount}`);
+    return amount === 'none'
+      ? word
+      : i18n.t('weather.amountMm', { word, mm: i18n.formatNumber(mmValue, 1) });
+  };
   const ms = (n: number): string => i18n.t('weather.detail.ms', { n: i18n.formatNumber(n, 1) });
   const ground = groundState(f);
   const heat = surfaceHeat(f);
   const feel = comfort(f);
   const air = aqiLevel(f.aqi);
+  const wet = puddles(f);
+  const lastRainAt = f.lastRainAt;
   const pollen = topPollen(f);
 
   const chips: WeatherChip[] = [
     {
       id: 'ground',
-      text: i18n.t(`weather.ground.${ground}`),
+      text: groundText(ground, wet, i18n),
       tone: ground === 'wet' || ground === 'icy' || ground === 'snow' ? 'warn' : 'plain',
     },
   ];
@@ -60,12 +82,15 @@ export function weatherView(f: WeatherFacts, i18n: I18n): WeatherView {
       text: i18n.t('weather.rainIn', { min: f.nextRainMin }),
       tone: 'plain',
     });
-  } else if (f.rain24hMm >= 0.5) {
-    chips.push({
-      id: 'rain',
-      text: i18n.t('weather.rained', { mm: i18n.formatNumber(f.rain24hMm, 1) }),
-      tone: 'plain',
-    });
+  } else if (lastRainAt !== null && f.rain72hMm >= 0.5) {
+    const amount = rainAmount(now - lastRainAt < 24 * 3_600_000 ? f.rain24hMm : f.rain72hMm);
+    if (amount !== 'none') {
+      chips.push({
+        id: 'rain',
+        text: i18n.t(`weather.rainWas.${amount}`, { ago: i18n.formatAgo(lastRainAt, now) }),
+        tone: 'plain',
+      });
+    }
   }
   if (f.daylightLeftMin !== null) {
     chips.push({
@@ -91,7 +116,7 @@ export function weatherView(f: WeatherFacts, i18n: I18n): WeatherView {
   if (air !== null && air !== 'good') {
     chips.push({
       id: 'air',
-      text: i18n.t(`weather.aqi.${air}`),
+      text: i18n.t(`weather.aqi.${air}`, { n: i18n.formatNumber(Math.round(f.aqi ?? 0)) }),
       tone: air === 'fair' || air === 'moderate' ? 'plain' : 'warn',
     });
   }
@@ -104,10 +129,18 @@ export function weatherView(f: WeatherFacts, i18n: I18n): WeatherView {
   }
 
   const rows: WeatherRow[] = [
-    { label: i18n.t('weather.detail.ground'), value: i18n.t(`weather.ground.${ground}`) },
-    { label: i18n.t('weather.detail.rain3'), value: mm(f.rain3hMm) },
-    { label: i18n.t('weather.detail.rain24'), value: mm(f.rain24hMm) },
-    { label: i18n.t('weather.detail.rain72'), value: mm(f.rain72hMm) },
+    { label: i18n.t('weather.detail.ground'), value: groundText(ground, wet, i18n) },
+    {
+      label: i18n.t('weather.detail.lastRain'),
+      value: f.raining
+        ? i18n.t('weather.rainNow')
+        : lastRainAt === null
+          ? i18n.t('weather.detail.noRain')
+          : i18n.formatAgo(lastRainAt, now),
+    },
+    { label: i18n.t('weather.detail.rain3'), value: amountText(f.rain3hMm) },
+    { label: i18n.t('weather.detail.rain24'), value: amountText(f.rain24hMm) },
+    { label: i18n.t('weather.detail.rain72'), value: amountText(f.rain72hMm) },
   ];
   const add = (label: string, value: string | null): void => {
     if (value !== null) {
@@ -134,7 +167,12 @@ export function weatherView(f: WeatherFacts, i18n: I18n): WeatherView {
   add(i18n.t('weather.detail.uv'), f.uv === null ? null : i18n.formatNumber(round1(f.uv), 1));
   add(i18n.t('weather.detail.sunrise'), f.sunrise === null ? null : i18n.formatTime(f.sunrise));
   add(i18n.t('weather.detail.sunset'), f.sunset === null ? null : i18n.formatTime(f.sunset));
-  add(i18n.t('weather.detail.aqi'), f.aqi === null ? null : i18n.formatNumber(Math.round(f.aqi)));
+  add(
+    i18n.t('weather.detail.aqi'),
+    f.aqi === null || air === null
+      ? null
+      : `${i18n.formatNumber(Math.round(f.aqi))} — ${i18n.t(`weather.aqiWord.${air}`)}`,
+  );
   add(i18n.t('weather.detail.pm25'), f.pm25 === null ? null : i18n.formatNumber(f.pm25, 1));
   add(
     i18n.t('weather.detail.pollen'),
@@ -153,6 +191,7 @@ export function weatherView(f: WeatherFacts, i18n: I18n): WeatherView {
         : null,
     chips,
     rows,
+    notes: f.aqi === null ? [] : [i18n.t('weather.note.aqi')],
     footnote:
       f.gridDistanceKm >= 0.5
         ? i18n.t('weather.detail.grid', { km: i18n.formatNumber(f.gridDistanceKm, 1) })

@@ -77,6 +77,22 @@ function sumCompletedHours(
   return Math.round(sum * 100) / 100;
 }
 
+/** End of the latest completed hour with at least 0.1 mm of rain in the last 72 hours, in ms. */
+function lastRainEnd(
+  times: readonly (number | null)[],
+  values: readonly (number | null)[],
+  nowS: number,
+): number | null {
+  let last = 0;
+  for (const [i, start] of times.entries()) {
+    const end = start === null ? 0 : start + 3600;
+    if (end <= nowS && end > nowS - 72 * 3600 && (values[i] ?? 0) >= 0.1) {
+      last = Math.max(last, end);
+    }
+  }
+  return last === 0 ? null : last * 1000;
+}
+
 /** Index of the hour that contains `nowS`, or -1. */
 function currentHourIndex(times: readonly (number | null)[], nowS: number): number {
   let found = -1;
@@ -169,6 +185,7 @@ export function parseWeather(
     snow24hCm: sumCompletedHours(hTimes, snow, nowS, 24),
     raining,
     nextRainMin,
+    lastRainAt: raining ? now : lastRainEnd(hTimes, precip, nowS),
     surfaceTempC: hour < 0 ? null : (series(hourly, 'soil_temperature_0cm')[hour] ?? null),
     soilMoisture: hour < 0 ? null : (series(hourly, 'soil_moisture_0_to_1cm')[hour] ?? null),
     uv: hour < 0 ? null : (series(hourly, 'uv_index')[hour] ?? null),

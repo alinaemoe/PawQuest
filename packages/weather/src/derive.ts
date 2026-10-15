@@ -3,6 +3,8 @@ import type {
   Comfort,
   GroundState,
   PollenLevel,
+  Puddles,
+  RainAmount,
   SkyKind,
   SurfaceHeat,
   WeatherFacts,
@@ -44,6 +46,28 @@ export function surfaceHeat(f: WeatherFacts): SurfaceHeat {
     return f.surfaceTempC >= 45 ? 'hot' : f.surfaceTempC >= 35 ? 'warm' : 'ok';
   }
   return f.isDay && f.tempC >= 30 ? 'warm' : 'ok';
+}
+
+/**
+ * How much rain fell over a period, in words a person can picture: under 0.5 mm nothing worth
+ * noting, under 1 a sprinkle, under 3 a light rain, under 8 a proper rain, from 8 a downpour.
+ */
+export function rainAmount(mm: number): RainAmount {
+  if (mm < 0.5) {
+    return 'none';
+  }
+  return mm < 1 ? 'sprinkle' : mm < 3 ? 'light' : mm < 8 ? 'proper' : 'downpour';
+}
+
+/** Puddles from 3 mm in a day or 1 mm in the last 3 hours; mud from 8 mm in a day. Wet ground only. */
+export function puddles(f: WeatherFacts): Puddles {
+  if (groundState(f) !== 'wet') {
+    return 'none';
+  }
+  if (f.rain24hMm >= 8) {
+    return 'mud';
+  }
+  return f.rain24hMm >= 3 || f.rain3hMm >= 1 ? 'puddles' : 'none';
 }
 
 /** Feels-like extremes for a small dog: cold at -10 or below, heat at 28 or above. */
