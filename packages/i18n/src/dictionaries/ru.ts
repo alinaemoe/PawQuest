@@ -679,6 +679,12 @@ export const ru = {
   'place.card.deleted': 'Место удалено, записи остались',
   'place.card.saved': 'Сохранено',
   'pre.suggest': 'Вы здесь: {name}?',
+
+  'place.suggest.cluster': 'Вы часто останавливаетесь здесь. Назвать место?',
+  'place.suggest.type': 'Назвать это место?',
+  'place.suggest.name': 'Назвать',
+  'place.suggest.later': 'Не сейчас',
+  'place.suggest.never': 'Не предлагать здесь',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof ru;

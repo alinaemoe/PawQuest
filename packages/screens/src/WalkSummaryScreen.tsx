@@ -13,6 +13,11 @@ export interface WalkSummaryModel {
 export interface WalkSummaryScreenProps {
   readonly map?: ReactNode;
   readonly summary: WalkSummaryModel;
+  /** "Вы часто останавливаетесь здесь. Назвать место?" or "Назвать это место?"; null for none. */
+  readonly placeCard?: { readonly text: string; readonly canDecline: boolean } | null;
+  readonly onPlaceName?: () => void;
+  readonly onPlaceLater?: () => void;
+  readonly onPlaceNever?: () => void;
   readonly onSave: (result: {
     readonly mood: number | null;
     readonly distraction: number | null;
@@ -23,6 +28,7 @@ export interface WalkSummaryScreenProps {
 /** Walk summary (spec S05): the numbers first, then how it went; saving takes one tap. */
 export function WalkSummaryScreen(props: WalkSummaryScreenProps) {
   const { summary, onSave } = props;
+  const noop = (): void => undefined;
   const i18n = useI18n();
   const [mood, setMood] = useState<number | null>(null);
   const [distraction, setDistraction] = useState<number | null>(null);
@@ -43,6 +49,30 @@ export function WalkSummaryScreen(props: WalkSummaryScreenProps) {
           ))}
         </View>
       </Card>
+      {props.placeCard === undefined || props.placeCard === null ? null : (
+        <Card variant="stripe">
+          <AppText>{props.placeCard.text}</AppText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+            <Chip
+              size="sm"
+              label={i18n.t('place.suggest.name')}
+              onPress={props.onPlaceName ?? noop}
+            />
+            <Chip
+              size="sm"
+              label={i18n.t('place.suggest.later')}
+              onPress={props.onPlaceLater ?? noop}
+            />
+            {props.placeCard.canDecline ? (
+              <Chip
+                size="sm"
+                label={i18n.t('place.suggest.never')}
+                onPress={props.onPlaceNever ?? noop}
+              />
+            ) : null}
+          </View>
+        </Card>
+      )}
       {summary.eventsLine === null ? null : (
         <View style={{ gap: 4 }}>
           <AppText variant="eyebrow">{i18n.t('sumw.events')}</AppText>

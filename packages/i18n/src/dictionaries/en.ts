@@ -606,4 +606,10 @@ export const en = {
   'place.card.deleted': 'Place deleted, your records stay',
   'place.card.saved': 'Saved',
   'pre.suggest': 'You are at: {name}?',
+
+  'place.suggest.cluster': 'You often stop here. Name this place?',
+  'place.suggest.type': 'Name this place?',
+  'place.suggest.name': 'Name it',
+  'place.suggest.later': 'Not now',
+  'place.suggest.never': 'Do not suggest here',
 } as const satisfies Record<MessageKey, Message>;

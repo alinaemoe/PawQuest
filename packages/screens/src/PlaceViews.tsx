@@ -121,6 +121,8 @@ export function PlacesScreen({ rows, tidy, onBack, onOpen, onAdd, onMerge }: Pla
 
 export interface NewPlaceSheetProps {
   readonly visible: boolean;
+  /** The type preselected when the sheet opens (a walk that only had a type), else a park. */
+  readonly initialCategory?: PlaceCategory;
   /** False when the position is unknown: the sheet explains instead of saving. */
   readonly hasPosition: boolean;
   readonly onClose: () => void;
@@ -137,6 +139,7 @@ export interface NewPlaceSheetProps {
 /** A new place (S14-A): the type by tiles, an optional name with qualifier chips, duplicate check. */
 export function NewPlaceSheet({
   visible,
+  initialCategory = 'park',
   hasPosition,
   onClose,
   findSimilar,
@@ -149,7 +152,7 @@ export function NewPlaceSheet({
   const [askedFor, setAskedFor] = useState<string | null>(null);
   useEffect(() => {
     if (visible) {
-      setCategory('park');
+      setCategory(initialCategory);
       setName('');
       setAskedFor(null);
     }

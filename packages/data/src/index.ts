@@ -190,3 +190,11 @@ export {
   type PlacePatch,
   type PlaceStats,
 } from './places';
+export {
+  linkWalksToPlace,
+  proposalKey,
+  proposePlaces,
+  walkAnchor,
+  type PlaceProposal,
+  type ProposeOptions,
+} from './placeSuggest';

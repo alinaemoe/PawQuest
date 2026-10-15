@@ -1,16 +1,24 @@
 import {
+  PLACE_CATEGORIES,
   computeWalkMetrics,
   createEvent,
   finishWalk,
   getWalk,
+  hidePrompt,
+  isPromptHidden,
   lastTrackPoint,
+  linkWalksToPlace,
   panelEventTypes,
   pauseWalk,
+  proposePlaces,
   resumeWalk,
+  setWalkPlace,
   softDelete,
   updateEvent,
   updateWalk,
+  walkAnchor,
   type EventType,
+  type PlaceCategory,
   type Walk,
 } from '@pawquest/data';
 import { useToast, type EventKind } from '@pawquest/rn-ui';
@@ -26,6 +34,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useApp } from './AppContext';
+import { NewPlaceFlow } from './NewPlaceFlow';
 import { WalkRouteMap } from './RouteMap';
 import { startGpsUpdates, stopGpsUpdates } from './walkRecorder';
 
@@ -190,10 +199,25 @@ function pausedMs(db: ReturnType<typeof useApp>['db'], walkId: string): number {
 }
 
 /** The summary shown right after a walk (spec S05): numbers, how it went, one tap to save. */
+interface PlaceCard {
+  readonly kind: 'type' | 'cluster';
+  readonly at: { readonly lat: number; readonly lon: number };
+  readonly category: PlaceCategory | null;
+  /** Walks to link to the place once it is named. */
+  readonly walkIds: readonly string[];
+  /** Remembers that the owner does not want a suggestion at this spot. */
+  readonly key: string | null;
+}
+
+const DAY = 86_400_000;
+const FOREVER = 3650 * DAY;
+
 export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDone: () => void }) {
   const { db, ctx, i18n, bump } = useApp();
   const toast = useToast();
   const walk = useMemo(() => getWalk(db, walkId), [db, walkId]);
+  const [naming, setNaming] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const eventsLine = useMemo(() => {
     const types = new Map(panelEventTypes(db).map((t) => [t.id, t]));
     return db
@@ -208,19 +232,101 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
       .join(' · ');
   }, [db, walkId, i18n]);
 
+  // Decided once per summary: a walk that only had a type offers to name its place; otherwise a
+  // place seen in repeated stops is suggested, at most once a day (S14-Auto).
+  const [card] = useState<PlaceCard | null>(() => {
+    const now = Date.now();
+    const row = db.all('SELECT mode, place_id, place_kind FROM walk WHERE id = ?', [walkId])[0];
+    if (row?.['mode'] !== 'gps') {
+      return null;
+    }
+    if (row['place_id'] === null && typeof row['place_kind'] === 'string') {
+      const at = walkAnchor(db, walkId, now);
+      const kind = row['place_kind'];
+      const category = (PLACE_CATEGORIES as readonly string[]).includes(kind)
+        ? (kind as PlaceCategory)
+        : null;
+      return at === null ? null : { kind: 'type', at, category, walkIds: [walkId], key: null };
+    }
+    if (isPromptHidden(db, 'place-suggest:daily', now)) {
+      return null;
+    }
+    const proposal = proposePlaces(db, now).find((p) => !isPromptHidden(db, p.key, now));
+    return proposal === undefined
+      ? null
+      : {
+          kind: 'cluster',
+          at: { lat: proposal.lat, lon: proposal.lon },
+          category: null,
+          walkIds: proposal.walkIds,
+          key: proposal.key,
+        };
+  });
+  useEffect(() => {
+    if (card?.kind === 'cluster') {
+      hidePrompt(db, ctx, 'place-suggest:daily', Date.now() + DAY);
+    }
+    // once, when the summary opens
+  }, []);
+
   if (walk === null) {
     return null;
   }
+  const shown = card !== null && !dismissed;
   return (
-    <WalkSummaryScreen
-      map={<WalkRouteMap walkId={walk.id} mode="fit" height={220} />}
-      summary={{ facts: walkFacts(walk, i18n), eventsLine: eventsLine === '' ? null : eventsLine }}
-      onSave={({ mood, distraction, notes }) => {
-        updateWalk(db, ctx, walk.id, { mood, distraction, notes, summaryPending: false });
-        bump();
-        toast.show({ message: i18n.t('sumw.saved') });
-        onDone();
-      }}
-    />
+    <>
+      <WalkSummaryScreen
+        map={<WalkRouteMap walkId={walk.id} mode="fit" height={220} />}
+        summary={{
+          facts: walkFacts(walk, i18n),
+          eventsLine: eventsLine === '' ? null : eventsLine,
+        }}
+        placeCard={
+          shown
+            ? {
+                text: i18n.t(card.kind === 'type' ? 'place.suggest.type' : 'place.suggest.cluster'),
+                canDecline: card.key !== null,
+              }
+            : null
+        }
+        onPlaceName={() => {
+          setNaming(true);
+        }}
+        onPlaceLater={() => {
+          setDismissed(true);
+        }}
+        onPlaceNever={() => {
+          if (card?.key != null) {
+            hidePrompt(db, ctx, card.key, Date.now() + FOREVER);
+          }
+          setDismissed(true);
+        }}
+        onSave={({ mood, distraction, notes }) => {
+          updateWalk(db, ctx, walk.id, { mood, distraction, notes, summaryPending: false });
+          bump();
+          toast.show({ message: i18n.t('sumw.saved') });
+          onDone();
+        }}
+      />
+      {card === null ? null : (
+        <NewPlaceFlow
+          visible={naming}
+          at={card.at}
+          {...(card.category === null ? {} : { initialCategory: card.category })}
+          onClose={() => {
+            setNaming(false);
+          }}
+          onDone={(placeId) => {
+            linkWalksToPlace(db, ctx, placeId, card.walkIds);
+            if (card.kind === 'type') {
+              setWalkPlace(db, ctx, walk.id, { placeId, placeKind: null });
+            }
+            bump();
+            setNaming(false);
+            setDismissed(true);
+          }}
+        />
+      )}
+    </>
   );
 }

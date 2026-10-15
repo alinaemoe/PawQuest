@@ -9,6 +9,9 @@ import { currentPlace } from './weatherService';
 export interface NewPlaceFlowProps {
   readonly visible: boolean;
   readonly onClose: () => void;
+  /** Where the place is, when it is not "here and now" (a place suggested from the walks). */
+  readonly at?: { readonly lat: number; readonly lon: number };
+  readonly initialCategory?: PlaceCategory;
   /** The id of the new place, or of the existing one the owner confirmed. */
   readonly onDone: (placeId: string) => void;
 }
@@ -17,13 +20,17 @@ export interface NewPlaceFlowProps {
  * "Новое место" (S14-A): saves a place where the owner stands now, after the duplicate check
  * (A-24): "Похоже на «Парк у дома». Это то же место?"
  */
-export function NewPlaceFlow({ visible, onClose, onDone }: NewPlaceFlowProps) {
+export function NewPlaceFlow({ visible, onClose, at, initialCategory, onDone }: NewPlaceFlowProps) {
   const { db, ctx, i18n, bump } = useApp();
   const toast = useToast();
   const [position, setPosition] = useState<{ lat: number; lon: number } | null>(null);
 
   useEffect(() => {
     if (!visible) {
+      return;
+    }
+    if (at !== undefined) {
+      setPosition(at);
       return;
     }
     let alive = true;
@@ -40,6 +47,7 @@ export function NewPlaceFlow({ visible, onClose, onDone }: NewPlaceFlowProps) {
   return (
     <NewPlaceSheet
       visible={visible}
+      {...(initialCategory === undefined ? {} : { initialCategory })}
       hasPosition={position !== null}
       onClose={onClose}
       findSimilar={(name, category: PlaceCategory) => {
