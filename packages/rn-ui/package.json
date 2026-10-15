@@ -15,11 +15,13 @@
     "test": "echo \"component tests come with the first logic-bearing component\""
   },
   "dependencies": {
-    "@pawquest/ui": "workspace:*"
+    "@pawquest/ui": "workspace:*",
+    "@pawquest/i18n": "workspace:*"
   },
   "peerDependencies": {
     "react": "19.2.3",
     "react-native": "0.86.3",
-    "react-native-svg": "*"
+    "react-native-svg": "*",
+    "react-native-safe-area-context": "*"
   }
 }

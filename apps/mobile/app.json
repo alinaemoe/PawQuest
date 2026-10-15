@@ -13,7 +13,9 @@
     },
     "android": {
       "package": "app.pawquest",
-      "permissions": ["android.permission.RECEIVE_BOOT_COMPLETED"],
+      "permissions": [
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -31,7 +33,8 @@
         }
       ],
       "expo-sqlite",
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      "expo-font"
     ],
     "web": {
       "favicon": "./assets/favicon.png"

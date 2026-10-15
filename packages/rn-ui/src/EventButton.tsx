@@ -55,7 +55,9 @@ export function EventButton({ kind, label, count = 0, onPress, onLongPress }: Ev
       })}
     >
       <SvgXml xml={shapeXml(kind, colors.events[kind])} width={24} height={24} />
-      <AppText style={{ fontWeight: '600', fontSize: 13 }}>{label}</AppText>
+      <AppText weight={600} style={{ fontSize: 13 }}>
+        {label}
+      </AppText>
       {count > 0 ? (
         <View style={{ position: 'absolute', top: 6, right: 10 }}>
           <AppText variant="mono" style={{ fontSize: 12, color: colors.muted }}>

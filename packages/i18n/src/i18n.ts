@@ -37,6 +37,8 @@ export interface I18n {
   formatTime(ts: number): string;
   /** 12 окт, with the year when it is not the current one. */
   formatDate(ts: number, now: number): string;
+  /** Среда, 14 октября (Wednesday, October 14) */
+  formatLongDate(ts: number): string;
   /** сегодня / вчера / 12 окт */
   formatDay(ts: number, now: number): string;
   /** только что / 12 минут назад / 4 часа назад / вчера / 3 дня назад / 12 окт */
@@ -121,6 +123,16 @@ export function createI18n(options: I18nOptions): I18n {
     return p.year === current.year ? base : `${base} ${String(p.year)}`;
   };
 
+  const formatLongDate = (ts: number): string => {
+    const p = localParts(ts, offsetAt(ts));
+    const data = LOCALES[locale];
+    const weekday = data.weekdaysLong[p.weekday] ?? '';
+    const month = data.monthsLong[p.month - 1] ?? '';
+    return locale === 'ru'
+      ? `${weekday}, ${String(p.day)} ${month}`
+      : `${weekday}, ${month} ${String(p.day)}`;
+  };
+
   const dayDifference = (ts: number, now: number): number =>
     localParts(now, offsetAt(now)).dayIndex - localParts(ts, offsetAt(ts)).dayIndex;
 
@@ -171,6 +183,7 @@ export function createI18n(options: I18nOptions): I18n {
     formatWeight,
     formatTime,
     formatDate,
+    formatLongDate,
     formatDay,
     formatAgo,
   };

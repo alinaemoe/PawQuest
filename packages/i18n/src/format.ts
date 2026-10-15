@@ -41,6 +41,8 @@ export interface LocalParts {
   readonly day: number;
   readonly hour: number;
   readonly minute: number;
+  /** 0 = Monday ... 6 = Sunday */
+  readonly weekday: number;
   /** Whole local days since 1970-01-01, for calendar-day differences. */
   readonly dayIndex: number;
 }
@@ -54,6 +56,7 @@ export function localParts(ts: number, offsetMin: number): LocalParts {
     day: shifted.getUTCDate(),
     hour: shifted.getUTCHours(),
     minute: shifted.getUTCMinutes(),
+    weekday: (shifted.getUTCDay() + 6) % 7,
     dayIndex: Math.floor((ts + offsetMin * 60_000) / 86_400_000),
   };
 }

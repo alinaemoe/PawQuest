@@ -2,6 +2,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
 import { formatNumber, localParts, pad2 } from './format';
+import { LOCALES } from './locale';
 
 const NBSP = ' ';
 
@@ -71,8 +72,23 @@ describe('pad2 and localParts', () => {
     expect(localParts(ts, -240)).toMatchObject({ day: 14, hour: 18, minute: 30 });
   });
 
+  it('weekday is 0 for Monday and 6 for Sunday', () => {
+    expect(localParts(Date.UTC(2026, 9, 12, 12), 0).weekday).toBe(0);
+    expect(localParts(Date.UTC(2026, 9, 18, 12), 0).weekday).toBe(6);
+  });
+
   it('dayIndex counts local calendar days', () => {
     const a = Date.UTC(2026, 9, 14, 22, 30);
     expect(localParts(a, 180).dayIndex - localParts(a, 0).dayIndex).toBe(1);
+  });
+});
+
+describe('locale tables', () => {
+  it.each(['ru', 'en'] as const)('%s has 12 months and 7 weekdays in every form', (locale) => {
+    const data = LOCALES[locale];
+    expect(data.monthsShort).toHaveLength(12);
+    expect(data.monthsLong).toHaveLength(12);
+    expect(data.weekdaysShort).toHaveLength(7);
+    expect(data.weekdaysLong).toHaveLength(7);
   });
 });

@@ -126,6 +126,22 @@ describe('time and date', () => {
   });
 });
 
+describe('formatLongDate', () => {
+  it('weekday and date in each language', () => {
+    expect(ru.formatLongDate(NOW)).toBe('Четверг, 15 октября');
+    expect(en.formatLongDate(NOW)).toBe('Thursday, October 15');
+  });
+
+  it('covers Monday first and Sunday last, in the local zone', () => {
+    const monday = Date.UTC(2026, 9, 12, 9); // 12 Oct 2026
+    const sunday = Date.UTC(2026, 9, 18, 9);
+    expect(ru.formatLongDate(monday)).toBe('Понедельник, 12 октября');
+    expect(ru.formatLongDate(sunday)).toBe('Воскресенье, 18 октября');
+    // 23:30 UTC Sunday is already Monday in Minsk
+    expect(ru.formatLongDate(Date.UTC(2026, 9, 18, 23, 30))).toBe('Понедельник, 19 октября');
+  });
+});
+
 describe('formatAgo', () => {
   it('same day: just now, minutes, hours', () => {
     expect(ru.formatAgo(NOW - 20_000, NOW)).toBe('только что');
