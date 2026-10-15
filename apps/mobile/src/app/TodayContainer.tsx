@@ -39,6 +39,8 @@ export interface TodayContainerProps {
   readonly onWalkSheetShown: () => void;
   /** Opens the training skill picker (the "training at home" tile and the + menu). */
   readonly onTraining: () => void;
+  /** Opens the diary form: "new" or the id of an existing observation. */
+  readonly onObservation: (id: string) => void;
 }
 
 type SheetId = 'add' | 'note' | 'weight' | 'walk' | null;
@@ -48,6 +50,7 @@ export function TodayContainer({
   autoOpenWalk,
   onWalkSheetShown,
   onTraining,
+  onObservation,
 }: TodayContainerProps) {
   const { db, ctx, dog, settings, i18n, version, bump } = useApp();
   const toast = useToast();
@@ -149,7 +152,8 @@ export function TodayContainer({
     if (choice === 'walk') {
       setSheet('walk');
     } else if (choice === 'observation') {
-      setSheet('note');
+      setSheet(null);
+      onObservation('new');
     } else if (choice === 'weight') {
       setSheet('weight');
     } else {
@@ -192,7 +196,11 @@ export function TodayContainer({
           hidePrompt(db, ctx, 'weight', ctx.now() + settings.weightIntervalDays * DAY);
           bump();
         }}
-        onRecentPress={() => undefined}
+        onRecentPress={(row) => {
+          if (row.kind === 'event') {
+            onObservation(row.id);
+          }
+        }}
         onFab={() => {
           setSheet('add');
         }}

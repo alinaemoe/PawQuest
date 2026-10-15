@@ -424,6 +424,7 @@ export const ru = {
     many: 'осталось {n} дней',
     other: 'осталось {n} дня',
   },
+  'diary.edit': 'Наблюдение',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof ru;

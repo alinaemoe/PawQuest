@@ -10,6 +10,7 @@ import { BackHandler, View } from 'react-native';
 import { DiagnosticsScreen } from '../diagnostics/DiagnosticsScreen';
 import { useApp } from './AppContext';
 import { ClickerContainer } from './ClickerContainer';
+import { DiaryContainer } from './DiaryContainer';
 import { TodayContainer } from './TodayContainer';
 import { TrashContainer } from './TrashContainer';
 import { WalksTab } from './WalksTab';
@@ -41,7 +42,9 @@ export function Root() {
   const { i18n, settings, dog } = app;
   const [tab, setTab] = useState<Tab>('today');
   const [diagnostics, setDiagnostics] = useState(false);
-  const [overlay, setOverlay] = useState<'trash' | null>(null);
+  const [overlay, setOverlay] = useState<
+    { kind: 'trash' } | { kind: 'diary'; open: string | null } | null
+  >(null);
   const [openWalk, setOpenWalk] = useState(false);
   const [flow, setFlow] = useState<FlowState | null>(null);
   const dogId = dog?.id ?? null;
@@ -123,7 +126,21 @@ export function Root() {
     );
   }
 
-  if (overlay === 'trash') {
+  if (overlay?.kind === 'diary') {
+    return (
+      <>
+        {statusBar}
+        <DiaryContainer
+          initialOpen={overlay.open}
+          onBack={() => {
+            setOverlay(null);
+          }}
+        />
+      </>
+    );
+  }
+
+  if (overlay?.kind === 'trash') {
     return (
       <>
         {statusBar}
@@ -154,6 +171,9 @@ export function Root() {
             onWalkSheetShown={onWalkSheetShown}
             onTraining={() => {
               setFlow({ kind: 'picker' });
+            }}
+            onObservation={(id) => {
+              setOverlay({ kind: 'diary', open: id });
             }}
           />
         ) : null}
@@ -188,11 +208,10 @@ export function Root() {
             trashCount={listTrash(app.db).length}
             incompleteCount={countIncompleteEvents(app.db, dog.id)}
             onTrash={() => {
-              setOverlay('trash');
+              setOverlay({ kind: 'trash' });
             }}
             onDiary={() => {
-              // the diary screen arrives in the next step
-              setOverlay(null);
+              setOverlay({ kind: 'diary', open: null });
             }}
             onDiagnostics={() => {
               setDiagnostics(true);

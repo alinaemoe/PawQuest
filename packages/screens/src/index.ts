@@ -48,3 +48,9 @@ export type {
   WalkEdit,
   WalkEditSheetProps,
 } from './WalkSheets';
+export { diaryRow, filledLine, groupDiaryByDay } from './diaryModel';
+export type { DiaryGroup, DiaryRowModel } from './diaryModel';
+export { DiaryScreen } from './DiaryScreen';
+export type { DiaryFilterId, DiaryScreenProps } from './DiaryScreen';
+export { ObservationScreen } from './ObservationScreen';
+export type { ObservationDraft, ObservationScreenProps } from './ObservationScreen';

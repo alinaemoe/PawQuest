@@ -112,3 +112,17 @@ export {
   type WalkChanges,
   type WalkTotals,
 } from './walks';
+export {
+  DETAIL_FIELD_COUNT,
+  EMPTY_DETAIL,
+  filledFields,
+  getEventDetail,
+  listDiary,
+  saveEventDetail,
+  updateEvent,
+  type DiaryEntry,
+  type DiaryFilter,
+  type EventChanges,
+  type EventDetail,
+  type Outcome,
+} from './diary';

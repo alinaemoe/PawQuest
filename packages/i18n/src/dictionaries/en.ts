@@ -376,4 +376,5 @@ export const en = {
   'out.ongoing': 'Ongoing',
   'out.unknown': 'Not sure',
   'trash.daysLeft': { one: '{n} day left', other: '{n} days left' },
+  'diary.edit': 'Observation',
 } as const satisfies Record<MessageKey, Message>;

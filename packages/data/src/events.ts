@@ -30,6 +30,9 @@ export interface BehaviorEvent {
   readonly note: string | null;
   readonly distanceBucket: DistanceBucket | null;
   readonly reaction: number | null;
+  readonly distraction: number | null;
+  /** Seconds the dog needed to settle, null when unknown. */
+  readonly recoveryS: number | null;
   /** True while the observation still lacks details ("можно дополнить"). */
   readonly incomplete: boolean;
 }
@@ -72,7 +75,7 @@ function toEventType(row: SqlRow): EventType {
   };
 }
 
-function toEvent(row: SqlRow): BehaviorEvent {
+export function eventFromRow(row: SqlRow): BehaviorEvent {
   return {
     id: String(row['id']),
     dogId: String(row['dog_id']),
@@ -82,6 +85,8 @@ function toEvent(row: SqlRow): BehaviorEvent {
     note: str(row['note']),
     distanceBucket: str(row['distance_bucket']) as DistanceBucket | null,
     reaction: num(row['reaction']),
+    distraction: num(row['distraction']),
+    recoveryS: num(row['recovery_s']),
     incomplete: row['incomplete'] === 1,
   };
 }
@@ -135,7 +140,7 @@ export function createEvent(db: SqlDb, ctx: Ctx, input: EventInput): BehaviorEve
 
 export function getEvent(db: SqlDb, id: string): BehaviorEvent | null {
   const row = db.all('SELECT * FROM event WHERE id = ? AND deleted_at IS NULL', [id])[0];
-  return row === undefined ? null : toEvent(row);
+  return row === undefined ? null : eventFromRow(row);
 }
 
 /** Events of a dog between two moments (inclusive start, exclusive end), newest first. */
@@ -150,7 +155,7 @@ export function listEvents(
       'SELECT * FROM event WHERE dog_id = ? AND deleted_at IS NULL AND ts >= ? AND ts < ? ORDER BY ts DESC, id DESC',
       [dogId, toIso(fromTs), toIso(toTs)],
     )
-    .map(toEvent);
+    .map(eventFromRow);
 }
 
 /** Count of events still marked "можно дополнить" (badge of the diary, S12). */
