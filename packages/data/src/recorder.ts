@@ -287,3 +287,14 @@ export function recoverWalk(
   });
   return getWalk(db, walkId);
 }
+
+/**
+ * The id of the walk that should receive new GPS fixes: the one that is active (not paused).
+ * Used by the background location task, which does not know which screen is open.
+ */
+export function getRunningWalkId(db: SqlDb): string | null {
+  const row = db.all(
+    "SELECT id FROM walk WHERE status = 'active' AND deleted_at IS NULL ORDER BY started_at DESC LIMIT 1",
+  )[0];
+  return row === undefined ? null : String(row['id']);
+}

@@ -5,6 +5,7 @@ import './src/spike/gpsTask';
 // The notification action listener must exist before any screen (spike S5).
 import './src/spike/notif';
 import './src/app/careNotif';
+import './src/app/walkRecorder';
 import App from './App';
 
 registerRootComponent(App);

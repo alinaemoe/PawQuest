@@ -41,6 +41,8 @@ describe('DEFAULT_TRACK_FILTER_CONFIG', () => {
       minStepM: 3,
       accuracyStepFactor: 0.5,
       gapAfterS: 30,
+      // not in the original spec: added after a stale first fix swallowed a whole walk (D-59)
+      reanchorAfterJumps: 5,
     });
   });
 });
@@ -306,5 +308,62 @@ describe('filterTrack properties', () => {
         expect(points.length + dropped.length).toBe(fixes.length);
       }),
     );
+  });
+});
+
+describe('filterTrack: a stale first fix (D-59)', () => {
+  const M_PER_DEG = 111_195;
+  const north = (second: number, lat0 = 55.7558): GpsFix => ({
+    ts: second * 1000,
+    lat: lat0 + (1.4 * second) / M_PER_DEG,
+    lon: 37.6173,
+    accuracyM: 5,
+  });
+  const stale: GpsFix = { ts: 0, lat: 37.4219, lon: -122.084, accuracyM: 5 }; // far away
+
+  it('restarts the track after five agreeing fixes instead of dropping the whole walk', () => {
+    const walk = Array.from({ length: 40 }, (_, i) => north(i + 1));
+    const result = filterTrack([stale, ...walk]);
+    // the stale point plus the fixes that were dropped before the restart
+    expect(result.dropped.map((d) => d.reason)).toEqual(Array(4).fill('speed_jump'));
+    expect(result.points[0]).toBe(stale);
+    expect(result.points[1]).toBe(walk[4]);
+    // distance is the real walk after the restart (~35 fixes at 1.4 m/s), nothing from the jump
+    expect(result.distanceM).toBeGreaterThan(40);
+    expect(result.distanceM).toBeLessThan(55);
+    expect(result.gaps).toHaveLength(1);
+    expect(result.gaps[0]?.fromTs).toBe(0);
+  });
+
+  it('a single glitch in the middle of a walk is still just dropped', () => {
+    const walk = Array.from({ length: 20 }, (_, i) => north(i));
+    const glitch: GpsFix = { ts: 10_500, lat: 56.5, lon: 38, accuracyM: 5 };
+    const result = filterTrack([...walk.slice(0, 11), glitch, ...walk.slice(11)]);
+    expect(result.dropped).toEqual([{ index: 11, reason: 'speed_jump' }]);
+    expect(result.points).toHaveLength(20);
+  });
+
+  it('fixes that jump around without agreeing never restart the track', () => {
+    const start = north(0);
+    const wild = Array.from({ length: 12 }, (_, i): GpsFix => ({
+      ts: (i + 1) * 1000,
+      lat: 40 + (i % 2) * 5,
+      lon: 10 + i * 7,
+      accuracyM: 5,
+    }));
+    const result = filterTrack([start, ...wild]);
+    expect(result.points).toEqual([start]);
+    expect(result.dropped).toHaveLength(12);
+  });
+
+  it('the restart happens exactly at the configured streak', () => {
+    const walk = Array.from({ length: 10 }, (_, i) => north(i + 1));
+    const two = filterTrack([stale, ...walk], {
+      ...DEFAULT_TRACK_FILTER_CONFIG,
+      reanchorAfterJumps: 2,
+    });
+    expect(two.points[1]).toBe(walk[1]);
+    const never = filterTrack([stale, ...walk.slice(0, 4)]);
+    expect(never.points).toEqual([stale]);
   });
 });

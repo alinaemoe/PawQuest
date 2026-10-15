@@ -1,6 +1,7 @@
 import {
   SKILL_TEMPLATES,
   createSkill,
+  getActiveWalk,
   getSkill,
   lastSessionSettings,
   listSkillSummaries,
@@ -84,6 +85,8 @@ export function TrainingFlow({ state, onChange }: TrainingFlowProps) {
   const begin = (skillId: string, settings: PrepSettings): void => {
     startSession(db, ctx, dogId, skillId, {
       levelId: settings.levelId,
+      // a session started during a walk belongs to it (spec 5.4a)
+      walkId: getActiveWalk(db, dogId)?.id ?? null,
       context: settings.context,
       distraction: settings.distraction,
       reward: settings.reward,

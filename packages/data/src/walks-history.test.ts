@@ -124,6 +124,14 @@ describe('updateWalk', () => {
     });
   });
 
+  it('clears the "can be completed" mark when the summary was seen', () => {
+    const w = walk(2, 30);
+    updateWalk(env.db, env.ctx, w.id, { summaryPending: false });
+    expect(env.db.all('SELECT summary_pending FROM walk WHERE id = ?', [w.id])[0]).toEqual({
+      summary_pending: 0,
+    });
+  });
+
   it('refuses a bad duration, unknown or deleted walks give null', () => {
     const w = walk(2, 30);
     expect(() => updateWalk(env.db, env.ctx, w.id, { durationS: -5 })).toThrow(/duration/);

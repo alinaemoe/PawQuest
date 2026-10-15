@@ -7,6 +7,7 @@ import {
   discardWalk,
   finishWalk,
   getActiveWalk,
+  getRunningWalkId,
   lastTrackPoint,
   listTrackPoints,
   pauseWalk,
@@ -72,6 +73,19 @@ describe('startWalk', () => {
     const other = createDog(env.db, env.ctx, { name: 'Бим' });
     expect(startWalk(env.db, env.ctx, { dogId: other.id, mode: 'no_gps' }).mode).toBe('no_gps');
     expect(getActiveWalk(env.db, other.id)).not.toBeNull();
+  });
+});
+
+describe('getRunningWalkId', () => {
+  it('is the active walk, not a paused, finished or missing one', () => {
+    expect(getRunningWalkId(env.db)).toBeNull();
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    expect(getRunningWalkId(env.db)).toBe(walk.id);
+    pauseWalk(env.db, env.ctx, walk.id);
+    expect(getRunningWalkId(env.db)).toBeNull();
+    resumeWalk(env.db, env.ctx, walk.id);
+    finishWalk(env.db, env.ctx, walk.id);
+    expect(getRunningWalkId(env.db)).toBeNull();
   });
 });
 

@@ -23,6 +23,11 @@ export interface TrackFilterConfig {
   readonly accuracyStepFactor: number;
   /** A time difference strictly above this between accepted fixes is reported as a gap. */
   readonly gapAfterS: number;
+  /**
+   * This many consecutive fixes that agree with each other but are "too fast" for the last accepted
+   * one mean the first fix was stale (a cached position): the track restarts from the new place.
+   */
+  readonly reanchorAfterJumps: number;
 }
 
 export const DEFAULT_TRACK_FILTER_CONFIG: Readonly<TrackFilterConfig> = {
@@ -31,6 +36,7 @@ export const DEFAULT_TRACK_FILTER_CONFIG: Readonly<TrackFilterConfig> = {
   minStepM: 3,
   accuracyStepFactor: 0.5,
   gapAfterS: 30,
+  reanchorAfterJumps: 5,
 };
 
 export type DropReason = 'invalid' | 'poor_accuracy' | 'non_monotonic' | 'speed_jump';
@@ -59,10 +65,13 @@ export interface TrackFilterState {
   readonly lastAccepted: GpsFix | null;
   readonly anchor: GpsFix | null;
   readonly distanceM: number;
+  /** Consecutive "too fast" fixes that agree with each other (see `reanchorAfterJumps`). */
+  readonly jumpStreak: number;
+  readonly lastJumped: GpsFix | null;
 }
 
 export function initialTrackFilterState(): TrackFilterState {
-  return { lastAccepted: null, anchor: null, distanceM: 0 };
+  return { lastAccepted: null, anchor: null, distanceM: 0, jumpStreak: 0, lastJumped: null };
 }
 
 function isValidFix(fix: GpsFix): boolean {
@@ -77,6 +86,41 @@ function dropped(
   reason: DropReason,
 ): { state: TrackFilterState; decision: FixDecision } {
   return { state, decision: { kind: 'dropped', reason } };
+}
+
+/**
+ * A fix that is too fast for the last accepted one. Usually a glitch, so it is dropped; but when
+ * several in a row agree with each other the old position was the wrong one (a stale first fix) and
+ * the track restarts here. The jump itself adds no distance and is reported as a gap.
+ */
+function handleJump(
+  state: TrackFilterState,
+  fix: GpsFix,
+  lastAccepted: GpsFix,
+  config: Readonly<TrackFilterConfig>,
+): { state: TrackFilterState; decision: FixDecision } {
+  const previous = state.lastJumped;
+  const agrees =
+    previous !== null &&
+    fix.ts > previous.ts &&
+    haversineDistanceM(previous, fix) / ((fix.ts - previous.ts) / 1000) <=
+      config.maxPlausibleSpeedMps;
+  const streak = agrees ? state.jumpStreak + 1 : 1;
+  if (streak >= config.reanchorAfterJumps) {
+    return {
+      state: { ...state, lastAccepted: fix, anchor: fix, jumpStreak: 0, lastJumped: null },
+      decision: {
+        kind: 'accepted',
+        motion: 'start',
+        distanceDeltaM: 0,
+        gap: { fromTs: lastAccepted.ts, toTs: fix.ts },
+      },
+    };
+  }
+  return {
+    state: { ...state, jumpStreak: streak, lastJumped: fix },
+    decision: { kind: 'dropped', reason: 'speed_jump' },
+  };
 }
 
 /**
@@ -98,7 +142,7 @@ export function applyFix(
   const { lastAccepted, anchor } = state;
   if (lastAccepted === null || anchor === null) {
     return {
-      state: { lastAccepted: fix, anchor: fix, distanceM: state.distanceM },
+      state: { ...state, lastAccepted: fix, anchor: fix, jumpStreak: 0, lastJumped: null },
       decision: { kind: 'accepted', motion: 'start', distanceDeltaM: 0, gap: null },
     };
   }
@@ -108,7 +152,7 @@ export function applyFix(
   }
   const dtS = (fix.ts - lastAccepted.ts) / 1000;
   if (haversineDistanceM(lastAccepted, fix) / dtS > config.maxPlausibleSpeedMps) {
-    return dropped(state, 'speed_jump');
+    return handleJump(state, fix, lastAccepted, config);
   }
 
   const gap: TrackGap | null =
@@ -118,12 +162,18 @@ export function applyFix(
 
   if (fromAnchorM < thresholdM) {
     return {
-      state: { lastAccepted: fix, anchor, distanceM: state.distanceM },
+      state: { ...state, lastAccepted: fix, anchor, jumpStreak: 0, lastJumped: null },
       decision: { kind: 'accepted', motion: 'stationary', distanceDeltaM: 0, gap },
     };
   }
   return {
-    state: { lastAccepted: fix, anchor: fix, distanceM: state.distanceM + fromAnchorM },
+    state: {
+      lastAccepted: fix,
+      anchor: fix,
+      distanceM: state.distanceM + fromAnchorM,
+      jumpStreak: 0,
+      lastJumped: null,
+    },
     decision: { kind: 'accepted', motion: 'moving', distanceDeltaM: fromAnchorM, gap },
   };
 }

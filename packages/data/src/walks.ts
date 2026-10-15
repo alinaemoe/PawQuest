@@ -160,6 +160,8 @@ export interface WalkChanges {
   readonly mood?: number | null;
   readonly distraction?: number | null;
   readonly placeKind?: string | null;
+  /** False once the owner has seen the summary ("можно дополнить" disappears). */
+  readonly summaryPending?: boolean;
 }
 
 /** Edits a finished walk; changing the duration moves the end time, the start stays put. */
@@ -189,6 +191,10 @@ export function updateWalk(db: SqlDb, ctx: Ctx, id: string, changes: WalkChanges
   set('mood', changes.mood);
   set('distraction', changes.distraction);
   set('place_kind', changes.placeKind);
+  set(
+    'summary_pending',
+    changes.summaryPending === undefined ? undefined : changes.summaryPending ? 1 : 0,
+  );
   if (sets.length > 0) {
     db.run(
       `UPDATE walk SET ${sets.join(', ')}, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,

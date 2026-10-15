@@ -1,9 +1,17 @@
 import { TabBar, useTheme, type TabItem } from '@pawquest/rn-ui';
-import { countIncompleteEvents, getActiveSession, listTrash, updateDog } from '@pawquest/data';
+import {
+  countIncompleteEvents,
+  getActiveSession,
+  getActiveWalk,
+  listTrash,
+  recoverWalk,
+  updateDog,
+} from '@pawquest/data';
 import {
   DogEditSheet,
   DogScreen,
   OnboardingFlow,
+  RecoverSheet,
   SoonScreen,
   type DogDraft,
 } from '@pawquest/screens';
@@ -21,8 +29,11 @@ import { DiaryContainer } from './DiaryContainer';
 import { HealthContainer } from './HealthContainer';
 import { TodayContainer } from './TodayContainer';
 import { TrashContainer } from './TrashContainer';
+import { WalkContainer, WalkSummaryContainer } from './WalkContainer';
+import { startGpsUpdates } from './walkRecorder';
 import { WalksTab } from './WalksTab';
 import { syncCareReminders } from './reminders';
+import { StartWalkFlow } from './StartWalkFlow';
 import { TrainingFlow, type FlowState } from './TrainingFlow';
 import { TrainingTab } from './TrainingTab';
 
@@ -58,6 +69,9 @@ export function Root() {
   const [flow, setFlow] = useState<FlowState | null>(null);
   const [care, setCare] = useState<CareTarget | null>(null);
   const [editingDog, setEditingDog] = useState(false);
+  const [prewalk, setPrewalk] = useState(false);
+  const [keepAwake, setKeepAwake] = useState(false);
+  const [summaryWalkId, setSummaryWalkId] = useState<string | null>(null);
   const careFlow = (
     <CareFlow
       target={care}
@@ -72,6 +86,13 @@ export function Root() {
     () => (dogId === null ? null : getActiveSession(app.db, dogId)),
     [app.db, dogId, app.version],
   );
+
+  const activeWalk = useMemo(
+    () => (dogId === null ? null : getActiveWalk(app.db, dogId)),
+    [app.db, dogId, app.version],
+  );
+  // A walk that is still running when the app starts was interrupted: offer to recover it.
+  const [recoverId, setRecoverId] = useState<string | null>(() => activeWalk?.id ?? null);
 
   // Keep the phone's scheduled care reminders in step with the plans after every change.
   useEffect(() => {
@@ -143,6 +164,63 @@ export function Root() {
       <>
         {statusBar}
         <ClickerContainer session={activeSession} />
+      </>
+    );
+  }
+
+  if (summaryWalkId !== null) {
+    return (
+      <>
+        {statusBar}
+        <WalkSummaryContainer
+          walkId={summaryWalkId}
+          onDone={() => {
+            setSummaryWalkId(null);
+          }}
+        />
+      </>
+    );
+  }
+
+  if (activeWalk !== null && dogId !== null) {
+    return (
+      <>
+        {statusBar}
+        <WalkContainer
+          walk={activeWalk}
+          dogId={dogId}
+          keepAwake={keepAwake}
+          onTraining={() => {
+            setFlow({ kind: 'picker' });
+          }}
+          onFinished={setSummaryWalkId}
+        />
+        <TrainingFlow state={flow} onChange={setFlow} />
+        <RecoverSheet
+          visible={recoverId === activeWalk.id}
+          description={`${app.i18n.formatDuration((Date.now() - activeWalk.startedAt) / 1000)} · ${app.i18n.formatTime(activeWalk.startedAt)}`}
+          onContinue={() => {
+            recoverWalk(app.db, app.ctx, activeWalk.id, 'continue');
+            if (activeWalk.mode === 'gps') {
+              void startGpsUpdates(app.i18n.t('active.notifTitle'), app.i18n.t('active.notifBody'));
+            }
+            setRecoverId(null);
+            app.bump();
+          }}
+          onFinish={() => {
+            const done = recoverWalk(app.db, app.ctx, activeWalk.id, 'finish');
+            setRecoverId(null);
+            if (done !== null) {
+              setSummaryWalkId(done.id);
+            }
+            app.bump();
+          }}
+          onDiscard={() => {
+            recoverWalk(app.db, app.ctx, activeWalk.id, 'discard');
+            setRecoverId(null);
+            app.bump();
+          }}
+        />
       </>
     );
   }
@@ -225,6 +303,9 @@ export function Root() {
               setOverlay({ kind: 'diary', open: id });
             }}
             onCare={setCare}
+            onStartWalk={() => {
+              setPrewalk(true);
+            }}
           />
         ) : null}
         {tab === 'walks' ? <WalksTab /> : null}
@@ -278,6 +359,16 @@ export function Root() {
       </View>
       <TabBar tabs={tabs} active={tab} onSelect={setTab} />
       <TrainingFlow state={flow} onChange={setFlow} />
+      <StartWalkFlow
+        visible={prewalk}
+        onClose={() => {
+          setPrewalk(false);
+        }}
+        onStarted={(awake) => {
+          setKeepAwake(awake);
+          setPrewalk(false);
+        }}
+      />
       <DogEditSheet
         visible={editingDog}
         dog={dog}

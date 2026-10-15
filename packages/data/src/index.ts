@@ -155,6 +155,7 @@ export {
   discardWalk,
   finishWalk,
   getActiveWalk,
+  getRunningWalkId,
   lastTrackPoint,
   listTrackPoints,
   pauseWalk,

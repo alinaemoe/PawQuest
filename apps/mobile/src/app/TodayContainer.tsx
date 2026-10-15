@@ -47,6 +47,8 @@ export interface TodayContainerProps {
   /** Opens the diary form: "new" or the id of an existing observation. */
   readonly onObservation: (id: string) => void;
   readonly onCare: (target: CareTarget) => void;
+  /** The big button: opens the pre-walk sheet for a GPS walk. */
+  readonly onStartWalk: () => void;
 }
 
 type SheetId = 'add' | 'note' | 'weight' | 'walk' | null;
@@ -58,6 +60,7 @@ export function TodayContainer({
   onTraining,
   onObservation,
   onCare,
+  onStartWalk,
 }: TodayContainerProps) {
   const { db, ctx, dog, settings, i18n, version, bump } = useApp();
   const toast = useToast();
@@ -190,7 +193,7 @@ export function TodayContainer({
         now={now}
         dogName={dog?.name ?? ''}
         dogPhotoUri={dog?.photoUri ?? null}
-        gpsWalks={false}
+        gpsWalks
         lastWalk={
           data.lastWalk === null
             ? null
@@ -216,9 +219,7 @@ export function TodayContainer({
         weightCard={data.weightCard}
         recent={data.recent}
         firstRun={data.firstRun}
-        onStartWalk={() => {
-          setSheet('walk');
-        }}
+        onStartWalk={onStartWalk}
         onTraining={onTraining}
         onNote={() => {
           setSheet('note');
