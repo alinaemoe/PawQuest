@@ -7,7 +7,15 @@ export const PLACE_KINDS = ['park', 'meadow', 'yard', 'district', 'forest', 'wat
 
 export interface PreWalkChoice {
   readonly gps: boolean;
+  /** Only a type ("Луг"), when no saved place is chosen. */
   readonly placeKind: string | null;
+  /** A saved place from the library. */
+  readonly placeId: string | null;
+}
+
+export interface PlaceChip {
+  readonly id: string;
+  readonly name: string;
 }
 
 export interface PreWalkSheetProps {
@@ -18,6 +26,13 @@ export interface PreWalkSheetProps {
   readonly note: string | null;
   /** "8° · Мокро · …" from the weather at the dog's position; null when unknown. */
   readonly weatherLine?: string | null;
+  /** The saved place the dog is in right now ("Вы здесь: Парк у дома?"), preselected. */
+  readonly suggested?: PlaceChip | null;
+  /** The most visited and most recent saved places. */
+  readonly places?: readonly PlaceChip[];
+  /** A place just created from "+ Новое место": becomes the choice. */
+  readonly pickedPlaceId?: string | null;
+  readonly onNewPlace?: () => void;
   readonly onClose: () => void;
   readonly onStart: (choice: PreWalkChoice) => void;
 }
@@ -28,19 +43,35 @@ export function PreWalkSheet({
   lastPlaceKind,
   note,
   weatherLine = null,
+  suggested = null,
+  places = [],
+  pickedPlaceId = null,
+  onNewPlace,
   onClose,
   onStart,
 }: PreWalkSheetProps) {
   const i18n = useI18n();
   const [gps, setGps] = useState(true);
   const [placeKind, setPlaceKind] = useState<string | null>(lastPlaceKind);
+  const [placeId, setPlaceId] = useState<string | null>(suggested?.id ?? null);
   useEffect(() => {
     if (visible) {
       setGps(true);
-      setPlaceKind(lastPlaceKind);
+      setPlaceId(suggested?.id ?? null);
+      setPlaceKind(suggested === null ? lastPlaceKind : null);
     }
     // reset only when the sheet opens
   }, [visible]);
+  useEffect(() => {
+    if (pickedPlaceId !== null) {
+      setPlaceId(pickedPlaceId);
+      setPlaceKind(null);
+    }
+  }, [pickedPlaceId]);
+  const chosen = (id: string): void => {
+    setPlaceId(placeId === id ? null : id);
+    setPlaceKind(null);
+  };
   return (
     <Sheet visible={visible} onClose={onClose} title={i18n.t('pre.title')}>
       {weatherLine === null ? null : (
@@ -49,6 +80,27 @@ export function PreWalkSheet({
       <View style={{ gap: 8 }}>
         <AppText variant="eyebrow">{i18n.t('pre.where')}</AppText>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {suggested === null ? null : (
+            <Chip
+              label={i18n.t('pre.suggest', { name: suggested.name })}
+              selected={placeId === suggested.id}
+              onPress={() => {
+                chosen(suggested.id);
+              }}
+            />
+          )}
+          {places
+            .filter((p) => p.id !== suggested?.id)
+            .map((p) => (
+              <Chip
+                key={p.id}
+                label={p.name}
+                selected={placeId === p.id}
+                onPress={() => {
+                  chosen(p.id);
+                }}
+              />
+            ))}
           {PLACE_KINDS.map((kind) => (
             <Chip
               key={kind}
@@ -56,9 +108,13 @@ export function PreWalkSheet({
               selected={placeKind === kind}
               onPress={() => {
                 setPlaceKind(placeKind === kind ? null : kind);
+                setPlaceId(null);
               }}
             />
           ))}
+          {onNewPlace === undefined ? null : (
+            <Chip label={`+ ${i18n.t('places.add')}`} onPress={onNewPlace} />
+          )}
         </View>
       </View>
       <SwitchRow label={i18n.t('pre.gpsToggle')} value={gps} onValueChange={setGps} />
@@ -68,7 +124,7 @@ export function PreWalkSheet({
         icon="paw"
         size="lg"
         onPress={() => {
-          onStart({ gps, placeKind });
+          onStart({ gps, placeKind, placeId });
         }}
       />
     </Sheet>

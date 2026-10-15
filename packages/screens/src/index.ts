@@ -79,7 +79,12 @@ export type { DogEdit, DogEditSheetProps } from './DogEditSheet';
 export { ActiveWalkScreen } from './ActiveWalkScreen';
 export type { ActiveWalkScreenProps, GpsStatus, WalkEventButton } from './ActiveWalkScreen';
 export { PLACE_KINDS, PreWalkSheet, RecoverSheet } from './WalkFlowSheets';
-export type { PreWalkChoice, PreWalkSheetProps, RecoverSheetProps } from './WalkFlowSheets';
+export type {
+  PlaceChip,
+  PreWalkChoice,
+  PreWalkSheetProps,
+  RecoverSheetProps,
+} from './WalkFlowSheets';
 export { WalkSummaryScreen } from './WalkSummaryScreen';
 export type { WalkSummaryModel, WalkSummaryScreenProps } from './WalkSummaryScreen';
 export {
@@ -95,3 +100,23 @@ export {
   type WeatherCardProps,
   type WeatherSheetProps,
 } from './WeatherViews';
+export {
+  categoryFromGuess,
+  categoryLabel,
+  filterPlaces,
+  groupPlaces,
+  placeRow,
+  tidyPair,
+  withQualifier,
+  type PlaceGroup,
+  type PlaceRowModel,
+  type TidyPairModel,
+} from './placesModel';
+export {
+  NewPlaceSheet,
+  PlaceSheet,
+  PlacesScreen,
+  type NewPlaceSheetProps,
+  type PlaceSheetProps,
+  type PlacesScreenProps,
+} from './PlaceViews';

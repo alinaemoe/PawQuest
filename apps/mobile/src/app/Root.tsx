@@ -27,6 +27,7 @@ import { ClickerContainer } from './ClickerContainer';
 import { CareFlow, type CareTarget } from './CareFlow';
 import { DiaryContainer } from './DiaryContainer';
 import { HealthContainer } from './HealthContainer';
+import { PlacesContainer } from './PlacesContainer';
 import { TodayContainer } from './TodayContainer';
 import { TrashContainer } from './TrashContainer';
 import { WalkContainer, WalkSummaryContainer } from './WalkContainer';
@@ -63,7 +64,11 @@ export function Root() {
   const [tab, setTab] = useState<Tab>('today');
   const [diagnostics, setDiagnostics] = useState(false);
   const [overlay, setOverlay] = useState<
-    { kind: 'trash' } | { kind: 'health' } | { kind: 'diary'; open: string | null } | null
+    | { kind: 'trash' }
+    | { kind: 'health' }
+    | { kind: 'places' }
+    | { kind: 'diary'; open: string | null }
+    | null
   >(null);
   const [openWalk, setOpenWalk] = useState(false);
   const [flow, setFlow] = useState<FlowState | null>(null);
@@ -267,6 +272,19 @@ export function Root() {
     );
   }
 
+  if (overlay?.kind === 'places') {
+    return (
+      <>
+        {statusBar}
+        <PlacesContainer
+          onBack={() => {
+            setOverlay(null);
+          }}
+        />
+      </>
+    );
+  }
+
   if (overlay?.kind === 'trash') {
     return (
       <>
@@ -346,6 +364,9 @@ export function Root() {
             }}
             onHealth={() => {
               setOverlay({ kind: 'health' });
+            }}
+            onPlaces={() => {
+              setOverlay({ kind: 'places' });
             }}
             onEditProfile={() => {
               setEditingDog(true);
