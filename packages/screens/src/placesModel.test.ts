@@ -78,8 +78,8 @@ describe('groupPlaces and filterPlaces', () => {
     const groups = groupPlaces(rows, ru);
     expect(groups.map((g) => [g.label, g.rows.map((r) => r.id)])).toEqual([
       ['Парк', ['b', 'c']],
-      ['Двор', ['a']],
       ['Лес', ['d']],
+      ['Двор', ['a']],
     ]);
     expect(groupPlaces([], ru)).toEqual([]);
   });
