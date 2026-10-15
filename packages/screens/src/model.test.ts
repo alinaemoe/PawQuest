@@ -5,7 +5,7 @@ import type { EventType, FeedItem } from '@pawquest/data';
 import { createI18n, en, ru } from '@pawquest/i18n';
 import { describe, expect, it } from 'vitest';
 
-import { eventTypeLabel, feedRow, lastWalkLine, weightCardTitle } from './model';
+import { ageText, eventTypeLabel, feedRow, lastWalkLine, weightCardTitle } from './model';
 
 const ruI = createI18n({ locale: 'ru', units: 'metric', tzOffsetMin: () => 180 });
 const enI = createI18n({ locale: 'en', units: 'metric', tzOffsetMin: () => 180 });
@@ -92,6 +92,21 @@ describe('feedRow', () => {
     expect(feedRow({ ...base, typeId: 'gone' }, ruI, types, NOW).title).toBe('gone');
   });
 
+  it('built-in marker types keep their shape in the list', () => {
+    const shape = (id: string, icon: string): string =>
+      feedRow(
+        { kind: 'event', id: 'e', ts: NOW, typeId: id, note: null },
+        ruI,
+        new Map([[id, type(id, icon, `event.${id}`, null)]]),
+        NOW,
+      ).icon;
+    expect(shape('dog', 'dog')).toBe('circle');
+    expect(shape('child', 'child')).toBe('triangle');
+    expect(shape('hard', 'diamond')).toBe('diamond');
+    expect(shape('exercise', 'square')).toBe('square');
+    expect(shape('success', 'star')).toBe('star');
+  });
+
   it('symptom and weight', () => {
     expect(
       feedRow({ kind: 'symptom', id: 'y', ts: NOW, symptom: 'cough' }, ruI, types, NOW).title,
@@ -149,5 +164,17 @@ describe('built-in event types and the dictionary', () => {
       expect(key in ru, key).toBe(true);
       expect(key in en, key).toBe(true);
     }
+  });
+});
+
+describe('ageText', () => {
+  it('words an approximate age in years and months', () => {
+    expect(ageText(null, ruI.t)).toBeNull();
+    expect(ageText(5, ruI.t)).toBe('5 месяцев');
+    expect(ageText(12, ruI.t)).toBe('1 год');
+    expect(ageText(14, ruI.t)).toBe('1 год 2 месяца');
+    expect(ageText(0, ruI.t)).toBe('0 месяцев');
+    expect(ageText(26, enI.t)).toBe('2 years 2 months');
+    expect(ageText(13, enI.t)).toBe('1 year 1 month');
   });
 });

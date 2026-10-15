@@ -2,7 +2,20 @@ import type { EventType, FeedItem, WeightEntry } from '@pawquest/data';
 import type { I18n, MessageKey } from '@pawquest/i18n';
 
 export type RowIcon =
-  'pin' | 'target' | 'note' | 'drop' | 'disc' | 'cookie' | 'star' | 'paw' | 'scale' | 'heart';
+  | 'pin'
+  | 'target'
+  | 'note'
+  | 'drop'
+  | 'disc'
+  | 'cookie'
+  | 'star'
+  | 'paw'
+  | 'scale'
+  | 'heart'
+  | 'circle'
+  | 'triangle'
+  | 'diamond'
+  | 'square';
 
 export interface FeedRowModel {
   readonly id: string;
@@ -20,6 +33,13 @@ const EVENT_ICONS: Readonly<Record<string, RowIcon>> = {
   cookie: 'cookie',
   note: 'note',
   star: 'star',
+  // the marker shapes of the walk screen, so a row looks like its button
+  dog: 'circle',
+  person: 'circle',
+  animal: 'circle',
+  child: 'triangle',
+  diamond: 'diamond',
+  square: 'square',
 };
 
 /** Title of an event type: the i18n label for built-in types, the user's own text for custom ones. */
@@ -120,4 +140,21 @@ export function weightCardTitle(latest: WeightEntry | null, i18n: I18n, now: num
   }
   const days = Math.floor((now - latest.measuredAt) / 86_400_000);
   return i18n.t('today.weightTitle', { n: days });
+}
+
+/** "1 год 2 месяца" from an approximate age in months, or null when unknown. */
+export function ageText(months: number | null, t: I18n['t']): string | null {
+  if (months === null) {
+    return null;
+  }
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  const parts: string[] = [];
+  if (years > 0) {
+    parts.push(t('dog.ageYears', { n: years }));
+  }
+  if (rest > 0 || years === 0) {
+    parts.push(t('dog.ageMonths', { n: rest }));
+  }
+  return parts.join(' ');
 }

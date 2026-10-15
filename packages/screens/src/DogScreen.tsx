@@ -1,0 +1,187 @@
+import type { Dog, PaletteKey } from '@pawquest/data';
+import type { Locale, UnitSystem } from '@pawquest/i18n';
+import {
+  AppText,
+  Avatar,
+  Button,
+  Card,
+  Chip,
+  ListRow,
+  Screen,
+  SwitchRow,
+  Tag,
+  useI18n,
+  useTheme,
+  type SchemeMode,
+} from '@pawquest/rn-ui';
+import { PALETTES } from '@pawquest/ui';
+import { Pressable, View } from 'react-native';
+
+import { ageText } from './model';
+
+export interface DogScreenProps {
+  readonly dog: Dog;
+  readonly language: Locale;
+  readonly units: UnitSystem;
+  readonly palette: PaletteKey;
+  readonly scheme: SchemeMode;
+  readonly haptics: boolean;
+  readonly onLanguage: (language: Locale) => void;
+  readonly onUnits: (units: UnitSystem) => void;
+  readonly onPalette: (palette: PaletteKey) => void;
+  readonly onScheme: (scheme: SchemeMode) => void;
+  readonly onHaptics: (on: boolean) => void;
+  readonly onDiagnostics: () => void;
+  readonly onRemoveDemo: () => void;
+}
+
+const PALETTE_KEYS: readonly PaletteKey[] = ['forest', 'sea', 'berry', 'sun'];
+const SCHEMES: readonly SchemeMode[] = ['system', 'light', 'dark'];
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={{ gap: 8 }}>
+      <AppText variant="eyebrow">{title}</AppText>
+      {children}
+    </View>
+  );
+}
+
+/** The Dog tab: profile card and settings (spec 07). Changes apply live. */
+export function DogScreen(props: DogScreenProps) {
+  const i18n = useI18n();
+  const { theme } = useTheme();
+  const age = ageText(props.dog.approxAgeMonths, i18n.t);
+  const details = [age, props.dog.breed].filter((x): x is string => x !== null && x !== '');
+
+  return (
+    <Screen>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <Avatar uri={props.dog.photoUri} size={64} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <AppText variant="numBig" numberOfLines={1}>
+            {props.dog.name}
+          </AppText>
+          {details.length === 0 ? null : <AppText variant="muted">{details.join(' · ')}</AppText>}
+        </View>
+      </View>
+
+      {props.dog.isDemo ? (
+        <Card variant="stripe">
+          <AppText>{i18n.t('dog.demoNote')}</AppText>
+          <View style={{ marginTop: 8 }}>
+            <Button label={i18n.t('dog.removeDemo')} tone="ghost" onPress={props.onRemoveDemo} />
+          </View>
+        </Card>
+      ) : null}
+
+      <AppText variant="title" style={{ marginTop: 4 }}>
+        {i18n.t('dog.settings')}
+      </AppText>
+
+      <Section title={i18n.t('dog.language')}>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Chip
+            label="Русский"
+            selected={props.language === 'ru'}
+            onPress={() => {
+              props.onLanguage('ru');
+            }}
+          />
+          <Chip
+            label="English"
+            selected={props.language === 'en'}
+            onPress={() => {
+              props.onLanguage('en');
+            }}
+          />
+        </View>
+      </Section>
+
+      <Section title={i18n.t('dog.units')}>
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          <Chip
+            label={i18n.t('units.metric')}
+            selected={props.units === 'metric'}
+            onPress={() => {
+              props.onUnits('metric');
+            }}
+          />
+          <Chip
+            label={i18n.t('units.imperial')}
+            selected={props.units === 'imperial'}
+            onPress={() => {
+              props.onUnits('imperial');
+            }}
+          />
+        </View>
+      </Section>
+
+      <Section title={i18n.t('dog.palette')}>
+        <View style={{ flexDirection: 'row', gap: 14 }}>
+          {PALETTE_KEYS.map((key) => {
+            const selected = props.palette === key;
+            return (
+              <Pressable
+                key={key}
+                accessibilityRole="button"
+                accessibilityLabel={i18n.t(`palette.${key}`)}
+                accessibilityState={{ selected }}
+                onPress={() => {
+                  props.onPalette(key);
+                }}
+                style={{ alignItems: 'center', gap: 4 }}
+              >
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: PALETTES[key][theme.scheme],
+                    borderWidth: 3,
+                    borderColor: selected ? theme.colors.ink : 'transparent',
+                  }}
+                />
+                <AppText variant="muted" style={{ fontSize: 11 }}>
+                  {i18n.t(`palette.${key}`)}
+                </AppText>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Section>
+
+      <Section title={i18n.t('dog.theme')}>
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          {SCHEMES.map((scheme) => (
+            <Chip
+              key={scheme}
+              label={i18n.t(`theme.${scheme}`)}
+              selected={props.scheme === scheme}
+              onPress={() => {
+                props.onScheme(scheme);
+              }}
+            />
+          ))}
+        </View>
+      </Section>
+
+      <SwitchRow
+        label={i18n.t('dog.haptics')}
+        value={props.haptics}
+        onValueChange={props.onHaptics}
+      />
+
+      <Section title={i18n.t('dog.about')}>
+        <ListRow
+          icon="cog"
+          title={i18n.t('dog.diagnostics')}
+          subtitle={i18n.t('dog.diagnosticsHint')}
+          right={<Tag tone="plain" label="v0.1" />}
+          divider={false}
+          onPress={props.onDiagnostics}
+        />
+      </Section>
+    </Screen>
+  );
+}

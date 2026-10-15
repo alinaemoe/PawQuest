@@ -43,6 +43,10 @@ const ICONS = {
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01" stroke-width="2.4"/>',
   minus: '<path d="M5 12h14"/>',
+  circle: '<circle cx="12" cy="12" r="8"/>',
+  triangle: '<path d="M12 4l9 16H3z"/>',
+  diamond: '<path d="M12 3l9 9-9 9-9-9z"/>',
+  square: '<rect x="5" y="5" width="14" height="14" rx="2.5"/>',
 } as const;
 
 export type IconName = keyof typeof ICONS;

@@ -158,6 +158,63 @@ export const ru = {
   'goal.social': 'Социализация',
   'goal.activity': 'Активность',
   'goal.diary': 'Просто вести дневник',
+
+  'common.soon': 'Скоро появится',
+  'common.restored': 'Возвращено',
+
+  'soon.title': 'Скоро здесь появится',
+  'soon.walks': 'История прогулок, календарь и карта маршрутов',
+  'soon.training': 'Навыки, тренировочные сессии и прогресс',
+  'soon.insights': 'Честная статистика по вашим записям: с числом наблюдений и без громких выводов',
+
+  'dog.settings': 'Настройки',
+  'dog.language': 'Язык',
+  'dog.units': 'Единицы',
+  'dog.palette': 'Цвет акцента',
+  'dog.theme': 'Тема',
+  'dog.haptics': 'Вибрация при нажатиях',
+  'dog.about': 'О приложении',
+  'dog.diagnostics': 'Диагностика',
+  'dog.diagnosticsHint': 'Проверки GPS, карты, базы и уведомлений',
+  'dog.removeDemo': 'Удалить демо-данные',
+  'dog.demoNote': 'Это демо-собака: записи придуманы. Их можно удалить в любой момент.',
+  'dog.ageYears': { one: '{n} год', few: '{n} года', many: '{n} лет', other: '{n} года' },
+  'dog.ageMonths': {
+    one: '{n} месяц',
+    few: '{n} месяца',
+    many: '{n} месяцев',
+    other: '{n} месяца',
+  },
+
+  'units.metric': 'Метры и километры',
+  'units.imperial': 'Футы и мили',
+  'palette.forest': 'Лес',
+  'palette.sea': 'Море',
+  'palette.berry': 'Ягода',
+  'palette.sun': 'Янтарь',
+  'theme.system': 'Как в системе',
+  'theme.light': 'Светлая',
+  'theme.dark': 'Тёмная',
+
+  'walk.title': 'Прогулка',
+  'walk.minutes': 'Сколько длилась, минут',
+  'walk.distanceKm': 'Дистанция, км (необязательно)',
+  'walk.distanceMi': 'Дистанция, ми (необязательно)',
+  'walk.ended': 'Когда закончилась',
+  'walk.endedNow': 'Только что',
+  'walk.ended1h': '1 час назад',
+  'walk.ended3h': '3 часа назад',
+  'walk.endedYesterday': 'Вчера',
+  'walk.saved': 'Прогулка записана',
+
+  'note.title': 'Заметка',
+  'note.placeholder': 'Что заметили?',
+  'note.saved': 'Заметка сохранена',
+
+  'weight.title': 'Вес',
+  'weight.inputKg': 'Вес, кг',
+  'weight.inputLb': 'Вес, фунтов',
+  'weight.saved': 'Вес записан',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof ru;

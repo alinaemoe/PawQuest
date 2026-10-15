@@ -160,9 +160,14 @@ describe('formatAgo', () => {
     expect(en.formatAgo(NOW - days(40), NOW)).toBe('Sep 5');
   });
 
+  it('a stamp a few minutes ahead of the clock still reads as just now', () => {
+    expect(ru.formatAgo(NOW + 30_000, NOW)).toBe('только что');
+    expect(ru.formatAgo(NOW + minutes(5), NOW)).toBe('только что');
+  });
+
   it('the future is shown as a date', () => {
     expect(ru.formatAgo(NOW + days(2), NOW)).toBe('17 окт');
-    expect(ru.formatAgo(NOW + minutes(5), NOW)).toBe('15 окт');
+    expect(ru.formatAgo(NOW + minutes(6), NOW)).toBe('15 окт');
   });
 });
 

@@ -211,9 +211,18 @@ importers:
       '@pawquest/data':
         specifier: workspace:*
         version: link:../../packages/data
+      '@pawquest/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@pawquest/insights':
         specifier: workspace:*
         version: link:../../packages/insights
+      '@pawquest/rn-ui':
+        specifier: workspace:*
+        version: link:../../packages/rn-ui
+      '@pawquest/screens':
+        specifier: workspace:*
+        version: link:../../packages/screens
       '@pawquest/ui':
         specifier: workspace:*
         version: link:../../packages/ui

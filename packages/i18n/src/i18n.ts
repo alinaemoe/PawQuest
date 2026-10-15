@@ -21,28 +21,28 @@ export interface I18nOptions {
 export interface I18n {
   readonly locale: Locale;
   readonly units: UnitSystem;
-  t(key: MessageKey, params?: Params): string;
-  formatNumber(value: number, decimals?: number): string;
+  readonly t: (key: MessageKey, params?: Params) => string;
+  readonly formatNumber: (value: number, decimals?: number) => string;
   /** 850 m / 1,84 km, or ft and miles for imperial. */
-  formatDistance(meters: number): string;
+  readonly formatDistance: (meters: number) => string;
   /** 45 с / 32 мин / 1 ч 05 мин. */
-  formatDuration(seconds: number): string;
+  readonly formatDuration: (seconds: number) => string;
   /** 00:12:34 */
-  formatClock(seconds: number): string;
+  readonly formatClock: (seconds: number) => string;
   /** 12:30 /км for minutes per kilometer, or a dash when the pace is unknown. */
-  formatPace(minPerKm: number | null): string;
+  readonly formatPace: (minPerKm: number | null) => string;
   /** 6,2 кг / 13.7 lb from grams. */
-  formatWeight(grams: number): string;
+  readonly formatWeight: (grams: number) => string;
   /** 14:05, 24-hour (G-07). */
-  formatTime(ts: number): string;
+  readonly formatTime: (ts: number) => string;
   /** 12 окт, with the year when it is not the current one. */
-  formatDate(ts: number, now: number): string;
+  readonly formatDate: (ts: number, now: number) => string;
   /** Среда, 14 октября (Wednesday, October 14) */
-  formatLongDate(ts: number): string;
+  readonly formatLongDate: (ts: number) => string;
   /** сегодня / вчера / 12 окт */
-  formatDay(ts: number, now: number): string;
+  readonly formatDay: (ts: number, now: number) => string;
   /** только что / 12 минут назад / 4 часа назад / вчера / 3 дня назад / 12 окт */
-  formatAgo(ts: number, now: number): string;
+  readonly formatAgo: (ts: number, now: number) => string;
 }
 
 function deviceOffset(ts: number): number {
@@ -149,6 +149,11 @@ export function createI18n(options: I18nOptions): I18n {
 
   const formatAgo = (ts: number, now: number): string => {
     const elapsedS = (now - ts) / 1000;
+    // A record made a moment ago may be stamped slightly ahead of a screen clock that is a few
+    // seconds old: still "just now", not a date in the future.
+    if (elapsedS < 0 && elapsedS >= -300) {
+      return t('time.justNow');
+    }
     const diff = dayDifference(ts, now);
     if (elapsedS < 0 || diff < 0) {
       return formatDate(ts, now);

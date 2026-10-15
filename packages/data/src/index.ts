@@ -69,3 +69,4 @@ export {
   type WeighConditions,
   type WeightEntry,
 } from './weights';
+export { deleteDemoData, hidePrompt, isPromptHidden, seedDemoData } from './demo';
