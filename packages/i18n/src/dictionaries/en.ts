@@ -377,4 +377,5 @@ export const en = {
   'out.unknown': 'Not sure',
   'trash.daysLeft': { one: '{n} day left', other: '{n} days left' },
   'diary.edit': 'Observation',
+  'trash.kind.care_plan': 'Health plan',
 } as const satisfies Record<MessageKey, Message>;

@@ -16,6 +16,7 @@ const TRASHABLE = {
   place: 'name',
   project: 'title',
   care_item: 'title',
+  care_plan: 'title',
   reminder: 'title',
   food_log: 'ts',
 } as const;

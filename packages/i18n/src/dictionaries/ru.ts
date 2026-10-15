@@ -425,6 +425,7 @@ export const ru = {
     other: 'осталось {n} дня',
   },
   'diary.edit': 'Наблюдение',
+  'trash.kind.care_plan': 'План здоровья',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof ru;

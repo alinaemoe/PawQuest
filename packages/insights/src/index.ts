@@ -45,3 +45,5 @@ export { MIN_PER_WEEK, weekIndex, weeklySeries } from './weekly';
 export type { DatedValue } from './weekly';
 export { countSuccesses, wilsonInterval } from './proportion';
 export type { AttemptResult, PartialPolicy, ProportionInterval } from './proportion';
+export { addMonths, dueStatus, inSeason, intervalStats, nextDue, reminderTimes } from './care';
+export type { CareSchedule, DueKind, DueStatus, IntervalStats } from './care';
