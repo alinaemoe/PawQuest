@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "drizzle-orm": "0.45.4",
-    "@pawquest/core": "workspace:*"
+    "@pawquest/core": "workspace:*",
+    "@pawquest/weather": "workspace:*"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "5.0.4",

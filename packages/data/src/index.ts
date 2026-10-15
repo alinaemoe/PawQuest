@@ -167,3 +167,4 @@ export {
   type TrackPointInput,
   type WalkMetrics,
 } from './recorder';
+export { getWeatherSnapshot, saveWeatherSnapshot } from './weather';
