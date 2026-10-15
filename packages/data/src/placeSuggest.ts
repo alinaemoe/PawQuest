@@ -1,9 +1,10 @@
 import {
-  analyzeMotion,
+  clusterStays,
   filterTrack,
-  suggestPlaces,
+  findStays,
   type LatLon,
-  type StopInput,
+  type Stay,
+  type StayScaleName,
 } from '@pawquest/core';
 
 import { fromIso, toIso, type Ctx } from './ids';
@@ -17,10 +18,15 @@ const CELL_DEG = 0.0005;
 export interface PlaceProposal extends LatLon {
   /** Identifies the spot for "do not suggest here": the grid cell of the centre. */
   readonly key: string;
+  /** The size of the proposed place: a stand or doorway, a clearing, or a park-sized area. */
+  readonly scale: StayScaleName;
+  /** A radius that covers the visits: their spread plus a margin, never below 40 m. */
+  readonly radiusM: number;
+  /** Number of stays in the cluster. */
   readonly stopCount: number;
   readonly walkCount: number;
   readonly totalDurationS: number;
-  /** Walks that stopped here, to link to the place once it is named. */
+  /** Walks that stayed here, to link to the place once it is named. */
   readonly walkIds: readonly string[];
 }
 
@@ -28,8 +34,13 @@ export function proposalKey(at: LatLon): string {
   return `place-suggest:${String(Math.floor(at.lat / CELL_DEG))}:${String(Math.floor(at.lon / CELL_DEG))}`;
 }
 
-/** The stops of one walk (A-03): its filtered track, manual pauses left out. */
-function stopsOfWalk(db: SqlDb, walkId: string, now: number): StopInput[] {
+/** Small up to a doorway-sized 40 m, medium up to a clearing-sized 120 m, large beyond. */
+function scaleOfRadius(radiusM: number): StayScaleName {
+  return radiusM <= 40 ? 'small' : radiusM <= 120 ? 'medium' : 'large';
+}
+
+/** The stays of one walk (A-28): its filtered track, manual pauses left out. */
+function staysOfWalk(db: SqlDb, walkId: string, now: number): Stay[] {
   const points = filterTrack(listTrackPoints(db, walkId)).points;
   if (points.length < 2) {
     return [];
@@ -42,12 +53,7 @@ function stopsOfWalk(db: SqlDb, walkId: string, now: number): StopInput[] {
       fromTs: fromIso(String(r['started_at'])),
       toTs: r['ended_at'] === null ? now : fromIso(String(r['ended_at'])),
     }));
-  return analyzeMotion(points, { pausedIntervals }).stops.map((s) => ({
-    lat: s.lat,
-    lon: s.lon,
-    walkId,
-    durationS: s.durationS,
-  }));
+  return findStays(points, { pausedIntervals });
 }
 
 export interface ProposeOptions {
@@ -58,9 +64,11 @@ export interface ProposeOptions {
 }
 
 /**
- * New places from repeated long stops (A-12, D-51): stops of the recent GPS walks are clustered, a
- * cluster must span at least two walks and be farther than 60 m from every saved place. Longest
- * total stop time first.
+ * New places from repeated stays (A-12b, D-62): the stays of the recent GPS walks are clustered
+ * with a reach that follows their own size (visits to a park wander over hundreds of meters,
+ * visits to a doorway do not). A cluster must span at least two walks and lie outside every saved
+ * place (inside its radius, at least 60 m); a smaller cluster inside a larger one is dropped. The
+ * proposed radius covers the visits. Longest total time first.
  */
 export function proposePlaces(
   db: SqlDb,
@@ -79,29 +87,45 @@ export function proposePlaces(
   if (walkIds.length < 2) {
     return [];
   }
-  const stops = walkIds.flatMap((id) => stopsOfWalk(db, id, now));
+  const stays = walkIds.flatMap((walkId) =>
+    staysOfWalk(db, walkId, now).map((stay) => ({
+      lat: stay.lat,
+      lon: stay.lon,
+      walkId,
+      durationS: stay.durationS,
+      radiusM: stay.radiusM,
+    })),
+  );
   const saved = db
     .all('SELECT lat, lon, radius_m FROM place WHERE deleted_at IS NULL')
     .map((r) => ({ lat: Number(r['lat']), lon: Number(r['lon']), radiusM: Number(r['radius_m']) }));
-  return suggestPlaces(stops, saved).map((s) => ({
-    lat: s.lat,
-    lon: s.lon,
-    key: proposalKey(s),
-    stopCount: s.stopCount,
-    walkCount: s.walkCount,
-    totalDurationS: s.totalDurationS,
-    walkIds: [...new Set(s.stopIndices.map((i) => stops[i]?.walkId ?? ''))].filter(
-      (id) => id !== '',
-    ),
+
+  return clusterStays(stays, saved).map((cluster) => ({
+    lat: cluster.lat,
+    lon: cluster.lon,
+    key: proposalKey(cluster),
+    scale: scaleOfRadius(cluster.radiusM),
+    radiusM: cluster.radiusM,
+    stopCount: cluster.stayCount,
+    walkCount: cluster.walkCount,
+    totalDurationS: cluster.totalDurationS,
+    walkIds: [
+      ...new Set(
+        cluster.stayIndices.flatMap((i) => {
+          const walkId = stays[i]?.walkId;
+          return walkId === undefined ? [] : [walkId];
+        }),
+      ),
+    ],
   }));
 }
 
 /**
- * Where a walk "was" for naming its place: the centre of its longest stop, else its first point.
+ * Where a walk "was" for naming its place: the centre of its longest stay, else its first point.
  * Null for a walk without a track.
  */
 export function walkAnchor(db: SqlDb, walkId: string, now: number): LatLon | null {
-  const longest = stopsOfWalk(db, walkId, now).sort((a, b) => b.durationS - a.durationS)[0];
+  const longest = [...staysOfWalk(db, walkId, now)].sort((a, b) => b.durationS - a.durationS)[0];
   if (longest !== undefined) {
     return { lat: longest.lat, lon: longest.lon };
   }

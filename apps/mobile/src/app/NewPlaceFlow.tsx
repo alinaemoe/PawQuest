@@ -12,6 +12,8 @@ export interface NewPlaceFlowProps {
   /** Where the place is, when it is not "here and now" (a place suggested from the walks). */
   readonly at?: { readonly lat: number; readonly lon: number };
   readonly initialCategory?: PlaceCategory;
+  /** The size of a place proposed from the walks. */
+  readonly initialRadiusM?: number;
   /** The id of the new place, or of the existing one the owner confirmed. */
   readonly onDone: (placeId: string) => void;
 }
@@ -20,7 +22,14 @@ export interface NewPlaceFlowProps {
  * "Новое место" (S14-A): saves a place where the owner stands now, after the duplicate check
  * (A-24): "Похоже на «Парк у дома». Это то же место?"
  */
-export function NewPlaceFlow({ visible, onClose, at, initialCategory, onDone }: NewPlaceFlowProps) {
+export function NewPlaceFlow({
+  visible,
+  onClose,
+  at,
+  initialCategory,
+  initialRadiusM,
+  onDone,
+}: NewPlaceFlowProps) {
   const { db, ctx, i18n, bump } = useApp();
   const toast = useToast();
   const [position, setPosition] = useState<{ lat: number; lon: number } | null>(null);
@@ -48,6 +57,7 @@ export function NewPlaceFlow({ visible, onClose, at, initialCategory, onDone }: 
     <NewPlaceSheet
       visible={visible}
       {...(initialCategory === undefined ? {} : { initialCategory })}
+      {...(initialRadiusM === undefined ? {} : { initialRadiusM })}
       hasPosition={position !== null}
       onClose={onClose}
       findSimilar={(name, category: PlaceCategory) => {

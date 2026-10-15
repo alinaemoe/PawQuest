@@ -134,6 +134,165 @@ describe('proposePlaces', () => {
   });
 });
 
+/** A deterministic wander inside a disc around a centre, one point per second. */
+function wanderTrack(
+  centre: { lat: number; lon: number },
+  radiusM: number,
+  seconds: number,
+  seed: number,
+  t0: number,
+  /** The fraction of the radius after which the walk turns back to the centre. */
+  pull = 0.8,
+): TrackPointInput[] {
+  let state = seed >>> 0;
+  const rand = (): number => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const mPerDegLat = 111_320;
+  const mPerDegLon = 111_320 * Math.cos((centre.lat * Math.PI) / 180);
+  let n = 0;
+  let e = 0;
+  let heading = rand() * Math.PI * 2;
+  const points: TrackPointInput[] = [];
+  for (let i = 0; i < seconds; i++) {
+    heading += (rand() - 0.5) * 1.2;
+    if (Math.hypot(n, e) > radiusM * pull) {
+      heading = Math.atan2(-n, -e);
+    }
+    n += Math.sin(heading) * 0.9;
+    e += Math.cos(heading) * 0.9;
+    points.push({
+      ts: t0 + i * 1000,
+      lat: centre.lat + n / mPerDegLat,
+      lon: centre.lon + e / mPerDegLon,
+      accuracyM: 5,
+      speedMps: 0.9,
+    });
+  }
+  return points;
+}
+
+function recordPoints(points: readonly TrackPointInput[]): string {
+  const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+  appendTrackPoints(env.db, walk.id, points);
+  finishWalk(env.db, env.ctx, walk.id, (points[points.length - 1]?.ts ?? START) + 1000);
+  return walk.id;
+}
+
+const offsetFrom = (c: { lat: number; lon: number }, north: number, east: number) => ({
+  lat: c.lat + north / 111_320,
+  lon: c.lon + east / (111_320 * Math.cos((c.lat * Math.PI) / 180)),
+});
+
+describe('proposePlaces: places of different size (A-12b)', () => {
+  const CLEARING = { lat: 55.7, lon: 37.5 };
+  const PARK = { lat: 55.8, lon: 37.6 };
+
+  it('three walks circling the same clearing give one small place of a sensible size', () => {
+    for (const [day, [n, e]] of [
+      [0, [0, 0]],
+      [1, [10, -8]],
+      [2, [-12, 9]],
+    ] as const) {
+      recordPoints(
+        wanderTrack(offsetFrom(CLEARING, n, e), 25, 12 * 60, 10 + day, START + day * 86_400_000),
+      );
+    }
+    const found = proposePlaces(env.db, START + 3 * 86_400_000);
+    expect(found).toHaveLength(1);
+    // a clearing: not a doorway and not park-sized
+    expect(found[0]?.scale).not.toBe('large');
+    expect(found[0]?.walkCount).toBe(3);
+    // covers the visits but is not park-sized
+    expect(found[0]?.radiusM).toBeGreaterThanOrEqual(40);
+    expect(found[0]?.radiusM).toBeLessThan(120);
+  });
+
+  it('three long wanders through a big park give one place that covers them', () => {
+    // the visits wander over different parts of the park, their centres up to ~60 m apart
+    for (const [day, [n, e]] of [
+      [0, [0, 0]],
+      [1, [30, 20]],
+      [2, [-25, 35]],
+    ] as const) {
+      recordPoints(
+        wanderTrack(offsetFrom(PARK, n, e), 200, 25 * 60, 20 + day, START + day * 86_400_000, 0.35),
+      );
+    }
+    const found = proposePlaces(env.db, START + 3 * 86_400_000);
+    expect(found).toHaveLength(1);
+    expect(found[0]?.scale).not.toBe('small');
+    // far bigger than a doorway: it has to cover where the visits wandered
+    expect(found[0]?.radiusM).toBeGreaterThanOrEqual(90);
+    expect(found[0]?.walkCount).toBe(3);
+  });
+
+  it('a saved park covers wanders inside it: nothing new is suggested there', () => {
+    createPlace(env.db, env.ctx, { category: 'park', label: 'Парк', ...PARK });
+    for (let day = 0; day < 4; day++) {
+      recordPoints(
+        wanderTrack(
+          offsetFrom(PARK, day * 25, -day * 20),
+          200,
+          25 * 60,
+          30 + day,
+          START + day * 86_400_000,
+        ),
+      );
+    }
+    expect(proposePlaces(env.db, START + 4 * 86_400_000)).toEqual([]);
+  });
+
+  it('a clearing outside the saved park is still suggested', () => {
+    createPlace(env.db, env.ctx, { category: 'park', label: 'Парк', ...PARK });
+    for (let day = 0; day < 3; day++) {
+      recordPoints(
+        wanderTrack(offsetFrom(PARK, 900, 900), 20, 10 * 60, 40 + day, START + day * 86_400_000),
+      );
+    }
+    const found = proposePlaces(env.db, START + 3 * 86_400_000);
+    expect(found).toHaveLength(1);
+    expect(found[0]?.scale).toBe('small');
+  });
+
+  it('a clearing next to a park wander is its own place, not folded into the park', () => {
+    // park-sized wanders at PARK; small circling 700 m away
+    for (let day = 0; day < 3; day++) {
+      recordPoints(wanderTrack(PARK, 200, 25 * 60, 50 + day, START + day * 86_400_000, 0.35));
+      recordPoints(
+        wanderTrack(
+          offsetFrom(PARK, 700, 0),
+          20,
+          10 * 60,
+          60 + day,
+          START + day * 86_400_000 + 5 * 3_600_000,
+        ),
+      );
+    }
+    const found = proposePlaces(env.db, START + 3 * 86_400_000);
+    // the park-sized wanders and the small clearing stay apart (the park's own label follows its spread)
+    expect(found).toHaveLength(2);
+    expect(found.filter((f) => f.scale === 'small')).toHaveLength(1);
+    expect(Math.max(...found.map((f) => f.radiusM))).toBeGreaterThanOrEqual(100);
+  });
+
+  it('longest total time first', () => {
+    for (let day = 0; day < 3; day++) {
+      recordPoints(wanderTrack(PARK, 200, 25 * 60, 70 + day, START + day * 86_400_000, 0.35));
+      recordPoints(
+        wanderTrack(CLEARING, 20, 8 * 60, 80 + day, START + day * 86_400_000 + 5 * 3_600_000),
+      );
+    }
+    const found = proposePlaces(env.db, START + 3 * 86_400_000);
+    expect(found.length).toBe(2);
+    expect(found[0]?.totalDurationS).toBeGreaterThan(found[1]?.totalDurationS ?? 0);
+  });
+});
+
 describe('walkAnchor', () => {
   it('is the centre of the longest stop', () => {
     const id = recordWalk(SPOT, 240, 0);

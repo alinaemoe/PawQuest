@@ -60,3 +60,7 @@ export type {
   TrackFilterState,
   TrackGap,
 } from './track/filter';
+export { DEFAULT_STAY_SCALES, findStays } from './track/stays';
+export type { Stay, StayOptions, StayPoint, StayScale, StayScaleName } from './track/stays';
+export { clusterStays } from './places/stayClusters';
+export type { ClusterStaysOptions, StayCluster, StayInput } from './places/stayClusters';

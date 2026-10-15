@@ -203,6 +203,8 @@ interface PlaceCard {
   readonly kind: 'type' | 'cluster';
   readonly at: { readonly lat: number; readonly lon: number };
   readonly category: PlaceCategory | null;
+  /** The size proposed from the walks; null to use the type's default. */
+  readonly radiusM: number | null;
   /** Walks to link to the place once it is named. */
   readonly walkIds: readonly string[];
   /** Remembers that the owner does not want a suggestion at this spot. */
@@ -210,6 +212,11 @@ interface PlaceCard {
 }
 
 const DAY = 86_400_000;
+const SCALE_CATEGORY: Readonly<Record<'small' | 'medium' | 'large', PlaceCategory>> = {
+  small: 'other',
+  medium: 'meadow',
+  large: 'park',
+};
 const FOREVER = 3650 * DAY;
 
 export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDone: () => void }) {
@@ -246,7 +253,9 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
       const category = (PLACE_CATEGORIES as readonly string[]).includes(kind)
         ? (kind as PlaceCategory)
         : null;
-      return at === null ? null : { kind: 'type', at, category, walkIds: [walkId], key: null };
+      return at === null
+        ? null
+        : { kind: 'type', at, category, radiusM: null, walkIds: [walkId], key: null };
     }
     if (isPromptHidden(db, 'place-suggest:daily', now)) {
       return null;
@@ -257,7 +266,9 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
       : {
           kind: 'cluster',
           at: { lat: proposal.lat, lon: proposal.lon },
-          category: null,
+          // a park-sized wander is a park, a clearing-sized one a meadow, a doorway-sized one "other"
+          category: SCALE_CATEGORY[proposal.scale],
+          radiusM: proposal.radiusM,
           walkIds: proposal.walkIds,
           key: proposal.key,
         };
@@ -313,6 +324,7 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
           visible={naming}
           at={card.at}
           {...(card.category === null ? {} : { initialCategory: card.category })}
+          {...(card.radiusM === null ? {} : { initialRadiusM: card.radiusM })}
           onClose={() => {
             setNaming(false);
           }}

@@ -160,6 +160,8 @@ export interface NewPlaceSheetProps {
   readonly visible: boolean;
   /** The type preselected when the sheet opens (a walk that only had a type), else a park. */
   readonly initialCategory?: PlaceCategory;
+  /** A size to start from (a place proposed from the walks), instead of the type's default. */
+  readonly initialRadiusM?: number;
   /** False when the position is unknown: the sheet explains instead of saving. */
   readonly hasPosition: boolean;
   readonly onClose: () => void;
@@ -177,6 +179,7 @@ export interface NewPlaceSheetProps {
 export function NewPlaceSheet({
   visible,
   initialCategory = 'park',
+  initialRadiusM,
   hasPosition,
   onClose,
   findSimilar,
@@ -186,14 +189,17 @@ export function NewPlaceSheet({
   const i18n = useI18n();
   const [category, setCategory] = useState<PlaceCategory>('park');
   const [name, setName] = useState('');
-  const [radiusM, setRadiusM] = useState<number>(PLACE_DEFAULT_RADIUS_M[initialCategory]);
-  const [radiusTouched, setRadiusTouched] = useState(false);
+  const [radiusM, setRadiusM] = useState<number>(
+    initialRadiusM ?? PLACE_DEFAULT_RADIUS_M[initialCategory],
+  );
+  // a proposed size is kept when the owner changes the type
+  const [radiusTouched, setRadiusTouched] = useState(initialRadiusM !== undefined);
   const [askedFor, setAskedFor] = useState<string | null>(null);
   useEffect(() => {
     if (visible) {
       setCategory(initialCategory);
-      setRadiusM(PLACE_DEFAULT_RADIUS_M[initialCategory]);
-      setRadiusTouched(false);
+      setRadiusM(initialRadiusM ?? PLACE_DEFAULT_RADIUS_M[initialCategory]);
+      setRadiusTouched(initialRadiusM !== undefined);
       setName('');
       setAskedFor(null);
     }
