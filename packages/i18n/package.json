@@ -1,0 +1,23 @@
+{
+  "name": "@pawquest/i18n",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PawQuest i18n: typed RU/EN messages, plural rules, locale-aware formatters (G-08, G-14). Pure TypeScript, no Intl.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "5.0.4",
+    "fast-check": "4.10.2",
+    "vitest": "5.0.4"
+  }
+}
