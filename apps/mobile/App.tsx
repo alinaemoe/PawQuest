@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { buildReport, type SpikeReport } from './src/spike/analyze';
+import { LockSpike } from './src/spike/LockSpike';
 import { MapSpike } from './src/spike/MapSpike';
+import { NotifSpike } from './src/spike/NotifSpike';
+import { ReplaySpike } from './src/spike/ReplaySpike';
 import { runDbCheck, type DbCheckResult } from './src/spike/dbCheck';
 import { runCoreSelfCheck, type SelfCheckItem } from './src/spike/selfCheck';
 import { clearLog, readLog, startRecording, stopRecording } from './src/spike/gpsTask';
@@ -49,7 +52,10 @@ function Row(props: { label: string; value: string }) {
 }
 
 export default function App() {
-  const [showMap, setShowMap] = useState(false);
+  const [screen, setScreen] = useState<'home' | 'map' | 'replay' | 'lock' | 'notif'>('home');
+  const goHome = useCallback(() => {
+    setScreen('home');
+  }, []);
   const [message, setMessage] = useState('Нажми «Начать запись», затем погаси экран и пройдись.');
   const [report, setReport] = useState<SpikeReport | null>(null);
   const [lastFixAt, setLastFixAt] = useState<number | null>(null);
@@ -101,14 +107,17 @@ export default function App() {
     };
   }, [refresh]);
 
-  if (showMap) {
-    return (
-      <MapSpike
-        onBack={() => {
-          setShowMap(false);
-        }}
-      />
-    );
+  if (screen === 'map') {
+    return <MapSpike onBack={goHome} />;
+  }
+  if (screen === 'replay') {
+    return <ReplaySpike onBack={goHome} />;
+  }
+  if (screen === 'lock') {
+    return <LockSpike onBack={goHome} />;
+  }
+  if (screen === 'notif') {
+    return <NotifSpike onBack={goHome} />;
   }
 
   return (
@@ -162,13 +171,34 @@ export default function App() {
         <Row key={c.name} label={`${c.ok ? '✓' : '✗'} ${c.name}`} value={c.ok ? '' : c.detail} />
       ))}
 
-      <Text style={styles.section}>Spike S2: карта</Text>
+      <Text style={styles.section}>Spikes: карта, воспроизведение, карман, уведомление</Text>
       <View style={styles.buttons}>
         <Button
-          label="Открыть карту"
+          label="S2: открыть карту"
           tone="plain"
           onPress={() => {
-            setShowMap(true);
+            setScreen('map');
+          }}
+        />
+        <Button
+          label="S3: воспроизведение 10 тыс. точек"
+          tone="plain"
+          onPress={() => {
+            setScreen('replay');
+          }}
+        />
+        <Button
+          label="S5: уведомление с кнопками"
+          tone="plain"
+          onPress={() => {
+            setScreen('notif');
+          }}
+        />
+        <Button
+          label="S6: карманный режим"
+          tone="plain"
+          onPress={() => {
+            setScreen('lock');
           }}
         />
       </View>

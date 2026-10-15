@@ -7,3 +7,5 @@ docs
 # the prototype is a self-contained throwaway HTML artifact
 docs/prototype
 packages/data/src/migrations.generated.ts
+apps/mobile/modules/*/android/build
+apps/mobile/android

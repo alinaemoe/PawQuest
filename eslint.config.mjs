@@ -8,7 +8,14 @@ import tseslint from 'typescript-eslint';
 
 export default defineConfig(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', 'docs/**', 'pnpm-lock.yaml'],
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/coverage/**',
+      '**/android/build/**',
+      'docs/**',
+      'pnpm-lock.yaml',
+    ],
   },
   js.configs.recommended,
   {
