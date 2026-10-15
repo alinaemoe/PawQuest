@@ -3,3 +3,5 @@ export { contrastRatio, luminance, mix, parseHex, toHex, withAlpha } from './col
 export type { Rgb } from './color';
 export { PALETTES, PALETTE_NAMES, buildTheme, eventColorList, fonts, metrics } from './theme';
 export type { EventColors, PaletteName, Scheme, Theme, ThemeColors } from './theme';
+export { darkenMapColor, darkenMapStyle, parseMapColor } from './mapStyle';
+export type { MapPaintRole } from './mapStyle';

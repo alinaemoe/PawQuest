@@ -10,9 +10,11 @@
     "test": "echo \"no mobile tests yet\""
   },
   "dependencies": {
+    "@maplibre/maplibre-react-native": "^11.5.0",
     "@pawquest/core": "workspace:*",
     "@pawquest/data": "workspace:*",
     "@pawquest/insights": "workspace:*",
+    "@pawquest/ui": "workspace:*",
     "drizzle-orm": "0.45.4",
     "expo": "~57.0.29",
     "expo-file-system": "~57.0.7",

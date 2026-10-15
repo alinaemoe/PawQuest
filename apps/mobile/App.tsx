@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { buildReport, type SpikeReport } from './src/spike/analyze';
+import { MapSpike } from './src/spike/MapSpike';
 import { runDbCheck, type DbCheckResult } from './src/spike/dbCheck';
 import { runCoreSelfCheck, type SelfCheckItem } from './src/spike/selfCheck';
 import { clearLog, readLog, startRecording, stopRecording } from './src/spike/gpsTask';
@@ -48,6 +49,7 @@ function Row(props: { label: string; value: string }) {
 }
 
 export default function App() {
+  const [showMap, setShowMap] = useState(false);
   const [message, setMessage] = useState('Нажми «Начать запись», затем погаси экран и пройдись.');
   const [report, setReport] = useState<SpikeReport | null>(null);
   const [lastFixAt, setLastFixAt] = useState<number | null>(null);
@@ -99,6 +101,16 @@ export default function App() {
     };
   }, [refresh]);
 
+  if (showMap) {
+    return (
+      <MapSpike
+        onBack={() => {
+          setShowMap(false);
+        }}
+      />
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {keepAwake ? <KeepScreenOn /> : null}
@@ -149,6 +161,17 @@ export default function App() {
       {selfCheck.map((c) => (
         <Row key={c.name} label={`${c.ok ? '✓' : '✗'} ${c.name}`} value={c.ok ? '' : c.detail} />
       ))}
+
+      <Text style={styles.section}>Spike S2: карта</Text>
+      <View style={styles.buttons}>
+        <Button
+          label="Открыть карту"
+          tone="plain"
+          onPress={() => {
+            setShowMap(true);
+          }}
+        />
+      </View>
 
       <Text style={styles.section}>Spike S4: база данных</Text>
       <View style={styles.buttons}>
