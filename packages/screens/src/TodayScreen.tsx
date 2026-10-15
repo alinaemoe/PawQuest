@@ -23,6 +23,10 @@ export interface TodayScreenProps {
   /** False until GPS walks exist (Phase 2): the main button then logs a walk by hand. */
   readonly gpsWalks: boolean;
   readonly lastWalk: { readonly startedAt: number; readonly durationS: number | null } | null;
+  /** The one health card of the day (G-22): "Глистогонка: срок был 3 дня назад". */
+  readonly careCard: { readonly planId: string; readonly line: string } | null;
+  readonly onCareDone: (planId: string) => void;
+  readonly onCareLater: (planId: string) => void;
   /** Set when the weight card should show; `title` is already worded. */
   readonly weightCard: { readonly title: string } | null;
   readonly recent: readonly FeedRowModel[];
@@ -67,6 +71,33 @@ export function TodayScreen(props: TodayScreenProps) {
         <Tile icon="note" label={i18n.t('today.tileNote')} onPress={props.onNote} />
         <Tile icon="drop" label={i18n.t('today.tileToilet')} onPress={props.onToilet} />
       </View>
+
+      {props.careCard === null ? null : (
+        <Card variant="stripe">
+          <AppText variant="eyebrow">{i18n.t('health.cardEyebrow')}</AppText>
+          <AppText style={{ marginVertical: 4 }}>{props.careCard.line}</AppText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <Chip
+              size="sm"
+              label={i18n.t('health.done')}
+              onPress={() => {
+                if (props.careCard !== null) {
+                  props.onCareDone(props.careCard.planId);
+                }
+              }}
+            />
+            <Chip
+              size="sm"
+              label={i18n.t('today.weightLater')}
+              onPress={() => {
+                if (props.careCard !== null) {
+                  props.onCareLater(props.careCard.planId);
+                }
+              }}
+            />
+          </View>
+        </Card>
+      )}
 
       {props.weightCard === null ? null : (
         <Card variant="stripe">

@@ -407,6 +407,9 @@ importers:
       '@pawquest/i18n':
         specifier: workspace:*
         version: link:../i18n
+      '@pawquest/insights':
+        specifier: workspace:*
+        version: link:../insights
       '@pawquest/rn-ui':
         specifier: workspace:*
         version: link:../rn-ui

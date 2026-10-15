@@ -10,10 +10,13 @@ import { BackHandler, View } from 'react-native';
 import { DiagnosticsScreen } from '../diagnostics/DiagnosticsScreen';
 import { useApp } from './AppContext';
 import { ClickerContainer } from './ClickerContainer';
+import { CareFlow, type CareTarget } from './CareFlow';
 import { DiaryContainer } from './DiaryContainer';
+import { HealthContainer } from './HealthContainer';
 import { TodayContainer } from './TodayContainer';
 import { TrashContainer } from './TrashContainer';
 import { WalksTab } from './WalksTab';
+import { syncCareReminders } from './reminders';
 import { TrainingFlow, type FlowState } from './TrainingFlow';
 import { TrainingTab } from './TrainingTab';
 
@@ -43,16 +46,40 @@ export function Root() {
   const [tab, setTab] = useState<Tab>('today');
   const [diagnostics, setDiagnostics] = useState(false);
   const [overlay, setOverlay] = useState<
-    { kind: 'trash' } | { kind: 'diary'; open: string | null } | null
+    { kind: 'trash' } | { kind: 'health' } | { kind: 'diary'; open: string | null } | null
   >(null);
   const [openWalk, setOpenWalk] = useState(false);
   const [flow, setFlow] = useState<FlowState | null>(null);
+  const [care, setCare] = useState<CareTarget | null>(null);
+  const careFlow = (
+    <CareFlow
+      target={care}
+      onClose={() => {
+        setCare(null);
+      }}
+    />
+  );
   const dogId = dog?.id ?? null;
   // A session that was running when the app closed is picked up again right here (S11-9).
   const activeSession = useMemo(
     () => (dogId === null ? null : getActiveSession(app.db, dogId)),
     [app.db, dogId, app.version],
   );
+
+  // Keep the phone's scheduled care reminders in step with the plans after every change.
+  useEffect(() => {
+    if (dogId === null) {
+      return;
+    }
+    void syncCareReminders(app.db, app.i18n, dogId)
+      .then((count) => {
+        // visible in logcat: how many care reminders are scheduled
+        console.warn(`[pq-care] reminders scheduled: ${String(count)}`);
+      })
+      .catch((error: unknown) => {
+        console.warn(`[pq-care] scheduling failed: ${String(error)}`);
+      });
+  }, [app.db, app.i18n, dogId, app.version]);
 
   // Back from Diagnostics returns to the Dog tab; on the root tabs the system minimizes the app.
   useEffect(() => {
@@ -140,6 +167,21 @@ export function Root() {
     );
   }
 
+  if (overlay?.kind === 'health') {
+    return (
+      <>
+        {statusBar}
+        <HealthContainer
+          openCare={setCare}
+          onBack={() => {
+            setOverlay(null);
+          }}
+        />
+        {careFlow}
+      </>
+    );
+  }
+
   if (overlay?.kind === 'trash') {
     return (
       <>
@@ -175,6 +217,7 @@ export function Root() {
             onObservation={(id) => {
               setOverlay({ kind: 'diary', open: id });
             }}
+            onCare={setCare}
           />
         ) : null}
         {tab === 'walks' ? <WalksTab /> : null}
@@ -213,6 +256,9 @@ export function Root() {
             onDiary={() => {
               setOverlay({ kind: 'diary', open: null });
             }}
+            onHealth={() => {
+              setOverlay({ kind: 'health' });
+            }}
             onDiagnostics={() => {
               setDiagnostics(true);
             }}
@@ -222,6 +268,7 @@ export function Root() {
       </View>
       <TabBar tabs={tabs} active={tab} onSelect={setTab} />
       <TrainingFlow state={flow} onChange={setFlow} />
+      {careFlow}
     </View>
   );
 }

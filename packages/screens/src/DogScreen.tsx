@@ -35,6 +35,7 @@ export interface DogScreenProps {
   readonly incompleteCount: number;
   readonly onTrash: () => void;
   readonly onDiary: () => void;
+  readonly onHealth: () => void;
   readonly onDiagnostics: () => void;
   readonly onRemoveDemo: () => void;
 }
@@ -177,6 +178,12 @@ export function DogScreen(props: DogScreenProps) {
       />
 
       <Section title={i18n.t('dog.data')}>
+        <ListRow
+          icon="heart"
+          title={i18n.t('dog.health')}
+          subtitle={i18n.t('dog.healthHint')}
+          onPress={props.onHealth}
+        />
         <ListRow
           icon="note"
           title={i18n.t('dog.diary')}

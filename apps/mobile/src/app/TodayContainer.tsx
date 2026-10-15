@@ -5,6 +5,7 @@ import {
   hidePrompt,
   isPromptHidden,
   isWeightDue,
+  listPlans,
   lastCompletedWalk,
   latestWeight,
   listEventTypes,
@@ -15,6 +16,9 @@ import { useToast } from '@pawquest/rn-ui';
 import {
   AddSheet,
   feedRow,
+  planCard,
+  planTitle,
+  todayCareCard,
   NoteSheet,
   TodayScreen,
   WalkSheet,
@@ -26,6 +30,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useApp } from './AppContext';
+import type { CareTarget } from './CareFlow';
 
 const DAY = 86_400_000;
 
@@ -41,6 +46,7 @@ export interface TodayContainerProps {
   readonly onTraining: () => void;
   /** Opens the diary form: "new" or the id of an existing observation. */
   readonly onObservation: (id: string) => void;
+  readonly onCare: (target: CareTarget) => void;
 }
 
 type SheetId = 'add' | 'note' | 'weight' | 'walk' | null;
@@ -51,6 +57,7 @@ export function TodayContainer({
   onWalkSheetShown,
   onTraining,
   onObservation,
+  onCare,
 }: TodayContainerProps) {
   const { db, ctx, dog, settings, i18n, version, bump } = useApp();
   const toast = useToast();
@@ -83,9 +90,24 @@ export function TodayContainer({
       isWeightDue(weight, current, settings.weightIntervalDays) &&
       !isPromptHidden(db, 'weight', current);
     const feed = recentFeed(db, dogId, 5);
+    const plans = listPlans(db, dogId).filter((p) => p.enabled);
+    const offset = -new Date().getTimezoneOffset();
+    const care = todayCareCard(
+      plans
+        .filter((p) => !isPromptHidden(db, `care:${p.id}`, current))
+        .map((p) => planCard(p, current, offset, i18n)),
+    );
     return {
+      care:
+        care === null
+          ? null
+          : {
+              planId: care.planId,
+              line: i18n.t('health.cardLine', { name: care.title, status: care.statusText }),
+            },
+      plans,
       lastWalk: lastCompletedWalk(db, dogId),
-      weightCard: due ? { title: weightCardTitle(weight, i18n, current) } : null,
+      weightCard: due && care === null ? { title: weightCardTitle(weight, i18n, current) } : null,
       recent: feed.map((item) => feedRow(item, i18n, types, current)),
       firstRun: feed.length === 0,
     };
@@ -174,6 +196,23 @@ export function TodayContainer({
             ? null
             : { startedAt: data.lastWalk.startedAt, durationS: data.lastWalk.durationS }
         }
+        careCard={data.care}
+        onCareDone={(planId) => {
+          const plan = data.plans.find((p) => p.id === planId);
+          if (plan !== undefined) {
+            onCare({
+              planId: plan.id,
+              kind: plan.kind,
+              subtype: plan.subtype,
+              name: planTitle(plan, i18n),
+              defaultProduct: plan.lastProduct ?? plan.defaultProduct,
+            });
+          }
+        }}
+        onCareLater={(planId) => {
+          hidePrompt(db, ctx, `care:${planId}`, ctx.now() + DAY);
+          bump();
+        }}
         weightCard={data.weightCard}
         recent={data.recent}
         firstRun={data.firstRun}
