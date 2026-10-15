@@ -1,0 +1,31 @@
+{
+  "latitude": 55.800003,
+  "longitude": 37.600002,
+  "generationtime_ms": 0.5241632461547852,
+  "utc_offset_seconds": 10800,
+  "timezone": "Europe/Moscow",
+  "timezone_abbreviation": "GMT+3",
+  "elevation": 140.0,
+  "current_units": {
+    "time": "unixtime",
+    "interval": "seconds",
+    "european_aqi": "EAQI",
+    "pm2_5": "μg/m³",
+    "pm10": "μg/m³",
+    "birch_pollen": "grains/m³",
+    "grass_pollen": "grains/m³",
+    "alder_pollen": "grains/m³",
+    "ragweed_pollen": "grains/m³"
+  },
+  "current": {
+    "time": 1792098000,
+    "interval": 3600,
+    "european_aqi": 64,
+    "pm2_5": 58.4,
+    "pm10": 72.9,
+    "birch_pollen": 0.0,
+    "grass_pollen": 0.0,
+    "alder_pollen": 0.0,
+    "ragweed_pollen": 0.0
+  }
+}

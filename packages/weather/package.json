@@ -1,0 +1,25 @@
+{
+  "name": "@pawquest/weather",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PawQuest weather: Open-Meteo requests for an exact position, parsing, and dog-relevant facts (wet ground, recent rain, surface heat, pollen, daylight). Pure TypeScript.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@pawquest/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "5.0.4",
+    "vitest": "5.0.4"
+  }
+}
