@@ -1,6 +1,6 @@
 import type { UnitSystem } from '@pawquest/i18n';
 import { AppText, Button, Chip, Sheet, Tag, TextField, useI18n } from '@pawquest/rn-ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { distanceToMeters, parseMinutes } from './input';
@@ -17,6 +17,7 @@ export interface WalkDetailsModel {
 }
 
 export interface WalkDetailsSheetProps {
+  readonly map?: ReactNode;
   readonly walk: WalkDetailsModel | null;
   readonly onClose: () => void;
   readonly onEdit: () => void;
@@ -24,7 +25,7 @@ export interface WalkDetailsSheetProps {
 }
 
 /** One walk: when, the numbers, its events and note; edit and delete (the latter with undo). */
-export function WalkDetailsSheet({ walk, onClose, onEdit, onDelete }: WalkDetailsSheetProps) {
+export function WalkDetailsSheet({ walk, map, onClose, onEdit, onDelete }: WalkDetailsSheetProps) {
   const i18n = useI18n();
   if (walk === null) {
     return null;
@@ -32,6 +33,7 @@ export function WalkDetailsSheet({ walk, onClose, onEdit, onDelete }: WalkDetail
   return (
     <Sheet visible onClose={onClose} title={walk.whenText}>
       {walk.manual ? <Tag tone="plain" label={i18n.t('walk.manual')} /> : null}
+      {walk.manual ? null : map}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 20 }}>
         {walk.facts.map((fact) => (
           <View key={fact.label}>

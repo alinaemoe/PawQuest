@@ -488,4 +488,6 @@ export const en = {
   'recover.continue': 'Continue',
   'recover.finish': 'Finish',
   'recover.discard': 'Delete',
+  'map.loading': 'Loading the map…',
+  'map.offline': 'The map needs a network. The route is still being recorded.',
 } as const satisfies Record<MessageKey, Message>;

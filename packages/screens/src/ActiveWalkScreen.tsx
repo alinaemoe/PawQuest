@@ -8,6 +8,7 @@ import {
   useTheme,
   type EventKind,
 } from '@pawquest/rn-ui';
+import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useEffect, useState } from 'react';
 
@@ -21,6 +22,8 @@ export interface WalkEventButton {
 }
 
 export interface ActiveWalkScreenProps {
+  /** The route map (an app-level component: MapLibre is native), shown under the clock. */
+  readonly map?: ReactNode;
   /** When the walk started, for the clock. */
   readonly startedAt: number;
   /** Time spent paused so far, subtracted from the clock. */
@@ -110,6 +113,8 @@ export function ActiveWalkScreen(props: ActiveWalkScreenProps) {
           </View>
         </View>
       </View>
+
+      {props.map}
 
       {props.recovery === null ? null : (
         <View

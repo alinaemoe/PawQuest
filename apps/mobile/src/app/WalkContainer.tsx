@@ -26,6 +26,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useApp } from './AppContext';
+import { WalkRouteMap } from './RouteMap';
 import { startGpsUpdates, stopGpsUpdates } from './walkRecorder';
 
 const KINDS = new Set<string>(['dog', 'person', 'child', 'animal', 'ok', 'hard', 'ex']);
@@ -132,6 +133,7 @@ export function WalkContainer({
     <>
       {keepAwake ? <KeepScreenOn /> : null}
       <ActiveWalkScreen
+        map={<WalkRouteMap walkId={walk.id} mode="follow" height={170} refreshKey={tick} />}
         startedAt={walk.startedAt}
         pausedMs={pausedMs(db, walk.id)}
         paused={walk.status === 'paused'}
@@ -211,6 +213,7 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
   }
   return (
     <WalkSummaryScreen
+      map={<WalkRouteMap walkId={walk.id} mode="fit" height={220} />}
       summary={{ facts: walkFacts(walk, i18n), eventsLine: eventsLine === '' ? null : eventsLine }}
       onSave={({ mood, distraction, notes }) => {
         updateWalk(db, ctx, walk.id, { mood, distraction, notes, summaryPending: false });

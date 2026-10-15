@@ -556,6 +556,8 @@ export const ru = {
   'recover.continue': 'Продолжить',
   'recover.finish': 'Завершить',
   'recover.discard': 'Удалить',
+  'map.loading': 'Карта загружается…',
+  'map.offline': 'Карта недоступна без сети. Маршрут всё равно записывается.',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof ru;

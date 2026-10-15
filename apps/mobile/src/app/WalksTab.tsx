@@ -25,6 +25,7 @@ import {
 import { useMemo, useState } from 'react';
 
 import { useApp } from './AppContext';
+import { WalkRouteMap } from './RouteMap';
 
 const PAGE = 30;
 const DAY = 86_400_000;
@@ -101,6 +102,7 @@ export function WalksTab() {
         }}
       />
       <WalkDetailsSheet
+        map={open === null ? null : <WalkRouteMap walkId={open.id} mode="fit" height={200} />}
         walk={editing ? null : details}
         onClose={() => {
           setOpenId(null);

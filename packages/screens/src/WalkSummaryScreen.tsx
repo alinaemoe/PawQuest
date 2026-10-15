@@ -1,5 +1,5 @@
 import { AppText, Button, Card, Chip, Screen, TextField, useI18n } from '@pawquest/rn-ui';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import type { WalkFacts } from './walksModel';
@@ -11,6 +11,7 @@ export interface WalkSummaryModel {
 }
 
 export interface WalkSummaryScreenProps {
+  readonly map?: ReactNode;
   readonly summary: WalkSummaryModel;
   readonly onSave: (result: {
     readonly mood: number | null;
@@ -20,7 +21,8 @@ export interface WalkSummaryScreenProps {
 }
 
 /** Walk summary (spec S05): the numbers first, then how it went; saving takes one tap. */
-export function WalkSummaryScreen({ summary, onSave }: WalkSummaryScreenProps) {
+export function WalkSummaryScreen(props: WalkSummaryScreenProps) {
+  const { summary, onSave } = props;
   const i18n = useI18n();
   const [mood, setMood] = useState<number | null>(null);
   const [distraction, setDistraction] = useState<number | null>(null);
@@ -28,6 +30,7 @@ export function WalkSummaryScreen({ summary, onSave }: WalkSummaryScreenProps) {
   return (
     <Screen>
       <AppText variant="numBig">{i18n.t('sumw.title')}</AppText>
+      {props.map}
       <Card variant="soft">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 24 }}>
           {summary.facts.map((fact) => (
