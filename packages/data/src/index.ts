@@ -168,3 +168,25 @@ export {
   type WalkMetrics,
 } from './recorder';
 export { getWeatherSnapshot, saveWeatherSnapshot } from './weather';
+export {
+  PLACE_CATEGORIES,
+  addAlias,
+  createPlace,
+  findSimilarPlaces,
+  getPlace,
+  listPlaces,
+  mergePlaces,
+  placeAt,
+  setWalkPlace,
+  similarPlacePairs,
+  topPlaces,
+  undoMerge,
+  updatePlace,
+  type CreatePlaceInput,
+  type MergeRecord,
+  type Place,
+  type PlaceCategory,
+  type PlaceMatch,
+  type PlacePatch,
+  type PlaceStats,
+} from './places';
