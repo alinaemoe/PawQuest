@@ -442,4 +442,7 @@ export const en = {
   'visit.next2w': 'In 2 weeks',
   'visit.nextNone': 'Not needed',
   'visit.saved': 'Visit saved',
+  'dog.editTitle': 'Dog profile',
+  'dog.edit': 'Edit profile',
+  'dog.saved': 'Profile saved',
 } as const satisfies Record<MessageKey, Message>;

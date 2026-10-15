@@ -74,3 +74,5 @@ export type {
   VisitInput,
   VisitSheetProps,
 } from './HealthSheets';
+export { DogEditSheet } from './DogEditSheet';
+export type { DogEdit, DogEditSheetProps } from './DogEditSheet';

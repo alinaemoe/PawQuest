@@ -36,6 +36,7 @@ export interface DogScreenProps {
   readonly onTrash: () => void;
   readonly onDiary: () => void;
   readonly onHealth: () => void;
+  readonly onEditProfile: () => void;
   readonly onDiagnostics: () => void;
   readonly onRemoveDemo: () => void;
 }
@@ -61,7 +62,12 @@ export function DogScreen(props: DogScreenProps) {
 
   return (
     <Screen>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={i18n.t('dog.edit')}
+        onPress={props.onEditProfile}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}
+      >
         <Avatar uri={props.dog.photoUri} size={64} />
         <View style={{ flex: 1, gap: 2 }}>
           <AppText variant="numBig" numberOfLines={1}>
@@ -69,7 +75,7 @@ export function DogScreen(props: DogScreenProps) {
           </AppText>
           {details.length === 0 ? null : <AppText variant="muted">{details.join(' · ')}</AppText>}
         </View>
-      </View>
+      </Pressable>
 
       {props.dog.isDemo ? (
         <Card variant="stripe">

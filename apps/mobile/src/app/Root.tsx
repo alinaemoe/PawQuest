@@ -1,6 +1,12 @@
 import { TabBar, useTheme, type TabItem } from '@pawquest/rn-ui';
-import { countIncompleteEvents, getActiveSession, listTrash } from '@pawquest/data';
-import { DogScreen, OnboardingFlow, SoonScreen, type DogDraft } from '@pawquest/screens';
+import { countIncompleteEvents, getActiveSession, listTrash, updateDog } from '@pawquest/data';
+import {
+  DogEditSheet,
+  DogScreen,
+  OnboardingFlow,
+  SoonScreen,
+  type DogDraft,
+} from '@pawquest/screens';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
@@ -51,6 +57,7 @@ export function Root() {
   const [openWalk, setOpenWalk] = useState(false);
   const [flow, setFlow] = useState<FlowState | null>(null);
   const [care, setCare] = useState<CareTarget | null>(null);
+  const [editingDog, setEditingDog] = useState(false);
   const careFlow = (
     <CareFlow
       target={care}
@@ -259,6 +266,9 @@ export function Root() {
             onHealth={() => {
               setOverlay({ kind: 'health' });
             }}
+            onEditProfile={() => {
+              setEditingDog(true);
+            }}
             onDiagnostics={() => {
               setDiagnostics(true);
             }}
@@ -268,6 +278,18 @@ export function Root() {
       </View>
       <TabBar tabs={tabs} active={tab} onSelect={setTab} />
       <TrainingFlow state={flow} onChange={setFlow} />
+      <DogEditSheet
+        visible={editingDog}
+        dog={dog}
+        onClose={() => {
+          setEditingDog(false);
+        }}
+        onSave={(edit) => {
+          updateDog(app.db, app.ctx, dog.id, edit);
+          setEditingDog(false);
+          app.bump();
+        }}
+      />
       {careFlow}
     </View>
   );

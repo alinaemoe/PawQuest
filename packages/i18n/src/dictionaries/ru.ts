@@ -510,6 +510,9 @@ export const ru = {
   'visit.next2w': 'Через 2 недели',
   'visit.nextNone': 'Не нужен',
   'visit.saved': 'Визит записан',
+  'dog.editTitle': 'Профиль собаки',
+  'dog.edit': 'Изменить профиль',
+  'dog.saved': 'Профиль сохранён',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof ru;
