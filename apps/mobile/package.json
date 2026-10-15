@@ -21,6 +21,7 @@
     "@pawquest/rn-ui": "workspace:*",
     "@pawquest/screens": "workspace:*",
     "@pawquest/ui": "workspace:*",
+    "@pawquest/weather": "workspace:*",
     "drizzle-orm": "0.45.4",
     "expo": "~57.0.29",
     "expo-file-system": "~57.0.7",

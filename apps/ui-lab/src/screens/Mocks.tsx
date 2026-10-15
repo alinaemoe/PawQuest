@@ -50,6 +50,9 @@ export function MockToday() {
       dogPhotoUri={null}
       gpsWalks={false}
       lastWalk={{ startedAt: NOW - 4 * HOUR, durationS: 1920 }}
+      weather={null}
+      weatherHint={null}
+      onWeather={noop}
       careCard={{ planId: 'p', line: 'Глистогонка: срок был 3 дня назад' }}
       onCareDone={noop}
       onCareLater={noop}

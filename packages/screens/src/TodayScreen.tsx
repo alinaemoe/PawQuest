@@ -15,6 +15,8 @@ import {
 import { View } from 'react-native';
 
 import { lastWalkLine, type FeedRowModel } from './model';
+import type { WeatherView } from './weatherModel';
+import { WeatherCard } from './WeatherViews';
 
 export interface TodayScreenProps {
   readonly now: number;
@@ -29,6 +31,10 @@ export interface TodayScreenProps {
   readonly onCareLater: (planId: string) => void;
   /** Set when the weight card should show; `title` is already worded. */
   readonly weightCard: { readonly title: string } | null;
+  /** Weather at the dog's position; null when unknown, with a quiet hint (or none). */
+  readonly weather: WeatherView | null;
+  readonly weatherHint: string | null;
+  readonly onWeather: () => void;
   readonly recent: readonly FeedRowModel[];
   /** No records yet: show the "where to start" card instead of an empty feed (G-05). */
   readonly firstRun: boolean;
@@ -71,6 +77,8 @@ export function TodayScreen(props: TodayScreenProps) {
         <Tile icon="note" label={i18n.t('today.tileNote')} onPress={props.onNote} />
         <Tile icon="drop" label={i18n.t('today.tileToilet')} onPress={props.onToilet} />
       </View>
+
+      <WeatherCard view={props.weather} hint={props.weatherHint} onPress={props.onWeather} />
 
       {props.careCard === null ? null : (
         <Card variant="stripe">

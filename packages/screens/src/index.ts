@@ -82,3 +82,16 @@ export { PLACE_KINDS, PreWalkSheet, RecoverSheet } from './WalkFlowSheets';
 export type { PreWalkChoice, PreWalkSheetProps, RecoverSheetProps } from './WalkFlowSheets';
 export { WalkSummaryScreen } from './WalkSummaryScreen';
 export type { WalkSummaryModel, WalkSummaryScreenProps } from './WalkSummaryScreen';
+export {
+  weatherLine,
+  weatherView,
+  type WeatherChip,
+  type WeatherRow,
+  type WeatherView,
+} from './weatherModel';
+export {
+  WeatherCard,
+  WeatherSheet,
+  type WeatherCardProps,
+  type WeatherSheetProps,
+} from './WeatherViews';

@@ -20,7 +20,8 @@
     "@pawquest/rn-ui": "workspace:*",
     "@pawquest/ui": "workspace:*",
     "@pawquest/core": "workspace:*",
-    "@pawquest/insights": "workspace:*"
+    "@pawquest/insights": "workspace:*",
+    "@pawquest/weather": "workspace:*"
   },
   "peerDependencies": {
     "react": "19.2.3",

@@ -22,7 +22,9 @@ import {
   NoteSheet,
   TodayScreen,
   WalkSheet,
+  WeatherSheet,
   WeightSheet,
+  weatherView,
   weightCardTitle,
   type AddChoice,
   type ManualWalk,
@@ -31,6 +33,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useApp } from './AppContext';
 import type { CareTarget } from './CareFlow';
+import { useWeather } from './useWeather';
 
 const DAY = 86_400_000;
 
@@ -66,6 +69,12 @@ export function TodayContainer({
   const toast = useToast();
   const [sheet, setSheet] = useState<SheetId>(null);
   const [now, setNow] = useState(() => Date.now());
+  const weather = useWeather();
+  const [weatherOpen, setWeatherOpen] = useState(false);
+  const weatherModel = useMemo(
+    () => (weather.facts === null ? null : weatherView(weather.facts, i18n)),
+    [weather.facts, i18n],
+  );
 
   // "4 hours ago" must not freeze: refresh the clock every minute.
   useEffect(() => {
@@ -217,6 +226,23 @@ export function TodayContainer({
           bump();
         }}
         weightCard={data.weightCard}
+        weather={weatherModel}
+        weatherHint={
+          weatherModel !== null
+            ? null
+            : weather.status === 'no-permission'
+              ? i18n.t('weather.noPlace')
+              : weather.status === 'unavailable'
+                ? i18n.t('weather.unavailable')
+                : null
+        }
+        onWeather={() => {
+          if (weatherModel !== null) {
+            setWeatherOpen(true);
+          } else if (weather.status === 'no-permission') {
+            weather.enable();
+          }
+        }}
         recent={data.recent}
         firstRun={data.firstRun}
         onStartWalk={onStartWalk}
@@ -245,6 +271,14 @@ export function TodayContainer({
           setSheet('add');
         }}
       />
+      {weatherOpen ? (
+        <WeatherSheet
+          view={weatherModel}
+          onClose={() => {
+            setWeatherOpen(false);
+          }}
+        />
+      ) : null}
       <AddSheet visible={sheet === 'add'} onClose={closeSheet} onChoose={choose} />
       <NoteSheet visible={sheet === 'note'} onClose={closeSheet} onSave={saveNote} />
       <WeightSheet

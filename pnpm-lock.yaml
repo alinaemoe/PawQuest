@@ -226,6 +226,9 @@ importers:
       '@pawquest/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@pawquest/weather':
+        specifier: workspace:*
+        version: link:../../packages/weather
       drizzle-orm:
         specifier: 0.45.4
         version: 0.45.4(expo-sqlite@57.0.4(expo@57.0.29)(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))
@@ -422,6 +425,9 @@ importers:
       '@pawquest/ui':
         specifier: workspace:*
         version: link:../ui
+      '@pawquest/weather':
+        specifier: workspace:*
+        version: link:../weather
       react:
         specifier: 19.2.3
         version: 19.2.3
