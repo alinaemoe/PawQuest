@@ -18,7 +18,8 @@
     "@pawquest/data": "workspace:*",
     "@pawquest/i18n": "workspace:*",
     "@pawquest/rn-ui": "workspace:*",
-    "@pawquest/ui": "workspace:*"
+    "@pawquest/ui": "workspace:*",
+    "@pawquest/core": "workspace:*"
   },
   "peerDependencies": {
     "react": "19.2.3",

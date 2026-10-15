@@ -117,3 +117,92 @@ export function listWalks(db: SqlDb, dogId: string, fromTs: number, toTs: number
     )
     .map(toWalk);
 }
+
+export interface WalkTotals {
+  readonly count: number;
+  readonly durationS: number;
+  readonly distanceM: number;
+}
+
+/** Number, total time and total distance of the finished walks that started in a range. */
+export function walkTotals(db: SqlDb, dogId: string, fromTs: number, toTs: number): WalkTotals {
+  const row = db.all(
+    `SELECT COUNT(*) AS n, COALESCE(SUM(w.duration_s), 0) AS dur, COALESCE(SUM(w.distance_m), 0) AS dist
+       FROM walk w JOIN walk_dog d ON d.walk_id = w.id
+      WHERE d.dog_id = ? AND w.status = 'completed' AND w.deleted_at IS NULL
+        AND w.started_at >= ? AND w.started_at < ?`,
+    [dogId, toIso(fromTs), toIso(toTs)],
+  )[0];
+  return {
+    count: Number(row?.['n'] ?? 0),
+    durationS: Number(row?.['dur'] ?? 0),
+    distanceM: Number(row?.['dist'] ?? 0),
+  };
+}
+
+/** One page of finished walks, newest first; `before` is the start time of the last row of the previous page. */
+export function listWalksPage(db: SqlDb, dogId: string, limit: number, before?: number): Walk[] {
+  return db
+    .all(
+      `SELECT w.* FROM walk w JOIN walk_dog d ON d.walk_id = w.id
+        WHERE d.dog_id = ? AND w.status = 'completed' AND w.deleted_at IS NULL AND w.started_at < ?
+        ORDER BY w.started_at DESC, w.id DESC LIMIT ?`,
+      [dogId, toIso(before ?? 8_000_000_000_000), limit],
+    )
+    .map(toWalk);
+}
+
+export interface WalkChanges {
+  readonly title?: string | null;
+  readonly notes?: string | null;
+  readonly durationS?: number;
+  readonly distanceM?: number | null;
+  readonly mood?: number | null;
+  readonly distraction?: number | null;
+  readonly placeKind?: string | null;
+}
+
+/** Edits a finished walk; changing the duration moves the end time, the start stays put. */
+export function updateWalk(db: SqlDb, ctx: Ctx, id: string, changes: WalkChanges): Walk | null {
+  const walk = getWalk(db, id);
+  if (walk === null) {
+    return null;
+  }
+  const sets: string[] = [];
+  const params: SqlValue[] = [];
+  const set = (column: string, value: SqlValue | undefined): void => {
+    if (value !== undefined) {
+      sets.push(`${column} = ?`);
+      params.push(value);
+    }
+  };
+  if (changes.durationS !== undefined) {
+    if (!Number.isFinite(changes.durationS) || changes.durationS < 0) {
+      throw new Error('Walk duration must be zero or more seconds');
+    }
+    set('duration_s', Math.round(changes.durationS));
+    set('ended_at', toIso(walk.startedAt + changes.durationS * 1000));
+  }
+  set('title', changes.title);
+  set('notes', changes.notes);
+  set('distance_m', changes.distanceM);
+  set('mood', changes.mood);
+  set('distraction', changes.distraction);
+  set('place_kind', changes.placeKind);
+  if (sets.length > 0) {
+    db.run(
+      `UPDATE walk SET ${sets.join(', ')}, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
+      [...params, toIso(ctx.now()), id],
+    );
+  }
+  return getWalk(db, id);
+}
+
+/** Events recorded during a walk, in time order. */
+export function walkEventIds(db: SqlDb, walkId: string): { typeId: string; ts: number }[] {
+  return db
+    .all('SELECT type_id, ts FROM event WHERE walk_id = ? AND deleted_at IS NULL ORDER BY ts', [
+      walkId,
+    ])
+    .map((row) => ({ typeId: String(row['type_id']), ts: fromIso(String(row['ts'])) }));
+}

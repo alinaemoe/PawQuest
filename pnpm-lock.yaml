@@ -398,6 +398,9 @@ importers:
 
   packages/screens:
     dependencies:
+      '@pawquest/core':
+        specifier: workspace:*
+        version: link:../core
       '@pawquest/data':
         specifier: workspace:*
         version: link:../data

@@ -104,3 +104,11 @@ export {
   type TrainingContext,
   type TrainingSession,
 } from './training';
+export {
+  listWalksPage,
+  updateWalk,
+  walkEventIds,
+  walkTotals,
+  type WalkChanges,
+  type WalkTotals,
+} from './walks';

@@ -31,6 +31,10 @@ export interface DogScreenProps {
   readonly onPalette: (palette: PaletteKey) => void;
   readonly onScheme: (scheme: SchemeMode) => void;
   readonly onHaptics: (on: boolean) => void;
+  readonly trashCount: number;
+  readonly incompleteCount: number;
+  readonly onTrash: () => void;
+  readonly onDiary: () => void;
   readonly onDiagnostics: () => void;
   readonly onRemoveDemo: () => void;
 }
@@ -171,6 +175,30 @@ export function DogScreen(props: DogScreenProps) {
         value={props.haptics}
         onValueChange={props.onHaptics}
       />
+
+      <Section title={i18n.t('dog.data')}>
+        <ListRow
+          icon="note"
+          title={i18n.t('dog.diary')}
+          subtitle={i18n.t('dog.diaryHint')}
+          right={
+            props.incompleteCount > 0 ? (
+              <Tag tone="warn" label={String(props.incompleteCount)} />
+            ) : undefined
+          }
+          onPress={props.onDiary}
+        />
+        <ListRow
+          icon="trash"
+          title={i18n.t('dog.trash')}
+          subtitle={i18n.t('dog.trashHint')}
+          right={
+            props.trashCount > 0 ? <Tag tone="plain" label={String(props.trashCount)} /> : undefined
+          }
+          divider={false}
+          onPress={props.onTrash}
+        />
+      </Section>
 
       <Section title={i18n.t('dog.about')}>
         <ListRow

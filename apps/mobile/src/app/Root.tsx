@@ -1,5 +1,5 @@
 import { TabBar, useTheme, type TabItem } from '@pawquest/rn-ui';
-import { getActiveSession } from '@pawquest/data';
+import { countIncompleteEvents, getActiveSession, listTrash } from '@pawquest/data';
 import { DogScreen, OnboardingFlow, SoonScreen, type DogDraft } from '@pawquest/screens';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
@@ -11,6 +11,8 @@ import { DiagnosticsScreen } from '../diagnostics/DiagnosticsScreen';
 import { useApp } from './AppContext';
 import { ClickerContainer } from './ClickerContainer';
 import { TodayContainer } from './TodayContainer';
+import { TrashContainer } from './TrashContainer';
+import { WalksTab } from './WalksTab';
 import { TrainingFlow, type FlowState } from './TrainingFlow';
 import { TrainingTab } from './TrainingTab';
 
@@ -39,6 +41,7 @@ export function Root() {
   const { i18n, settings, dog } = app;
   const [tab, setTab] = useState<Tab>('today');
   const [diagnostics, setDiagnostics] = useState(false);
+  const [overlay, setOverlay] = useState<'trash' | null>(null);
   const [openWalk, setOpenWalk] = useState(false);
   const [flow, setFlow] = useState<FlowState | null>(null);
   const dogId = dog?.id ?? null;
@@ -51,6 +54,10 @@ export function Root() {
   // Back from Diagnostics returns to the Dog tab; on the root tabs the system minimizes the app.
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (overlay !== null) {
+        setOverlay(null);
+        return true;
+      }
       if (diagnostics) {
         setDiagnostics(false);
         return true;
@@ -60,7 +67,7 @@ export function Root() {
     return () => {
       subscription.remove();
     };
-  }, [diagnostics]);
+  }, [diagnostics, overlay]);
 
   const onWalkSheetShown = useCallback(() => {
     setOpenWalk(false);
@@ -116,6 +123,19 @@ export function Root() {
     );
   }
 
+  if (overlay === 'trash') {
+    return (
+      <>
+        {statusBar}
+        <TrashContainer
+          onBack={() => {
+            setOverlay(null);
+          }}
+        />
+      </>
+    );
+  }
+
   const tabs: readonly TabItem<Tab>[] = [
     { id: 'today', label: i18n.t('tab.today'), icon: 'home' },
     { id: 'walks', label: i18n.t('tab.walks'), icon: 'pin' },
@@ -137,9 +157,7 @@ export function Root() {
             }}
           />
         ) : null}
-        {tab === 'walks' ? (
-          <SoonScreen icon="pin" title={i18n.t('tab.walks')} text={i18n.t('soon.walks')} />
-        ) : null}
+        {tab === 'walks' ? <WalksTab /> : null}
         {tab === 'training' ? <TrainingTab openFlow={setFlow} /> : null}
         {tab === 'insights' ? (
           <SoonScreen icon="chart" title={i18n.t('tab.insights')} text={i18n.t('soon.insights')} />
@@ -166,6 +184,15 @@ export function Root() {
             }}
             onHaptics={(on) => {
               app.updateSetting('haptics', on);
+            }}
+            trashCount={listTrash(app.db).length}
+            incompleteCount={countIncompleteEvents(app.db, dog.id)}
+            onTrash={() => {
+              setOverlay('trash');
+            }}
+            onDiary={() => {
+              // the diary screen arrives in the next step
+              setOverlay(null);
             }}
             onDiagnostics={() => {
               setDiagnostics(true);

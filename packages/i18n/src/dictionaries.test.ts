@@ -76,9 +76,9 @@ describe('dictionaries (G-14: no key without a translation)', () => {
     }
   });
 
-  it('keys follow area.name', () => {
+  it('keys follow area.name (or area.group.name)', () => {
     for (const [key] of ruEntries) {
-      expect(key).toMatch(/^[a-z]+\.[a-zA-Z0-9]+$/);
+      expect(key).toMatch(/^[a-z]+(\.[a-zA-Z0-9_]+)+$/);
     }
   });
 });

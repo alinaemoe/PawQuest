@@ -35,3 +35,16 @@ export type {
   TemplateChoice,
   TemplateSheetProps,
 } from './TrainingSheets';
+export { groupWalksByDay, totalsLine, walkFacts } from './walksModel';
+export type { DayGroup, WalkFacts, WalkRowModel } from './walksModel';
+export { TrashScreen } from './TrashScreen';
+export type { TrashRowModel, TrashScreenProps } from './TrashScreen';
+export { WalksScreen } from './WalksScreen';
+export type { WalksScreenProps } from './WalksScreen';
+export { WalkDetailsSheet, WalkEditSheet } from './WalkSheets';
+export type {
+  WalkDetailsModel,
+  WalkDetailsSheetProps,
+  WalkEdit,
+  WalkEditSheetProps,
+} from './WalkSheets';
