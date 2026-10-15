@@ -1,5 +1,5 @@
 import { createI18n } from '@pawquest/i18n';
-import type { Place, PlaceStats } from '@pawquest/data';
+import { PLACE_CATEGORIES, type Place, type PlaceStats } from '@pawquest/data';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -34,24 +34,17 @@ const place = (extra: Partial<PlaceStats> = {}): PlaceStats => ({
 
 describe('category labels', () => {
   it('every category has a label in both languages', () => {
-    for (const c of [
-      'park',
-      'meadow',
-      'yard',
-      'district',
-      'forest',
-      'waterfront',
-      'dog_area',
-      'quiet_street',
-      'busy_street',
-      'vet',
-      'other',
-    ] as const) {
+    for (const c of PLACE_CATEGORIES) {
       expect(categoryLabel(c, ru)).not.toBe('');
       expect(categoryLabel(c, en)).not.toBe('');
     }
     expect(categoryLabel('dog_area', ru)).toBe('Площадка');
     expect(categoryLabel('busy_street', en)).toBe('Busy street');
+    expect(categoryLabel('shop', ru)).toBe('Магазин');
+    expect(categoryLabel('grooming', ru)).toBe('Груминг');
+    expect(categoryLabel('home', en)).toBe('Home');
+    expect(categoryLabel('guests', ru)).toBe('Гости');
+    expect(PLACE_CATEGORIES).toHaveLength(17);
   });
 
   it('a guessed street becomes a quiet street, other guesses stay', () => {

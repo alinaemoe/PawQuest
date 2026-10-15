@@ -521,7 +521,7 @@ export const ru = {
   'pre.denied': 'Нет доступа к геолокации. Можно записать прогулку без маршрута.',
   'pre.foregroundOnly': 'Фоновая запись не разрешена: держите экран включённым во время прогулки.',
   'place.park': 'Парк',
-  'place.meadow': 'Луг',
+  'place.meadow': 'Луг, полянка',
   'place.yard': 'Двор',
   'place.district': 'Район',
   'place.forest': 'Лес',
@@ -691,6 +691,13 @@ export const ru = {
     'Парк большой, полянка маленькая: так приложение не станет предлагать новые места внутри большого парка.',
   'place.radius.less': 'Меньше',
   'place.radius.more': 'Больше',
+
+  'place.square': 'Сквер',
+  'place.alley': 'Аллея',
+  'place.shop': 'Магазин',
+  'place.grooming': 'Груминг',
+  'place.home': 'Дом',
+  'place.guests': 'Гости',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof ru;

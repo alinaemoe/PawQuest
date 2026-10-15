@@ -45,6 +45,12 @@ export const place = sqliteTable(
         'busy_street',
         'vet',
         'other',
+        'square',
+        'alley',
+        'shop',
+        'grooming',
+        'home',
+        'guests',
       ],
     })
       .notNull()

@@ -618,4 +618,11 @@ export const en = {
     'A park is big, a clearing is small: this keeps the app from suggesting new places inside a big park.',
   'place.radius.less': 'Smaller',
   'place.radius.more': 'Larger',
+
+  'place.square': 'Square',
+  'place.alley': 'Alley',
+  'place.shop': 'Shop',
+  'place.grooming': 'Grooming',
+  'place.home': 'Home',
+  'place.guests': 'Guests',
 } as const satisfies Record<MessageKey, Message>;

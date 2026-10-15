@@ -14,6 +14,12 @@ const CATEGORY_KEYS: Readonly<Record<PlaceCategory, MessageKey>> = {
   busy_street: 'place.busyStreet',
   vet: 'place.vet',
   other: 'place.other',
+  square: 'place.square',
+  alley: 'place.alley',
+  shop: 'place.shop',
+  grooming: 'place.grooming',
+  home: 'place.home',
+  guests: 'place.guests',
 };
 
 export function categoryLabel(category: PlaceCategory, i18n: I18n): string {

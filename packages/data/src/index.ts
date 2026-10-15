@@ -174,6 +174,7 @@ export {
   PLACE_CATEGORIES,
   PLACE_DEFAULT_RADIUS_M,
   addAlias,
+  isBasePlace,
   createPlace,
   findSimilarPlaces,
   getPlace,

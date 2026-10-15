@@ -5,11 +5,13 @@ import { createEvent } from './events';
 import {
   MAX_PLACE_RADIUS_M,
   MIN_PLACE_RADIUS_M,
+  PLACE_CATEGORIES,
   PLACE_DEFAULT_RADIUS_M,
   addAlias,
   createPlace,
   findSimilarPlaces,
   getPlace,
+  isBasePlace,
   listPlaces,
   mergePlaces,
   placeAt,
@@ -82,6 +84,28 @@ describe('createPlace', () => {
       PLACE_DEFAULT_RADIUS_M.other,
     ]);
     expect(PLACE_DEFAULT_RADIUS_M.park).toBeGreaterThan(PLACE_DEFAULT_RADIUS_M.meadow * 4);
+  });
+
+  it('every type has a default size inside the allowed range, and big places are bigger', () => {
+    for (const category of PLACE_CATEGORIES) {
+      const size = PLACE_DEFAULT_RADIUS_M[category];
+      expect(size, category).toBeGreaterThanOrEqual(MIN_PLACE_RADIUS_M);
+      expect(size, category).toBeLessThanOrEqual(MAX_PLACE_RADIUS_M);
+    }
+    expect(PLACE_DEFAULT_RADIUS_M.park).toBeGreaterThan(PLACE_DEFAULT_RADIUS_M.square);
+    expect(PLACE_DEFAULT_RADIUS_M.square).toBeGreaterThan(PLACE_DEFAULT_RADIUS_M.meadow);
+    expect(PLACE_DEFAULT_RADIUS_M.meadow).toBeGreaterThan(PLACE_DEFAULT_RADIUS_M.yard);
+  });
+
+  it('only home and guests are bases', () => {
+    expect(PLACE_CATEGORIES.filter((c) => isBasePlace(c))).toEqual(['home', 'guests']);
+  });
+
+  it('the new types can be saved and read back', () => {
+    for (const category of ['square', 'alley', 'shop', 'grooming', 'home', 'guests'] as const) {
+      const place = createPlace(env.db, env.ctx, { category, label: category, ...HOME });
+      expect(getPlace(env.db, place.id)?.category).toBe(category);
+    }
   });
 
   it('keeps a chosen radius within 15 to 1000 m', () => {

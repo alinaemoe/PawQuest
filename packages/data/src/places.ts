@@ -32,6 +32,12 @@ export const PLACE_CATEGORIES = [
   'busy_street',
   'vet',
   'other',
+  'square',
+  'alley',
+  'shop',
+  'grooming',
+  'home',
+  'guests',
 ] as const;
 
 export type PlaceCategory = (typeof PLACE_CATEGORIES)[number];
@@ -81,7 +87,18 @@ export const PLACE_DEFAULT_RADIUS_M: Readonly<Record<PlaceCategory, number>> = {
   busy_street: 40,
   vet: 40,
   other: 60,
+  square: 80,
+  alley: 40,
+  shop: 40,
+  grooming: 40,
+  home: 40,
+  guests: 40,
 };
+/** Places where the owner and dog go indoors for long: a walk ends and begins there (D-62). */
+export function isBasePlace(category: PlaceCategory): boolean {
+  return category === 'home' || category === 'guests';
+}
+
 export const MIN_PLACE_RADIUS_M = 15;
 export const MAX_PLACE_RADIUS_M = 1000;
 /** A grid cell of about 55 m instead of a geohash (D-51); only used to find neighbours quickly. */

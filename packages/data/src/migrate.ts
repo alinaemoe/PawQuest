@@ -12,6 +12,13 @@ export interface MigrationResult {
   readonly applied: readonly number[];
 }
 
+/**
+ * A migration that rebuilds a table other tables point to starts with this marker: the runner then
+ * switches foreign keys off around it (SQLite ignores that pragma inside a transaction), and the
+ * usual foreign key check still runs before the commit.
+ */
+const FOREIGN_KEYS_OFF = /^--\s*pq:foreign-keys-off\b/;
+
 function assertSequence(migrations: readonly Migration[]): void {
   migrations.forEach((migration, index) => {
     if (migration.version !== index + 1) {
@@ -50,19 +57,34 @@ export function migrate(
   }
   const applied: number[] = [];
   for (const migration of migrations.slice(from)) {
-    db.transaction(() => {
-      db.exec(migration.sql);
-      const broken = db.all('PRAGMA foreign_key_check');
-      if (broken.length > 0) {
+    const keysOff = FOREIGN_KEYS_OFF.test(migration.sql);
+    if (keysOff) {
+      db.exec('PRAGMA foreign_keys = OFF');
+      if (db.all('PRAGMA foreign_keys')[0]?.['foreign_keys'] !== 0) {
         throw new Error(
-          `Migration ${String(migration.version)} (${migration.name}) left ${String(broken.length)} broken foreign keys`,
+          `Migration ${String(migration.version)} (${migration.name}) needs foreign keys off, which is impossible inside a transaction`,
         );
       }
-      db.run('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)', [
-        migration.version,
-        now(),
-      ]);
-    });
+    }
+    try {
+      db.transaction(() => {
+        db.exec(migration.sql);
+        const broken = db.all('PRAGMA foreign_key_check');
+        if (broken.length > 0) {
+          throw new Error(
+            `Migration ${String(migration.version)} (${migration.name}) left ${String(broken.length)} broken foreign keys`,
+          );
+        }
+        db.run('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)', [
+          migration.version,
+          now(),
+        ]);
+      });
+    } finally {
+      if (keysOff) {
+        db.exec('PRAGMA foreign_keys = ON');
+      }
+    }
     applied.push(migration.version);
   }
   return { from, to: from + applied.length, applied };
