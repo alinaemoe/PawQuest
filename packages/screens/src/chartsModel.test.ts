@@ -35,8 +35,8 @@ describe('compareModel', () => {
       14,
       ru,
     );
-    expect(model.headerA).toBe('Последние 14 дн.');
-    expect(model.headerB).toBe('14 дн. до этого');
+    expect(model.headerA).toBe('Сейчас');
+    expect(model.headerB).toBe('Раньше');
     expect(model.empty).toBe(false);
     const row = (key: string) => model.rows.find((r) => r.key === key);
     expect(row('walks')).toMatchObject({ a: '10', b: '6', note: '+4', strong: false });

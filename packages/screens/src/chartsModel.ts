@@ -43,8 +43,8 @@ export function compareModel(comparison: PeriodComparison, days: number, i18n: I
   const count = (n: number): string => String(n);
   const formats: Record<string, (v: number) => string> = {
     walks: count,
-    time: (v) => i18n.formatDuration(v),
-    distance: (v) => i18n.formatDistance(v),
+    time: (v) => (v === 0 ? '—' : i18n.formatDuration(v)),
+    distance: (v) => (v === 0 ? '—' : i18n.formatDistance(v)),
     typicalWalk: (v) => i18n.formatDuration(v),
   };
   const rows = comparison.rows.map((row): CompareRowModel => {
@@ -76,11 +76,11 @@ export function compareModel(comparison: PeriodComparison, days: number, i18n: I
     };
   });
   return {
-    headerA: i18n.t('compare.last', { n: days }),
-    headerB: i18n.t('compare.before', { n: days }),
+    headerA: i18n.t('compare.last'),
+    headerB: i18n.t('compare.before'),
     rows,
     empty: comparison.rows.some((r) => r.key === 'walks' && r.a === 0 && r.b === 0),
-    caveat: i18n.t('compare.caveat'),
+    caveat: i18n.t('compare.caveat', { n: days }),
   };
 }
 
@@ -112,7 +112,12 @@ const scaled = (value: number, max: number): number => (max <= 0 ? 0 : Math.min(
 
 export function chartModels(data: ChartData, today: number, i18n: I18n): ChartModel[] {
   const noon = (day: number): number => day * DAY_MS + 12 * 3_600_000;
-  const maxWeek = Math.max(0, ...data.weeks.map((w) => w.durationS));
+  // weeks before the first walk are not drawn (but at least the last four are)
+  const first = data.weeks.findIndex((w) => w.durationS > 0);
+  const shown = data.weeks.slice(
+    first < 0 ? 0 : Math.min(first, Math.max(0, data.weeks.length - 4)),
+  );
+  const maxWeek = Math.max(0, ...shown.map((w) => w.durationS));
   const weeks: ChartModel = {
     key: 'weeks',
     title: i18n.t('charts.weeks.title'),
@@ -121,9 +126,9 @@ export function chartModels(data: ChartData, today: number, i18n: I18n): ChartMo
     bars:
       maxWeek === 0
         ? []
-        : data.weeks.map((w) => {
+        : shown.map((w) => {
             const label = i18n.formatDate(noon(w.mondayDay), noon(today));
-            const value = i18n.formatDuration(w.durationS);
+            const value = w.durationS === 0 ? '—' : i18n.formatDuration(w.durationS);
             return {
               key: String(w.mondayDay),
               label,
