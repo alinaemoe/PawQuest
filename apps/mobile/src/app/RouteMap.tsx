@@ -5,19 +5,16 @@ import {
   Map as MapView,
   Marker,
   type CameraRef,
-  type StyleSpecification,
 } from '@maplibre/maplibre-react-native';
 import { filterTrack, simplifyTrack } from '@pawquest/core';
 import { listEventTypes, listTrackPoints } from '@pawquest/data';
 import { AppText, useI18n, useTheme, type EventKind } from '@pawquest/rn-ui';
 import { darkenMapStyle } from '@pawquest/ui';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { View } from 'react-native';
 
 import { useApp } from './AppContext';
-
-const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
-let styleCache: StyleSpecification | null = null;
+import { useMapStyle } from './useMapStyle';
 
 type Shape = 'circle' | 'triangle' | 'diamond' | 'square' | 'star';
 const SHAPES: Readonly<Record<EventKind, Shape>> = {
@@ -89,24 +86,8 @@ export function WalkRouteMap({ walkId, mode, height = 190, refreshKey = 0 }: Wal
   const { db, version } = useApp();
   const i18n = useI18n();
   const { theme } = useTheme();
-  const [light, setLight] = useState<StyleSpecification | null>(styleCache);
-  const [failed, setFailed] = useState(false);
+  const { style: light, failed } = useMapStyle();
   const camera = useRef<CameraRef>(null);
-
-  useEffect(() => {
-    if (styleCache !== null) {
-      return;
-    }
-    fetch(STYLE_URL)
-      .then((r) => r.json() as Promise<StyleSpecification>)
-      .then((style) => {
-        styleCache = style;
-        setLight(style);
-      })
-      .catch(() => {
-        setFailed(true);
-      });
-  }, []);
 
   const route = useMemo(() => {
     const points = filterTrack(listTrackPoints(db, walkId)).points;

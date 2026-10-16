@@ -330,6 +330,7 @@ export function proposeRoutes(
     lat: p.lat,
     lon: p.lon,
     radiusM: p.radiusM,
+    boundary: p.boundary ?? undefined,
   }));
   const names = new Map(places.map((p) => [p.id, p.name]));
   const proposals: RouteProposal[] = [];

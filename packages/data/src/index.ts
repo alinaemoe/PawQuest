@@ -191,6 +191,8 @@ export {
   type Place,
   type PlaceCategory,
   type PlaceMatch,
+  restorePlaceGeometry,
+  setPlaceBoundary,
   type PlacePatch,
   type PlaceStats,
 } from './places';

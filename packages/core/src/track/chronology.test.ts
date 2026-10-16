@@ -5,6 +5,7 @@ import { EARTH_RADIUS_M, type LatLon } from '../geo/haversine';
 import {
   baseArrival,
   buildChronology,
+  forgottenBaseStay,
   chronologyTitle,
   placeContaining,
   visitsByPlace,
@@ -356,5 +357,77 @@ describe('baseArrival', () => {
 
   it('an unnamed place never asks', () => {
     expect(arrival(new Track().walkTo(1200, 0).stand(1800), [])).toBeNull();
+  });
+});
+
+describe('placeContaining with contours', () => {
+  const sq = (size: number, x = 0, y = 0) => [
+    at(x, y),
+    at(x + size, y),
+    at(x + size, y + size),
+    at(x, y + size),
+  ];
+  const parkPlace: ChronoPlace = {
+    ...place('park', 'Парк', 250, 250, 100),
+    boundary: sq(500),
+  };
+
+  it('a position inside the contour is in the place, however far from its centre', () => {
+    expect(placeContaining(at(20, 20), [parkPlace])?.id).toBe('park');
+    expect(placeContaining(at(480, 490), [parkPlace])?.id).toBe('park');
+  });
+
+  it('a few meters past the edge still count, farther does not', () => {
+    expect(placeContaining(at(-10, 250), [parkPlace])?.id).toBe('park');
+    expect(placeContaining(at(-30, 250), [parkPlace])).toBeNull();
+  });
+
+  it('a clearing inside the park wins over the park, the park holds the rest', () => {
+    const glade = place('glade', 'Полянка', 250, 250, 50);
+    expect(placeContaining(at(260, 250), [parkPlace, glade])?.id).toBe('glade');
+    expect(placeContaining(at(60, 60), [parkPlace, glade])?.id).toBe('park');
+  });
+
+  it('a contour with too few vertices is ignored, the radius rules', () => {
+    const odd: ChronoPlace = {
+      ...place('odd', 'Двор', 0, 0, 40),
+      boundary: [at(0, 0), at(10, 10)],
+    };
+    expect(placeContaining(at(20, 0), [odd])?.id).toBe('odd');
+  });
+});
+
+describe('forgottenBaseStay', () => {
+  const bases = new Set(['mom']);
+  const mom = place('mom', 'Мама', 1200, 0, 40);
+
+  it('finds a long stay in a base that the walk did not end at', () => {
+    const track = new Track().walkTo(1200, 0).stand(1800).walkTo(2400, 0);
+    const steps = chronology(track, [mom]);
+    const found = forgottenBaseStay(steps, bases);
+    expect(found?.placeId).toBe('mom');
+    expect(found?.isLast).toBe(false);
+    expect(found?.visit.durationS).toBeGreaterThan(1700);
+  });
+
+  it('knows when the stay is where the walk ended', () => {
+    const track = new Track().walkTo(1200, 0).stand(1800);
+    expect(forgottenBaseStay(chronology(track, [mom]), bases)?.isLast).toBe(true);
+  });
+
+  it('a short stay, a stay that begins the walk and a stay outside the bases are not it', () => {
+    expect(
+      forgottenBaseStay(chronology(new Track().walkTo(1200, 0).stand(600), [mom]), bases),
+    ).toBeNull();
+    expect(
+      forgottenBaseStay(
+        chronology(new Track().stand(1800), [place('mom', 'Мама', 0, 0, 40)]),
+        bases,
+      ),
+    ).toBeNull();
+    expect(
+      forgottenBaseStay(chronology(new Track().walkTo(1200, 0).stand(1800), [mom]), new Set()),
+    ).toBeNull();
+    expect(forgottenBaseStay([], bases)).toBeNull();
   });
 });

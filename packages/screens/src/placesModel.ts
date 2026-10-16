@@ -1,6 +1,8 @@
-import { nameKey, type InferredCategory } from '@pawquest/core';
+import { nameKey, ringAreaM2, type InferredCategory } from '@pawquest/core';
 import { PLACE_CATEGORIES, type Place, type PlaceCategory, type PlaceStats } from '@pawquest/data';
 import type { I18n, MessageKey } from '@pawquest/i18n';
+
+import { formatArea } from './contourModel';
 
 const CATEGORY_KEYS: Readonly<Record<PlaceCategory, MessageKey>> = {
   park: 'place.park',
@@ -38,6 +40,10 @@ export interface PlaceRowModel {
   readonly radiusM: number;
   /** "12 визитов · последний вчера" */
   readonly subtitle: string;
+  /** The place has its own outline from the map or drawn by hand. */
+  readonly hasContour: boolean;
+  /** "Контур: 33 га" or "Граница: круг 300 м". */
+  readonly boundaryLine: string;
 }
 
 export function placeRow(place: PlaceStats, i18n: I18n, now: number): PlaceRowModel {
@@ -53,6 +59,11 @@ export function placeRow(place: PlaceStats, i18n: I18n, now: number): PlaceRowMo
     category: place.category,
     radiusM: place.radiusM,
     subtitle,
+    hasContour: place.boundary !== null,
+    boundaryLine:
+      place.boundary === null
+        ? i18n.t('contour.noLine', { radius: i18n.formatDistance(place.radiusM) })
+        : i18n.t('contour.line', { area: formatArea(ringAreaM2(place.boundary), i18n) }),
   };
 }
 

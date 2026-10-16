@@ -1,10 +1,13 @@
 import {
   defaultPlaceName,
   findDuplicates,
-  haversineDistanceM,
   isValidLatLon,
   nameKey,
+  placeContaining,
+  ringCentroid,
+  ringRadiusM,
   tidyName,
+  tidyRing,
   type DuplicateCandidate,
   type LatLon,
 } from '@pawquest/core';
@@ -51,6 +54,9 @@ export interface Place {
   readonly lon: number;
   readonly radiusM: number;
   readonly notes: string | null;
+  /** The real outline of the place (a park, a wood), when the owner has one; else the radius rules. */
+  readonly boundary: readonly LatLon[] | null;
+  readonly boundarySource: 'osm' | 'drawn' | null;
 }
 
 export interface PlaceStats extends Place {
@@ -120,7 +126,20 @@ function toPlace(row: SqlRow): Place {
     lon: Number(row['lon']),
     radiusM: Number(row['radius_m']),
     notes: str(row['notes']),
+    boundary: parseBoundary(row['boundary']),
+    boundarySource:
+      row['boundary_source'] === 'osm' || row['boundary_source'] === 'drawn'
+        ? row['boundary_source']
+        : null,
   };
+}
+
+function parseBoundary(raw: SqlValue | undefined): LatLon[] | null {
+  if (typeof raw !== 'string') {
+    return null;
+  }
+  const ring = (JSON.parse(raw) as [number, number][]).map(([lat, lon]) => ({ lat, lon }));
+  return ring.length >= 3 ? ring : null;
 }
 
 function clampRadius(radius: number): number {
@@ -194,19 +213,23 @@ export function topPlaces(db: SqlDb, limit = 4): PlaceStats[] {
 }
 
 /**
- * The saved place the position is in (inside its radius, at least 40 m), the nearest one when
- * several overlap; the pre-walk sheet offers it as "Парк у дома?".
+ * The saved place the position is in (inside its contour, else its radius, at least 40 m); of
+ * places inside each other the smallest; the pre-walk sheet offers it as "Парк у дома?".
  */
 export function placeAt(db: SqlDb, at: LatLon): Place | null {
-  let best: { place: Place; distance: number } | null = null;
-  for (const row of db.all('SELECT * FROM place WHERE deleted_at IS NULL')) {
-    const place = toPlace(row);
-    const distance = haversineDistanceM(at, place);
-    if (distance <= Math.max(place.radiusM, 40) && (best === null || distance < best.distance)) {
-      best = { place, distance };
-    }
-  }
-  return best?.place ?? null;
+  const places = db.all('SELECT * FROM place WHERE deleted_at IS NULL').map(toPlace);
+  const found = placeContaining(
+    at,
+    places.map((p) => ({
+      id: p.id,
+      name: p.name,
+      lat: p.lat,
+      lon: p.lon,
+      radiusM: p.radiusM,
+      boundary: p.boundary ?? undefined,
+    })),
+  );
+  return places.find((p) => p.id === found?.id) ?? null;
 }
 
 export interface PlacePatch {
@@ -415,4 +438,66 @@ export function undoMerge(
       db.run('UPDATE place_alias SET place_id = ? WHERE alias_norm = ?', [fromId, key]);
     }
   });
+}
+
+/**
+ * Gives a place its real outline, or takes it away (`null`). The centre and the radius follow the
+ * outline (the radius is the circle that covers it, at most the largest radius a place has).
+ * @throws RangeError when the ring cannot be a contour (see `tidyRing`).
+ */
+export function setPlaceBoundary(
+  db: SqlDb,
+  ctx: Ctx,
+  id: string,
+  ring: readonly LatLon[] | null,
+  source: 'osm' | 'drawn' = 'drawn',
+): Place {
+  mustGet(db, id);
+  if (ring === null) {
+    db.run(
+      'UPDATE place SET boundary = NULL, boundary_source = NULL, updated_at = ? WHERE id = ?',
+      [toIso(ctx.now()), id],
+    );
+    return mustGet(db, id);
+  }
+  const tidy = tidyRing(ring);
+  const centre = ringCentroid(tidy);
+  db.run(
+    `UPDATE place SET boundary = ?, boundary_source = ?, lat = ?, lon = ?, radius_m = ?,
+            geohash8 = ?, updated_at = ? WHERE id = ?`,
+    [
+      JSON.stringify(tidy.map((p) => [p.lat, p.lon])),
+      source,
+      centre.lat,
+      centre.lon,
+      clampRadius(ringRadiusM(tidy)),
+      cell(centre.lat, centre.lon),
+      toIso(ctx.now()),
+      id,
+    ],
+  );
+  return mustGet(db, id);
+}
+
+/**
+ * Puts a place's geometry back as it was (the "Undo" of drawing a contour): the centre, the
+ * radius and the contour (or none) of the snapshot taken before.
+ */
+export function restorePlaceGeometry(db: SqlDb, ctx: Ctx, before: Place): Place {
+  mustGet(db, before.id);
+  db.run(
+    `UPDATE place SET lat = ?, lon = ?, radius_m = ?, geohash8 = ?, boundary = ?, boundary_source = ?,
+            updated_at = ? WHERE id = ?`,
+    [
+      before.lat,
+      before.lon,
+      before.radiusM,
+      cell(before.lat, before.lon),
+      before.boundary === null ? null : JSON.stringify(before.boundary.map((p) => [p.lat, p.lon])),
+      before.boundarySource,
+      toIso(ctx.now()),
+      before.id,
+    ],
+  );
+  return mustGet(db, before.id);
 }

@@ -176,3 +176,20 @@ export {
   type RouteStats,
   type Versus,
 } from './routesModel';
+export {
+  ContourCandidatesSheet,
+  ContourChoiceSheet,
+  type ContourCandidate,
+  type ContourCandidatesSheetProps,
+  type ContourChoiceSheetProps,
+} from './ContourSheets';
+export {
+  candidateLine,
+  formatArea,
+  insertVertex,
+  moveVertex,
+  removeVertex,
+  ringState,
+  type RingProblem,
+  type RingState,
+} from './contourModel';

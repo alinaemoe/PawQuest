@@ -27,6 +27,8 @@ const place = (extra: Partial<PlaceStats> = {}): PlaceStats => ({
   lon: 37.6,
   radiusM: 60,
   notes: null,
+  boundary: null,
+  boundarySource: null,
   visits: 12,
   lastVisitAt: NOW - DAY,
   ...extra,

@@ -15,6 +15,8 @@ import {
   listPlaces,
   mergePlaces,
   placeAt,
+  restorePlaceGeometry,
+  setPlaceBoundary,
   setWalkPlace,
   similarPlacePairs,
   topPlaces,
@@ -159,17 +161,38 @@ describe('listPlaces and topPlaces', () => {
 });
 
 describe('placeAt', () => {
-  it('finds the place whose radius holds the position, the nearest when several do', () => {
-    const near = park('Парк у дома');
-    createPlace(env.db, env.ctx, {
+  it('finds the place whose radius holds the position; of nested places the smallest wins', () => {
+    const big = park('Парк у дома');
+    const yard = createPlace(env.db, env.ctx, {
       category: 'yard',
       label: 'Двор',
       lat: HOME.lat + 0.0003,
       lon: HOME.lon,
       radiusM: 100,
     });
-    expect(placeAt(env.db, { lat: HOME.lat + 0.00005, lon: HOME.lon })?.id).toBe(near.id);
+    // both hold the position: the yard is smaller, so it is "the place" here
+    expect(placeAt(env.db, { lat: HOME.lat + 0.00005, lon: HOME.lon })?.id).toBe(yard.id);
+    // only the park holds this one
+    expect(placeAt(env.db, { lat: HOME.lat - 0.002, lon: HOME.lon })?.id).toBe(big.id);
     expect(placeAt(env.db, { lat: HOME.lat + 0.01, lon: HOME.lon })).toBeNull();
+  });
+
+  it('of equal places the nearest wins', () => {
+    const a = createPlace(env.db, env.ctx, {
+      category: 'yard',
+      label: 'Двор',
+      ...HOME,
+      radiusM: 100,
+    });
+    const b = createPlace(env.db, env.ctx, {
+      category: 'yard',
+      label: 'Двор',
+      lat: HOME.lat + 0.0006,
+      lon: HOME.lon,
+      radiusM: 100,
+    });
+    expect(placeAt(env.db, { lat: HOME.lat + 0.0001, lon: HOME.lon })?.id).toBe(a.id);
+    expect(placeAt(env.db, { lat: HOME.lat + 0.0005, lon: HOME.lon })?.id).toBe(b.id);
   });
 
   it('uses at least 40 m even for a small radius', () => {
@@ -322,5 +345,98 @@ describe('setWalkPlace', () => {
       place_id: null,
       place_kind: 'meadow',
     });
+  });
+});
+
+describe('place contours (spike S8)', () => {
+  const M_PER_DEG = 111_195;
+  const COS = Math.cos((55 * Math.PI) / 180);
+  const at = (x: number, y: number) => ({
+    lat: 55 + y / M_PER_DEG,
+    lon: 37 + x / (M_PER_DEG * COS),
+  });
+  const park = [at(0, 0), at(600, 0), at(600, 500), at(0, 500)]; // 30 ha
+
+  it('a contour moves the centre and the radius of the place with it', () => {
+    const place = createPlace(env.db, env.ctx, { category: 'park', label: 'Парк', ...at(10, 10) });
+    const shaped = setPlaceBoundary(env.db, env.ctx, place.id, park, 'osm');
+    expect(shaped.boundary).toHaveLength(4);
+    expect(shaped.boundarySource).toBe('osm');
+    expect(Math.abs(shaped.lat - at(300, 250).lat)).toBeLessThan(0.0001);
+    expect(shaped.radiusM).toBeGreaterThan(380);
+    expect(shaped.radiusM).toBeLessThan(400);
+    expect(getPlace(env.db, place.id)?.boundary).toEqual(shaped.boundary);
+  });
+
+  it('placeAt follows the contour, not the circle: a corner far from the centre is inside', () => {
+    const place = createPlace(env.db, env.ctx, {
+      category: 'park',
+      label: 'Парк',
+      ...at(300, 250),
+    });
+    expect(placeAt(env.db, at(10, 10))).toBeNull(); // 390 m from the centre, outside the 300 m circle
+    setPlaceBoundary(env.db, env.ctx, place.id, park);
+    expect(placeAt(env.db, at(10, 10))?.id).toBe(place.id);
+    expect(placeAt(env.db, at(-10, 250))?.id).toBe(place.id); // a few meters past the fence still counts
+    expect(placeAt(env.db, at(-60, 250))).toBeNull();
+  });
+
+  it('a glade inside the park wins where both contain the position', () => {
+    const big = createPlace(env.db, env.ctx, { category: 'park', label: 'Парк', ...at(300, 250) });
+    setPlaceBoundary(env.db, env.ctx, big.id, park);
+    const glade = createPlace(env.db, env.ctx, {
+      category: 'meadow',
+      label: 'Полянка',
+      ...at(300, 250),
+      radiusM: 50,
+    });
+    expect(placeAt(env.db, at(310, 250))?.id).toBe(glade.id);
+    expect(placeAt(env.db, at(100, 100))?.id).toBe(big.id);
+  });
+
+  it('takes the contour away, and the radius rules again', () => {
+    const place = createPlace(env.db, env.ctx, {
+      category: 'park',
+      label: 'Парк',
+      ...at(300, 250),
+    });
+    setPlaceBoundary(env.db, env.ctx, place.id, park);
+    const plain = setPlaceBoundary(env.db, env.ctx, place.id, null);
+    expect(plain.boundary).toBeNull();
+    expect(plain.boundarySource).toBeNull();
+  });
+
+  it('puts the geometry back as it was (the undo of a contour)', () => {
+    const before = createPlace(env.db, env.ctx, {
+      category: 'park',
+      label: 'Парк',
+      ...at(10, 10),
+      radiusM: 120,
+    });
+    setPlaceBoundary(env.db, env.ctx, before.id, park, 'osm');
+    const restored = restorePlaceGeometry(env.db, env.ctx, before);
+    expect(restored).toEqual(before);
+    expect(placeAt(env.db, at(500, 450))).toBeNull();
+    const shaped = setPlaceBoundary(env.db, env.ctx, before.id, park);
+    expect(restorePlaceGeometry(env.db, env.ctx, shaped).boundary).toHaveLength(4);
+    expect(() => restorePlaceGeometry(env.db, env.ctx, { ...before, id: 'nope' })).toThrow();
+  });
+
+  it('refuses a ring that is not a contour and a place that is gone', () => {
+    const place = createPlace(env.db, env.ctx, { category: 'park', label: 'Парк', ...at(0, 0) });
+    expect(() => setPlaceBoundary(env.db, env.ctx, place.id, [at(0, 0), at(50, 0)])).toThrow(
+      RangeError,
+    );
+    expect(() => setPlaceBoundary(env.db, env.ctx, 'nope', park)).toThrow();
+  });
+
+  it('a stay inside the contour is not proposed as a new place', () => {
+    const place = createPlace(env.db, env.ctx, {
+      category: 'park',
+      label: 'Парк',
+      ...at(300, 250),
+    });
+    setPlaceBoundary(env.db, env.ctx, place.id, park);
+    expect(placeAt(env.db, at(580, 480))?.id).toBe(place.id);
   });
 });

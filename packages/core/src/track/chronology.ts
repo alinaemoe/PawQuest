@@ -1,4 +1,5 @@
 import { haversineDistanceM, type LatLon } from '../geo/haversine';
+import { distanceToRingM, pointInRing, ringAreaM2 } from '../geo/polygon';
 
 import type { TimedPoint } from './motion';
 import type { Ride } from './rides';
@@ -14,6 +15,8 @@ export interface ChronoPlace extends LatLon {
   readonly id: string;
   readonly name: string;
   readonly radiusM: number;
+  /** The contour of the place, when it has one: then it is the contour that counts, not the radius. */
+  readonly boundary?: readonly LatLon[] | undefined;
 }
 
 export interface ChronoVisit extends LatLon {
@@ -65,20 +68,40 @@ export interface ChronologyOptions {
   readonly indoor?: readonly { readonly fromTs: number; readonly toTs: number }[];
 }
 
-/** The nearest saved place that contains a position (its radius, but not less than the reach). */
+/** A contour counts a few meters past its edge: GPS wobbles at the fence of a park. */
+const CONTOUR_EDGE_M = 15;
+
+/**
+ * The saved place that contains a position: inside its contour when it has one (a few meters past
+ * the edge counts), else inside its radius (but not less than the reach). When places lie inside
+ * each other the smallest wins, "the glade" rather than "the park"; equal ones go to the nearest.
+ */
 export function placeContaining(
   at: LatLon,
   places: readonly ChronoPlace[],
   minReachM = 40,
 ): ChronoPlace | null {
-  let best: { place: ChronoPlace; distance: number } | null = null;
+  let best: { place: ChronoPlace; area: number; distance: number } | null = null;
   for (const place of places) {
     const distance = haversineDistanceM(at, place);
-    if (
-      distance <= Math.max(place.radiusM, minReachM) &&
-      (best === null || distance < best.distance)
-    ) {
-      best = { place, distance };
+    let area: number;
+    if (place.boundary !== undefined && place.boundary.length >= 3) {
+      if (
+        !pointInRing(at, place.boundary) &&
+        distanceToRingM(at, place.boundary) > CONTOUR_EDGE_M
+      ) {
+        continue;
+      }
+      area = ringAreaM2(place.boundary);
+    } else {
+      const reach = Math.max(place.radiusM, minReachM);
+      if (distance > reach) {
+        continue;
+      }
+      area = Math.PI * reach * reach;
+    }
+    if (best === null || area < best.area || (area === best.area && distance < best.distance)) {
+      best = { place, area, distance };
     }
   }
   return best?.place ?? null;

@@ -66,7 +66,15 @@ describe('0006 place types: the rebuild keeps everything', () => {
     seedAtVersion5();
     const before = db.all('SELECT * FROM place ORDER BY id');
     migrate(db, MIGRATIONS, now);
-    expect(db.all('SELECT * FROM place ORDER BY id')).toEqual(before);
+    // later migrations add columns (the contour): the old ones must be unchanged
+    const after = db
+      .all('SELECT * FROM place ORDER BY id')
+      .map((row) =>
+        Object.fromEntries(
+          Object.entries(row).filter(([key]) => key !== 'boundary' && key !== 'boundary_source'),
+        ),
+      );
+    expect(after).toEqual(before);
     expect(before).toHaveLength(3);
     expect(before[1]?.['parent_id']).toBe('p1');
     expect(before[2]?.['deleted_at']).toBe(NOW);

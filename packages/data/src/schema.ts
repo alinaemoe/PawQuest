@@ -70,6 +70,8 @@ export const place = sqliteTable(
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
     deletedAt: text('deleted_at'),
+    boundary: text('boundary'),
+    boundarySource: text('boundary_source', { enum: ['osm', 'drawn'] }),
   },
   (t) => [index('idx_place_geohash').on(t.geohash8), index('idx_place_name_norm').on(t.nameNorm)],
 );

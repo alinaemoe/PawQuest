@@ -317,7 +317,10 @@ export interface PlaceSheetProps {
     readonly category: PlaceCategory;
     readonly radiusM: number;
     readonly subtitle: string;
+    readonly hasContour: boolean;
+    readonly boundaryLine: string;
   } | null;
+  readonly onContour: (id: string) => void;
   readonly onClose: () => void;
   readonly onSave: (
     id: string,
@@ -327,7 +330,7 @@ export interface PlaceSheetProps {
 }
 
 /** One saved place: rename, change the type, delete (the records stay, S14-Del). */
-export function PlaceSheet({ place, onClose, onSave, onDelete }: PlaceSheetProps) {
+export function PlaceSheet({ place, onContour, onClose, onSave, onDelete }: PlaceSheetProps) {
   const i18n = useI18n();
   const [name, setName] = useState(place?.name ?? '');
   const [category, setCategory] = useState<PlaceCategory>(place?.category ?? 'other');
@@ -364,7 +367,20 @@ export function PlaceSheet({ place, onClose, onSave, onDelete }: PlaceSheetProps
           />
         ))}
       </View>
-      <RadiusStepper value={radiusM} onChange={setRadiusM} />
+      {place.hasContour ? null : <RadiusStepper value={radiusM} onChange={setRadiusM} />}
+      <View style={{ gap: 6 }}>
+        <AppText variant="eyebrow">{i18n.t('contour.title')}</AppText>
+        <AppText>{place.boundaryLine}</AppText>
+        <View style={{ flexDirection: 'row' }}>
+          <Chip
+            size="sm"
+            label={i18n.t('contour.open')}
+            onPress={() => {
+              onContour(place.id);
+            }}
+          />
+        </View>
+      </View>
       <Button
         label={i18n.t('common.save')}
         onPress={() => {

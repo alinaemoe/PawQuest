@@ -47,6 +47,7 @@ export function walkChronology(db: SqlDb, walkId: string, now: number): WalkChro
     lat: p.lat,
     lon: p.lon,
     radiusM: p.radiusM,
+    boundary: p.boundary ?? undefined,
   }));
   const steps = buildChronology(
     points,

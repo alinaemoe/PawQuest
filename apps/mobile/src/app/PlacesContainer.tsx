@@ -12,6 +12,7 @@ import { PlaceSheet, PlacesScreen, placeRow, tidyPair } from '@pawquest/screens'
 import { useMemo, useState } from 'react';
 
 import { useApp } from './AppContext';
+import { ContourFlow } from './ContourFlow';
 import { NewPlaceFlow } from './NewPlaceFlow';
 
 export interface PlacesContainerProps {
@@ -24,6 +25,8 @@ export function PlacesContainer({ onBack }: PlacesContainerProps) {
   const toast = useToast();
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  // the place whose outline is being set (the card closes while the map flow is open)
+  const [contourFor, setContourFor] = useState<string | null>(null);
 
   const data = useMemo(() => {
     const now = Date.now();
@@ -63,7 +66,8 @@ export function PlacesContainer({ onBack }: PlacesContainerProps) {
         onMerge={merge}
       />
       <PlaceSheet
-        place={open}
+        place={contourFor === null ? open : null}
+        onContour={setContourFor}
         onClose={() => {
           setOpenId(null);
         }}
@@ -82,6 +86,14 @@ export function PlacesContainer({ onBack }: PlacesContainerProps) {
           toast.show({ message: i18n.t('place.card.deleted') });
         }}
       />
+      {contourFor === null ? null : (
+        <ContourFlow
+          placeId={contourFor}
+          onClose={() => {
+            setContourFor(null);
+          }}
+        />
+      )}
       <NewPlaceFlow
         visible={adding}
         onClose={() => {

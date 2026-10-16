@@ -99,3 +99,19 @@ export type {
   RouteMatch,
   RouteMatchOptions,
 } from './routes/routes';
+export {
+  MAX_RING_VERTICES,
+  MIN_RING_AREA_M2,
+  circleRing,
+  distanceToRingM,
+  isSimpleRing,
+  pointInRing,
+  ringAreaM2,
+  ringBounds,
+  ringCentroid,
+  ringRadiusM,
+  tidyRing,
+} from './geo/polygon';
+export type { Ring } from './geo/polygon';
+export { areaCentre, overpassQuery, parseOverpassAreas } from './geo/osmAreas';
+export type { MapArea } from './geo/osmAreas';
