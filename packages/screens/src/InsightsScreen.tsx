@@ -2,6 +2,8 @@ import { AppText, Button, Card, Chip, Screen, Sheet, Tag, useI18n } from '@pawqu
 import { View } from 'react-native';
 
 import type { CalendarCellModel, CalendarModel } from './calendarModel';
+import { InsightCharts, PeriodCompare } from './ChartViews';
+import type { ChartModel, CompareModel } from './chartsModel';
 import { WalkCalendar } from './CalendarViews';
 import type { InsightCardModel, InsightsModel } from './insightsModel';
 
@@ -12,6 +14,13 @@ export interface InsightsScreenProps {
   /** The calendar of the last weeks; absent while it is not ready. */
   readonly calendar?: CalendarModel;
   readonly onDay?: (cell: CalendarCellModel) => void;
+  /** The comparison of two periods and the charts; absent while they are not ready. */
+  readonly compare?: {
+    readonly model: CompareModel;
+    readonly days: number;
+    readonly onDays: (days: number) => void;
+  };
+  readonly charts?: readonly ChartModel[];
 }
 
 function InsightCard(props: {
@@ -63,6 +72,8 @@ export function InsightsScreen({
   onHide,
   calendar,
   onDay,
+  compare,
+  charts,
 }: InsightsScreenProps) {
   const i18n = useI18n();
   return (
@@ -154,6 +165,11 @@ export function InsightsScreen({
           ))}
         </View>
       )}
+
+      {compare === undefined ? null : (
+        <PeriodCompare model={compare.model} days={compare.days} onDays={compare.onDays} />
+      )}
+      {charts === undefined ? null : <InsightCharts charts={charts} />}
 
       <AppText variant="muted" style={{ marginTop: 8 }}>
         {model.honesty}

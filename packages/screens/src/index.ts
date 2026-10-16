@@ -232,3 +232,13 @@ export {
   type MemoriesCardProps,
   type WalkCalendarProps,
 } from './CalendarViews';
+export {
+  chartModels,
+  compareModel,
+  COMPARE_PRESETS,
+  type BarModel,
+  type ChartModel,
+  type CompareModel,
+  type CompareRowModel,
+} from './chartsModel';
+export { InsightCharts, PeriodCompare } from './ChartViews';

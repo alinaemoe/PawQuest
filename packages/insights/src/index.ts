@@ -88,3 +88,7 @@ export type {
 } from './similar';
 export { CALENDAR_BANDS_S, calendarDays, calendarWeeks, dayLevel, mondayOf } from './calendar';
 export type { CalendarDay, CalendarWalk, CalendarWeek } from './calendar';
+export { comparePeriods } from './periods';
+export type { ComparisonKey, ComparisonRow, PeriodWalk } from './periods';
+export { groupShares, groupSpreads, weeklyBars } from './charts';
+export type { ChartUnit, ChartWalk, ShareBar, SpreadBar, WeekBar } from './charts';

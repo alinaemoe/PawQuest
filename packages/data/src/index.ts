@@ -317,3 +317,10 @@ export {
   type WeatherUsual,
 } from './usual';
 export { dayWalks, onThisDay, walkCalendar, type DayWalk, type Memory } from './calendar';
+export {
+  chartData,
+  periodComparison,
+  type ChartData,
+  type Period,
+  type PeriodComparison,
+} from './periods';

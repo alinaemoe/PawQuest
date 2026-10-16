@@ -1,11 +1,13 @@
 import {
   cardWalks,
+  chartData,
   dayWalks,
   dogFacts,
   hiddenInsightKeys,
   hideInsight,
   listPlaces,
   listWalksPage,
+  periodComparison,
   walkCalendar,
   walkPatterns,
 } from '@pawquest/data';
@@ -13,6 +15,8 @@ import { useToast } from '@pawquest/rn-ui';
 import {
   buildInsights,
   calendarModel,
+  chartModels,
+  compareModel,
   CardWalksSheet,
   dayRows,
   DayWalksSheet,
@@ -37,6 +41,7 @@ export function InsightsContainer() {
   const [hiding, setHiding] = useState<InsightCardModel | null>(null);
   const [showing, setShowing] = useState<InsightCardModel | null>(null);
   const [openDay, setOpenDay] = useState<CalendarCellModel | null>(null);
+  const [days, setDays] = useState<number>(14);
 
   const model = useMemo(() => {
     const now = Date.now();
@@ -55,6 +60,17 @@ export function InsightsContainer() {
     const tz = -new Date(now).getTimezoneOffset();
     return calendarModel(walkCalendar(db, dogId, now, tz, 12), localDay(now, tz), i18n);
   }, [db, dogId, i18n, version]);
+
+  const compare = useMemo(
+    () => compareModel(periodComparison(db, dogId, Date.now(), days), days, i18n),
+    [db, dogId, i18n, days, version, tick],
+  );
+
+  const charts = useMemo(() => {
+    const now = Date.now();
+    const tz = -new Date(now).getTimezoneOffset();
+    return chartModels(chartData(db, dogId, now, tz), localDay(now, tz), i18n);
+  }, [db, dogId, i18n, version, tick]);
 
   const dayList = useMemo(
     () => (openDay === null ? [] : dayRows(dayWalks(db, dogId, openDay.day), i18n)),
@@ -106,6 +122,8 @@ export function InsightsContainer() {
         model={model}
         calendar={calendar}
         onDay={setOpenDay}
+        compare={{ model: compare, days, onDays: setDays }}
+        charts={charts}
         onShowWalks={setShowing}
         onHide={setHiding}
       />
