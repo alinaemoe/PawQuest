@@ -64,3 +64,16 @@ export { DEFAULT_STAY_SCALES, findStays } from './track/stays';
 export type { Stay, StayOptions, StayPoint, StayScale, StayScaleName } from './track/stays';
 export { clusterStays } from './places/stayClusters';
 export type { ClusterStaysOptions, StayCluster, StayInput } from './places/stayClusters';
+export {
+  buildChronology,
+  chronologyTitle,
+  placeContaining,
+  visitsByPlace,
+} from './track/chronology';
+export type {
+  ChronoLeg,
+  ChronoPlace,
+  ChronoStep,
+  ChronoVisit,
+  ChronologyOptions,
+} from './track/chronology';

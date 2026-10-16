@@ -40,7 +40,7 @@ function scaleOfRadius(radiusM: number): StayScaleName {
 }
 
 /** The stays of one walk (A-28): its filtered track, manual pauses left out. */
-function staysOfWalk(db: SqlDb, walkId: string, now: number): Stay[] {
+export function staysOfWalk(db: SqlDb, walkId: string, now: number): Stay[] {
   const points = filterTrack(listTrackPoints(db, walkId)).points;
   if (points.length < 2) {
     return [];

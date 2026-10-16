@@ -7,6 +7,7 @@ import {
   restore,
   softDelete,
   updateWalk,
+  walkChronology,
   walkEventIds,
   walkTotals,
 } from '@pawquest/data';
@@ -14,6 +15,7 @@ import { useToast } from '@pawquest/rn-ui';
 import {
   eventTypeLabel,
   groupWalksByDay,
+  timelineRows,
   totalsLine,
   walkFacts,
   WalkDetailsSheet,
@@ -60,6 +62,7 @@ export function WalksTab() {
       return null;
     }
     const types = new Map(listEventTypes(db, true).map((t) => [t.id, t]));
+    const chrono = open.mode === 'gps' ? walkChronology(db, open.id, Date.now()) : null;
     return {
       id: open.id,
       whenText: `${i18n.formatLongDate(open.startedAt)} · ${i18n.formatTime(open.startedAt)}`,
@@ -74,6 +77,8 @@ export function WalksTab() {
         return facts === null ? null : weatherLine(facts, i18n);
       })(),
       manual: open.mode === 'manual',
+      route: chrono?.title ?? null,
+      timeline: chrono === null ? [] : timelineRows(chrono.steps, chrono.placeNames, i18n),
     };
   }, [db, open, i18n]);
 

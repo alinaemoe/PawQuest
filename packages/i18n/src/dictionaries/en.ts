@@ -663,6 +663,11 @@ export const en = {
   'photo.denied': 'No access to the camera. Allow it in the phone settings.',
   'active.photo': 'Take a photo',
 
+  'walk.timeline': 'Walk timeline',
+  'walk.timeline.leg': 'Walking',
+  'walk.timeline.stay': 'Stay',
+  'walk.timeline.gap': 'no signal',
+
   'dog.album': 'Photo album',
   'dog.albumHint': 'Every photo from your walks',
   'dog.recap': 'Week in review',

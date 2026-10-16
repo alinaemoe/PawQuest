@@ -736,6 +736,11 @@ export const ru = {
   'photo.denied': 'Нет доступа к камере. Разрешите его в настройках телефона.',
   'active.photo': 'Сделать фото',
 
+  'walk.timeline': 'Ход прогулки',
+  'walk.timeline.leg': 'Переход',
+  'walk.timeline.stay': 'Остановка',
+  'walk.timeline.gap': 'без сигнала',
+
   'dog.album': 'Фотоальбом',
   'dog.albumHint': 'Все фото с прогулок',
   'dog.recap': 'Итоги недели',

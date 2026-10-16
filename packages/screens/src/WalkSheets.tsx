@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { distanceToMeters, parseMinutes } from './input';
+import type { TimelineRow } from './chronologyRows';
 import type { WalkFacts } from './walksModel';
 
 export interface WalkDetailsModel {
@@ -15,6 +16,10 @@ export interface WalkDetailsModel {
   readonly notes: string | null;
   /** Weather saved at the start of the walk, as one line; null when none was saved. */
   readonly weather?: string | null;
+  /** "Дом → Магазин → Парк": the saved places visited, when there were any. */
+  readonly route?: string | null;
+  /** What the walk consisted of: visits and legs, for GPS walks. */
+  readonly timeline?: readonly TimelineRow[];
   readonly manual: boolean;
 }
 
@@ -58,6 +63,23 @@ export function WalkDetailsSheet({
       </View>
       {walk.weather === undefined || walk.weather === null ? null : (
         <AppText variant="muted">{walk.weather}</AppText>
+      )}
+      {walk.route === undefined || walk.route === null ? null : (
+        <AppText weight={600}>{walk.route}</AppText>
+      )}
+      {walk.timeline === undefined || walk.timeline.length === 0 ? null : (
+        <View style={{ gap: 4 }}>
+          <AppText variant="eyebrow">{i18n.t('walk.timeline')}</AppText>
+          {walk.timeline.map((row) => (
+            <AppText
+              key={row.key}
+              variant="body"
+              style={row.kind === 'leg' ? { opacity: 0.65 } : {}}
+            >
+              {row.time} · {row.text} · {row.detail}
+            </AppText>
+          ))}
+        </View>
       )}
       <View style={{ gap: 4 }}>
         <AppText variant="eyebrow">{i18n.t('walk.events')}</AppText>

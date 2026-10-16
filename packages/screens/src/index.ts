@@ -153,3 +153,4 @@ export {
 } from './PhotoAlbumScreen';
 export { WeekRecapScreen, type WeekRecapModel, type WeekRecapScreenProps } from './WeekRecapScreen';
 export { recapDelta, type RecapDelta } from './recapModel';
+export { timelineRows, type TimelineRow } from './chronologyRows';
