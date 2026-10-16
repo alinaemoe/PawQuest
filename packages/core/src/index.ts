@@ -84,3 +84,18 @@ export type {
 } from './track/chronology';
 export { findRides, rideSecondsWithin } from './track/rides';
 export type { Ride, RideOptions } from './track/rides';
+export {
+  MIN_ROUTE_LENGTH_M,
+  findRoutes,
+  matchRoutes,
+  passOfRoute,
+  pathLength,
+  routeShape,
+} from './routes/routes';
+export type {
+  FindRoutesOptions,
+  RouteCandidate,
+  RouteLeg,
+  RouteMatch,
+  RouteMatchOptions,
+} from './routes/routes';

@@ -262,3 +262,18 @@ export {
   trimWalkEndUndoable,
   type IndoorSpan,
 } from './walkStructure';
+export {
+  createRoute,
+  deleteRoute,
+  getRoute,
+  listRoutes,
+  proposeRoutes,
+  renameRoute,
+  routePasses,
+  walkRoutePasses,
+  type Route,
+  type RouteInput,
+  type RouteKind,
+  type RoutePass,
+  type RouteProposal,
+} from './routes';

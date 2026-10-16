@@ -14,6 +14,7 @@ const TRASHABLE = {
   symptom_log: 'symptom',
   weight_log: 'CAST(weight_g AS TEXT)',
   place: 'name',
+  route: 'name',
   project: 'title',
   care_item: 'title',
   care_plan: 'title',
