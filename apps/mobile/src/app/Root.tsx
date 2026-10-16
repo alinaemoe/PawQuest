@@ -31,6 +31,7 @@ import { AlbumContainer } from './AlbumContainer';
 import { PlacesContainer } from './PlacesContainer';
 import { RecapContainer } from './RecapContainer';
 import { RoutesContainer } from './RoutesContainer';
+import { useDerivedRefresh } from './useDerivedRefresh';
 import { QuickMarksContainer } from './QuickMarksContainer';
 import { TodayContainer } from './TodayContainer';
 import { TrashContainer } from './TrashContainer';
@@ -63,6 +64,7 @@ function approxMonths(draft: DogDraft): number | null {
 
 export function Root() {
   const app = useApp();
+  useDerivedRefresh();
   const { theme } = useTheme();
   const { i18n, settings, dog } = app;
   const [tab, setTab] = useState<Tab>('today');

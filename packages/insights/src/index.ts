@@ -47,3 +47,11 @@ export { countSuccesses, wilsonInterval } from './proportion';
 export type { AttemptResult, PartialPolicy, ProportionInterval } from './proportion';
 export { addMonths, dueStatus, inSeason, intervalStats, nextDue, reminderTimes } from './care';
 export type { CareSchedule, DueKind, DueStatus, IntervalStats } from './care';
+export {
+  WALK_DIMENSIONS_VERSION,
+  WALK_DIMENSION_KEYS,
+  WALK_OUTCOME_KEYS,
+  walkDimensions,
+  walkOutcomes,
+} from './dimensions';
+export type { Dimensions, Outcomes, WalkDimensionInput, WalkOutcomeInput } from './dimensions';

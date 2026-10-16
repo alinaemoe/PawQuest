@@ -59,10 +59,17 @@ describe('migrate', () => {
       applied: MIGRATIONS.map((m) => m.version),
     });
     // 28 tables of 0001 (incl. schema_migrations) + project, project_stage, food_item, food_log,
-    // prompt_state, rest_day from 0002 + care_plan from 0004 + route from 0009.
-    expect(tableNames()).toHaveLength(36);
+    // prompt_state, rest_day from 0002 + care_plan from 0004 + route from 0009 + walk_derived from 0011.
+    expect(tableNames()).toHaveLength(37);
     expect(tableNames()).toEqual(
-      expect.arrayContaining(['route', 'dog', 'track_point', 'food_log', 'rest_day']),
+      expect.arrayContaining([
+        'walk_derived',
+        'route',
+        'dog',
+        'track_point',
+        'food_log',
+        'rest_day',
+      ]),
     );
     expect(db.all('SELECT version, applied_at FROM schema_migrations ORDER BY version')).toEqual([
       ...MIGRATIONS.map((m) => ({ version: m.version, applied_at: NOW })),

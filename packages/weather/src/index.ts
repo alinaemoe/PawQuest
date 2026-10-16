@@ -23,3 +23,5 @@ export type {
   SurfaceHeat,
   WeatherFacts,
 } from './types';
+export { WEATHER_DIMENSIONS_VERSION, weatherDimensions } from './dimensions';
+export type { WeatherDimensions } from './dimensions';

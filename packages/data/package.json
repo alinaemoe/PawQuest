@@ -20,6 +20,7 @@
   "dependencies": {
     "drizzle-orm": "0.45.4",
     "@pawquest/core": "workspace:*",
+    "@pawquest/insights": "workspace:*",
     "@pawquest/weather": "workspace:*"
   },
   "devDependencies": {

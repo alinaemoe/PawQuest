@@ -279,3 +279,21 @@ export {
   type RoutePass,
   type RouteProposal,
 } from './routes';
+export {
+  DERIVED_VERSIONS,
+  clearDerived,
+  computeDims,
+  computeStructure,
+  derivedHealth,
+  fingerprint,
+  listWalkDims,
+  refreshDerived,
+  type DerivedHealth,
+  type DerivedKind,
+  type DimsJson,
+  type RefreshOptions,
+  type RefreshResult,
+  type StoredDims,
+  type StructureJson,
+} from './derived';
+export { buildAnalysisUnits, walkPatterns, type WalkPatterns } from './analysis';

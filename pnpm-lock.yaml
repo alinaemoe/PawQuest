@@ -345,6 +345,9 @@ importers:
       '@pawquest/core':
         specifier: workspace:*
         version: link:../core
+      '@pawquest/insights':
+        specifier: workspace:*
+        version: link:../insights
       '@pawquest/weather':
         specifier: workspace:*
         version: link:../weather
