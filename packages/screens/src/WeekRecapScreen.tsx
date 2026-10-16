@@ -1,4 +1,4 @@
-import { AppText, Button, Card, Chip, Icon, Screen, useI18n, useTheme } from '@pawquest/rn-ui';
+import { AppText, Card, Chip, Icon, Screen, useI18n, useTheme } from '@pawquest/rn-ui';
 import { Image, Pressable, View } from 'react-native';
 
 import type { PhotoThumb } from './PhotoViews';
@@ -82,9 +82,12 @@ export function WeekRecapScreen(props: WeekRecapScreenProps) {
       <AppText variant="numBig">{i18n.t('recap.title')}</AppText>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Chip size="sm" label={`‹ ${i18n.t('recap.prev')}`} onPress={props.onEarlier} />
-        <AppText weight={600} style={{ flex: 1, textAlign: 'center' }}>
-          {props.isCurrent ? `${i18n.t('recap.thisWeek')} · ${props.range}` : props.range}
-        </AppText>
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          {props.isCurrent ? <AppText variant="eyebrow">{i18n.t('recap.thisWeek')}</AppText> : null}
+          <AppText weight={600} numberOfLines={1} adjustsFontSizeToFit>
+            {props.range}
+          </AppText>
+        </View>
         <Chip
           size="sm"
           label={`${i18n.t('recap.next')} ›`}
@@ -156,7 +159,6 @@ export function WeekRecapScreen(props: WeekRecapScreenProps) {
           ) : null}
         </Card>
       )}
-      <Button label={i18n.t('common.close')} tone="ghost" onPress={props.onBack} />
     </Screen>
   );
 }
