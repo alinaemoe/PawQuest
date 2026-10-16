@@ -25,12 +25,14 @@ import {
   updateEvent,
   updateWalk,
   walkAnchor,
+  walkBaseArrival,
   type PlaceCategory,
   type Walk,
 } from '@pawquest/data';
 import { useToast } from '@pawquest/rn-ui';
 import {
   ActiveWalkScreen,
+  BaseArrivalSheet,
   eventTypeLabel,
   EventDetailsSheet,
   walkFacts,
@@ -114,6 +116,27 @@ export function WalkContainer({
   }, [db, walk.id, walk.mode, tick, version]);
 
   const photoCount = useMemo(() => listWalkPhotos(db, walk.id).length, [db, walk.id, version]);
+
+  // "You came to Mom's. Finish the walk?": looked at once a minute while the walk is running
+  const [arrivalTick, setArrivalTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setArrivalTick((t) => t + 1);
+    }, 60_000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+  const arrival = useMemo(() => {
+    if (walk.mode !== 'gps' || walk.status !== 'active') {
+      return null;
+    }
+    const now = Date.now();
+    const found = walkBaseArrival(db, walk.id, now);
+    return found === null || isPromptHidden(db, `base-arrival:${walk.id}:${found.placeId}`, now)
+      ? null
+      : found;
+  }, [db, walk.id, walk.mode, walk.status, arrivalTick, version]);
 
   const buttons: WalkEventButton[] = types.map((type) => ({
     id: type.id,
@@ -255,6 +278,29 @@ export function WalkContainer({
           bump();
         }}
       />
+      {arrival === null ? null : (
+        <BaseArrivalSheet
+          visible
+          placeName={arrival.placeName}
+          stay={i18n.formatDuration(Math.round(arrival.stayS))}
+          onFinish={() => {
+            void stopGpsUpdates();
+            const done = finishWalk(db, ctx, walk.id, arrival.arrivedAt);
+            onFinished(done.id);
+            bump();
+          }}
+          onKeepWalking={() => {
+            // ask again in half an hour
+            hidePrompt(
+              db,
+              ctx,
+              `base-arrival:${walk.id}:${arrival.placeId}`,
+              Date.now() + 30 * 60_000,
+            );
+            bump();
+          }}
+        />
+      )}
       {details === null ? null : (
         <EventDetailsSheet
           key={details.event.id}

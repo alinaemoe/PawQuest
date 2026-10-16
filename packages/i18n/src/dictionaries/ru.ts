@@ -740,6 +740,12 @@ export const ru = {
   'walk.timeline.leg': 'Переход',
   'walk.timeline.stay': 'Остановка',
   'walk.timeline.gap': 'без сигнала',
+  'walk.timeline.ride': 'В дороге',
+
+  'arrival.title': 'Вы пришли: {place}',
+  'arrival.text': 'Вы здесь уже {stay}. Завершить прогулку? Она закончится в момент прихода.',
+  'arrival.finish': 'Завершить прогулку',
+  'arrival.keep': 'Мы ещё гуляем',
 
   'dog.album': 'Фотоальбом',
   'dog.albumHint': 'Все фото с прогулок',

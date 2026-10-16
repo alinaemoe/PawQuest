@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { walkChronology } from './chronology';
+import { walkBaseArrival, walkChronology } from './chronology';
 import { createDog, type Dog } from './dogs';
 import { createPlace } from './places';
 import { appendTrackPoints, finishWalk, startWalk, type TrackPointInput } from './recorder';
@@ -93,5 +93,54 @@ describe('walkChronology', () => {
     const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
     appendTrackPoints(env.db, walk.id, [{ ts: START, ...SHOP, accuracyM: 5, speedMps: 0 }]);
     expect(walkChronology(env.db, walk.id, START)).toBeNull();
+  });
+});
+
+describe('walkBaseArrival', () => {
+  /** A running walk: 150 s of walking, then `stopS` seconds standing at the spot. */
+  function runningWalk(stopS: number): string {
+    const points: TrackPointInput[] = [];
+    let t = START;
+    for (let i = 0; i < 150; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: SHOP.lat - (150 - i) * STEP,
+        lon: SHOP.lon,
+        accuracyM: 5,
+        speedMps: 1.2,
+      });
+    }
+    for (let i = 0; i < stopS; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: SHOP.lat + (i % 2) * 0.000004,
+        lon: SHOP.lon,
+        accuracyM: 5,
+        speedMps: 0,
+      });
+    }
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    appendTrackPoints(env.db, walk.id, points);
+    return walk.id;
+  }
+
+  it('asks at a guests place after fifteen minutes, with its name and arrival time', () => {
+    createPlace(env.db, env.ctx, { name: 'Мама', category: 'guests', label: 'Гости', ...SHOP });
+    const id = runningWalk(1200);
+    const found = walkBaseArrival(env.db, id, START + 150_000 + 1_200_000);
+    expect(found?.placeName).toBe('Мама');
+    expect(found?.stayS).toBeGreaterThan(1100);
+    expect(found?.arrivedAt).toBeGreaterThanOrEqual(START + 100_000);
+    expect(found?.arrivedAt).toBeLessThanOrEqual(START + 200_000);
+  });
+
+  it('does not ask at a shop, or when the place has no name yet, or before fifteen minutes', () => {
+    createPlace(env.db, env.ctx, { name: 'Магазин', category: 'shop', label: 'Магазин', ...SHOP });
+    expect(walkBaseArrival(env.db, runningWalk(1200), START + 2_000_000)).toBeNull();
+  });
+
+  it('a walk without points has nothing to ask', () => {
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    expect(walkBaseArrival(env.db, walk.id, START)).toBeNull();
   });
 });

@@ -65,15 +65,21 @@ export type { Stay, StayOptions, StayPoint, StayScale, StayScaleName } from './t
 export { clusterStays } from './places/stayClusters';
 export type { ClusterStaysOptions, StayCluster, StayInput } from './places/stayClusters';
 export {
+  baseArrival,
   buildChronology,
   chronologyTitle,
   placeContaining,
   visitsByPlace,
 } from './track/chronology';
 export type {
+  BaseArrival,
+  BaseArrivalOptions,
   ChronoLeg,
   ChronoPlace,
+  ChronoRide,
   ChronoStep,
   ChronoVisit,
   ChronologyOptions,
 } from './track/chronology';
+export { findRides, rideSecondsWithin } from './track/rides';
+export type { Ride, RideOptions } from './track/rides';

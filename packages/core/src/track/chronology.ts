@@ -1,6 +1,7 @@
 import { haversineDistanceM, type LatLon } from '../geo/haversine';
 
 import type { TimedPoint } from './motion';
+import type { Ride } from './rides';
 import type { Stay, StayScaleName } from './stays';
 
 /**
@@ -38,7 +39,16 @@ export interface ChronoLeg {
   readonly lengthM: number;
 }
 
-export type ChronoStep = ChronoVisit | ChronoLeg;
+/** A stretch in a car, a taxi or on a bike: part of the record, not of the walking. */
+export interface ChronoRide {
+  readonly kind: 'ride';
+  readonly fromTs: number;
+  readonly toTs: number;
+  readonly durationS: number;
+  readonly lengthM: number;
+}
+
+export type ChronoStep = ChronoVisit | ChronoLeg | ChronoRide;
 
 export interface ChronologyOptions {
   /** A leg shorter than this is not shown: the neighbouring visits simply follow each other. Default 60 s. */
@@ -47,6 +57,8 @@ export interface ChronologyOptions {
   readonly minPlaceReachM?: number;
   /** A visit shorter than this once cut to the walk is dropped. Default 180 s (the smallest stay). */
   readonly minVisitS?: number;
+  /** Rides found in the track: the legs are split around them. */
+  readonly rides?: readonly Ride[];
 }
 
 /** The nearest saved place that contains a position (its radius, but not less than the reach). */
@@ -100,7 +112,8 @@ export function buildChronology(
   const minVisitS = options.minVisitS ?? 180;
   const visits = [...stays].sort((a, b) => a.fromTs - b.fromTs);
   const steps: ChronoStep[] = [];
-  const leg = (fromTs: number, toTs: number): void => {
+  const rides = [...(options.rides ?? [])].sort((a, b) => a.fromTs - b.fromTs);
+  const walkLeg = (fromTs: number, toTs: number): void => {
     const durationS = (toTs - fromTs) / 1000;
     if (durationS >= minLegS) {
       steps.push({
@@ -111,6 +124,27 @@ export function buildChronology(
         lengthM: pathLengthM(points, fromTs, toTs),
       });
     }
+  };
+  // the way between two visits: walking pieces with the rides in them as steps of their own
+  const leg = (fromTs: number, toTs: number): void => {
+    let at = fromTs;
+    for (const ride of rides) {
+      const rideFrom = Math.max(ride.fromTs, at);
+      const rideTo = Math.min(ride.toTs, toTs);
+      if (rideTo - rideFrom < 1000) {
+        continue;
+      }
+      walkLeg(at, rideFrom);
+      steps.push({
+        kind: 'ride',
+        fromTs: rideFrom,
+        toTs: rideTo,
+        durationS: (rideTo - rideFrom) / 1000,
+        lengthM: pathLengthM(points, rideFrom, rideTo),
+      });
+      at = rideTo;
+    }
+    walkLeg(at, toTs);
   };
   let cursor = bounds.startedAt;
   for (const stay of visits) {
@@ -168,4 +202,49 @@ export function chronologyTitle(
     }
   }
   return names.length === 0 ? null : names.join(' → ');
+}
+
+export interface BaseArrival {
+  readonly visit: ChronoVisit;
+  /** The saved place (a base) where the walk now stands. */
+  readonly placeId: string;
+  /** When the owner arrived there: the walk ends at this moment if they agree. */
+  readonly arrivedAt: number;
+  readonly stayS: number;
+}
+
+export interface BaseArrivalOptions {
+  /** A stay in a base this long ends the walk (question). Default 900 s (15 min). */
+  readonly minStayS?: number;
+  /** The stay counts as "now" when it reaches to within this long of the last fix. Default 180 s. */
+  readonly freshS?: number;
+}
+
+/**
+ * "You came to Mom's. Finish the walk?" (D-62, 5.1 item 1): the walk now stands in a base (home,
+ * guests) for at least 15 minutes, and it got there from somewhere (the first step of a walk is
+ * not an arrival: standing at one's own door before setting off is not coming home). Shops, vets
+ * and groomers are not bases, a short visit ("hand something over") is part of the walk.
+ */
+export function baseArrival(
+  steps: readonly ChronoStep[],
+  baseIds: ReadonlySet<string>,
+  lastFixTs: number,
+  options: BaseArrivalOptions = {},
+): BaseArrival | null {
+  const minStayS = options.minStayS ?? 900;
+  const freshS = options.freshS ?? 180;
+  const index = steps.length - 1;
+  const last = steps[index];
+  if (
+    index < 1 ||
+    last?.kind !== 'visit' ||
+    last.placeId === null ||
+    !baseIds.has(last.placeId) ||
+    last.durationS < minStayS ||
+    (lastFixTs - last.toTs) / 1000 > freshS
+  ) {
+    return null;
+  }
+  return { visit: last, placeId: last.placeId, arrivedAt: last.fromTs, stayS: last.durationS };
 }

@@ -4,7 +4,7 @@ import type { I18n } from '@pawquest/i18n';
 export interface TimelineRow {
   readonly key: string;
   readonly time: string;
-  readonly kind: 'visit' | 'leg';
+  readonly kind: 'visit' | 'leg' | 'ride';
   readonly text: string;
   readonly detail: string;
 }
@@ -21,6 +21,15 @@ export function timelineRows(
   return steps.map((step, index) => {
     const time = i18n.formatTime(step.fromTs);
     const key = `${String(index)}-${String(step.fromTs)}`;
+    if (step.kind === 'ride') {
+      return {
+        key,
+        time,
+        kind: 'ride',
+        text: i18n.t('walk.timeline.ride'),
+        detail: `${i18n.formatDuration(Math.round(step.durationS))} · ${i18n.formatDistance(step.lengthM)}`,
+      };
+    }
     if (step.kind === 'leg') {
       return {
         key,

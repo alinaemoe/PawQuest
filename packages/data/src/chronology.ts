@@ -1,14 +1,17 @@
 import {
+  baseArrival,
   buildChronology,
   chronologyTitle,
   filterTrack,
+  findRides,
+  type BaseArrival,
   type ChronoPlace,
   type ChronoStep,
 } from '@pawquest/core';
 
-import { listPlaces } from './places';
+import { isBasePlace, listPlaces } from './places';
 import { staysOfWalk } from './placeSuggest';
-import { listTrackPoints } from './recorder';
+import { lastTrackPoint, listTrackPoints } from './recorder';
 import type { SqlDb } from './sql';
 import { getWalk } from './walks';
 
@@ -42,10 +45,35 @@ export function walkChronology(db: SqlDb, walkId: string, now: number): WalkChro
     lon: p.lon,
     radiusM: p.radiusM,
   }));
-  const steps = buildChronology(points, staysOfWalk(db, walkId, now), known, {
-    startedAt: walk.startedAt,
-    endedAt: walk.endedAt ?? now,
-  });
+  const steps = buildChronology(
+    points,
+    staysOfWalk(db, walkId, now),
+    known,
+    { startedAt: walk.startedAt, endedAt: walk.endedAt ?? now },
+    { rides: findRides(points) },
+  );
   const placeNames = new Map(places.map((p) => [p.id, p.name]));
   return { steps, title: chronologyTitle(steps, (id) => placeNames.get(id)), placeNames };
+}
+
+export interface WalkBaseArrival extends BaseArrival {
+  readonly placeName: string;
+}
+
+/**
+ * Whether a running walk now stands in a base (home, guests) long enough to ask "Finish the
+ * walk?" (D-62, 5.1): the base, when the owner arrived there and how long they have been there.
+ */
+export function walkBaseArrival(db: SqlDb, walkId: string, now: number): WalkBaseArrival | null {
+  const chronology = walkChronology(db, walkId, now);
+  const last = lastTrackPoint(db, walkId);
+  if (chronology === null || last === null) {
+    return null;
+  }
+  const places = listPlaces(db);
+  const bases = new Set(places.filter((p) => isBasePlace(p.category)).map((p) => p.id));
+  const found = baseArrival(chronology.steps, bases, last.ts);
+  return found === null
+    ? null
+    : { ...found, placeName: chronology.placeNames.get(found.placeId) ?? '' };
 }

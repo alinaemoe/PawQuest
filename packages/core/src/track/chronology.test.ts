@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { EARTH_RADIUS_M, type LatLon } from '../geo/haversine';
 
 import {
+  baseArrival,
   buildChronology,
   chronologyTitle,
   placeContaining,
@@ -11,6 +12,7 @@ import {
   type ChronoVisit,
 } from './chronology';
 import type { TimedPoint } from './motion';
+import { findRides } from './rides';
 import { findStays } from './stays';
 
 const M_PER_DEG = (EARTH_RADIUS_M * Math.PI) / 180;
@@ -184,6 +186,41 @@ describe('buildChronology: other shapes', () => {
     expect(visits(steps)).toHaveLength(1);
   });
 
+  it('a car trip between two walks is a ride of its own, with no walking length (S-9)', () => {
+    const track = new Track().walkTo(300, 0).walkTo(15_000, 0, 10).walkTo(15_300, 0);
+    const steps = buildChronology(
+      track.points,
+      [],
+      [],
+      { startedAt: T0, endedAt: track.end },
+      {
+        rides: findRides(track.points),
+      },
+    );
+    expect(steps.map((s) => s.kind)).toEqual(['leg', 'ride', 'leg']);
+    const ride = steps[1];
+    expect(ride?.kind === 'ride' ? ride.lengthM : 0).toBeGreaterThan(14_500);
+    const walked = steps.flatMap((s) => (s.kind === 'leg' ? [s.lengthM] : []));
+    expect(Math.max(...walked)).toBeLessThan(400);
+    for (let i = 1; i < steps.length; i += 1) {
+      expect(steps[i]?.fromTs ?? 0).toBeGreaterThanOrEqual(steps[i - 1]?.toTs ?? Infinity);
+    }
+  });
+
+  it('a ride at the very start or end leaves no empty legs', () => {
+    const track = new Track().walkTo(10_000, 0, 10);
+    const steps = buildChronology(
+      track.points,
+      [],
+      [],
+      { startedAt: T0, endedAt: track.end },
+      {
+        rides: findRides(track.points),
+      },
+    );
+    expect(steps.map((s) => s.kind)).toEqual(['ride']);
+  });
+
   it('a walk without stays is one leg of the whole length', () => {
     const track = new Track().walkTo(1000, 0);
     const steps = chronology(track, [HOME]);
@@ -222,5 +259,59 @@ describe('buildChronology: other shapes', () => {
       ['b', 'Б'],
     ]);
     expect(chronologyTitle(steps, (id) => names.get(id))).toBe('А → Б → А');
+  });
+});
+
+describe('baseArrival', () => {
+  const MOM = place('mom', 'Мама', 1200, 0, 40);
+  const bases = new Set(['home', 'mom']);
+  const arrival = (track: Track, places: ChronoPlace[], lastFix = track.end) =>
+    baseArrival(chronology(track, places), bases, lastFix);
+
+  it('two hours at Mom’s ask to finish, at the moment of arrival (S-4)', () => {
+    const track = new Track().walkTo(1200, 0).stand(7200);
+    const found = arrival(track, [HOME, MOM]);
+    expect(found?.placeId).toBe('mom');
+    expect(found?.stayS).toBeGreaterThan(7000);
+    expect(found?.arrivedAt).toBeGreaterThan(T0 + 800_000);
+    expect(found?.arrivedAt).toBeLessThan(T0 + 1_200_000);
+  });
+
+  it('eight minutes to hand something over is part of the walk (S-5)', () => {
+    expect(arrival(new Track().walkTo(1200, 0).stand(480), [HOME, MOM])).toBeNull();
+  });
+
+  it('just under and just over the fifteen minutes', () => {
+    expect(arrival(new Track().walkTo(1200, 0).stand(840), [MOM])).toBeNull();
+    expect(arrival(new Track().walkTo(1200, 0).stand(960), [MOM])).not.toBeNull();
+  });
+
+  it('a shop is not a base, however long', () => {
+    const shop = place('shop', 'Магазин', 1200, 0, 40);
+    expect(arrival(new Track().walkTo(1200, 0).stand(3600), [shop])).toBeNull();
+  });
+
+  it('standing at one’s own door before setting off is not an arrival', () => {
+    expect(arrival(new Track().stand(1200), [HOME])).toBeNull();
+  });
+
+  it('coming back home after the walk is an arrival', () => {
+    const track = new Track().stand(300).walkTo(900, 0).walkTo(0, 0).stand(1000);
+    expect(arrival(track, [HOME])?.placeId).toBe('home');
+  });
+
+  it('a stay that is over (the walk went on) asks nothing', () => {
+    const track = new Track().walkTo(1200, 0).stand(1200).walkTo(2400, 0);
+    expect(arrival(track, [MOM])).toBeNull();
+  });
+
+  it('an old stay does not ask once the signal has been silent for long', () => {
+    const track = new Track().walkTo(1200, 0).stand(1200);
+    expect(arrival(track, [MOM], track.end + 600_000)).toBeNull();
+    expect(arrival(track, [MOM], track.end + 120_000)).not.toBeNull();
+  });
+
+  it('an unnamed place never asks', () => {
+    expect(arrival(new Track().walkTo(1200, 0).stand(1800), [])).toBeNull();
   });
 });

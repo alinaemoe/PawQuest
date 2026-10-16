@@ -667,6 +667,13 @@ export const en = {
   'walk.timeline.leg': 'Walking',
   'walk.timeline.stay': 'Stay',
   'walk.timeline.gap': 'no signal',
+  'walk.timeline.ride': 'On the road',
+
+  'arrival.title': 'You have arrived: {place}',
+  'arrival.text':
+    'You have been here for {stay}. Finish the walk? It will end at the moment you arrived.',
+  'arrival.finish': 'Finish the walk',
+  'arrival.keep': 'We are still walking',
 
   'dog.album': 'Photo album',
   'dog.albumHint': 'Every photo from your walks',

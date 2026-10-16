@@ -100,6 +100,7 @@ export const walk = sqliteTable(
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
     deletedAt: text('deleted_at'),
+    rideS: integer('ride_s').notNull().default(0),
   },
   (t) => [
     index('idx_walk_started').on(t.startedAt),

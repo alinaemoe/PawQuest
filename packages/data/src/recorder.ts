@@ -1,4 +1,4 @@
-import { analyzeMotion, filterTrack, type GpsFix } from '@pawquest/core';
+import { analyzeMotion, filterTrack, findRides, type GpsFix } from '@pawquest/core';
 
 import { expectFound, fromIso, toIso, type Ctx } from './ids';
 import type { SqlDb, SqlRow } from './sql';
@@ -26,6 +26,8 @@ export interface WalkMetrics {
   readonly distanceM: number;
   readonly movingS: number;
   readonly pausedS: number;
+  /** Time spent riding (a car, a taxi, a bike): not part of the walking above. */
+  readonly rideS: number;
 }
 
 type SegmentKind = 'moving' | 'paused' | 'gap';
@@ -191,15 +193,20 @@ export function computeWalkMetrics(db: SqlDb, walkId: string, now: number): Walk
 
   let distanceM = 0;
   let movingS = 0;
+  let rideS = 0;
   // a walk written without segments (no GPS) has nothing to measure
   for (const segment of moving) {
     const fixes = all.filter((p) => p.ts >= segment.fromTs && p.ts <= segment.toTs);
     const filtered = filterTrack(fixes);
-    distanceM += filtered.distanceM;
-    movingS += analyzeMotion(filtered.points).movingS;
+    const rides = findRides(filtered.points);
+    const rideDistanceM = rides.reduce((sum, r) => sum + r.distanceM, 0);
+    const rideSeconds = rides.reduce((sum, r) => sum + r.durationS, 0);
+    distanceM += Math.max(0, filtered.distanceM - rideDistanceM);
+    movingS += Math.max(0, analyzeMotion(filtered.points).movingS - rideSeconds);
+    rideS += rideSeconds;
   }
   const pausedS = paused.reduce((sum, r) => sum + (r.toTs - r.fromTs) / 1000, 0);
-  return { distanceM, movingS, pausedS };
+  return { distanceM, movingS, pausedS, rideS };
 }
 
 /**
@@ -217,14 +224,15 @@ export function finishWalk(db: SqlDb, ctx: Ctx, walkId: string, endedAt?: number
     closeOpenSegment(db, walkId, end);
     const metrics = computeWalkMetrics(db, walkId, end);
     db.run(
-      `UPDATE walk SET status = 'completed', ended_at = ?, duration_s = ?, moving_s = ?, paused_s = ?,
+      `UPDATE walk SET status = 'completed', ended_at = ?, duration_s = ?, moving_s = ?, paused_s = ?, ride_s = ?,
               distance_m = ?, summary_pending = 1, updated_at = ?
         WHERE id = ?`,
       [
         toIso(end),
-        Math.max(0, Math.round((end - walk.startedAt) / 1000)),
+        Math.max(0, Math.round((end - walk.startedAt) / 1000 - metrics.rideS)),
         Math.round(metrics.movingS),
         Math.round(metrics.pausedS),
+        Math.round(metrics.rideS),
         Math.round(metrics.distanceM),
         toIso(ctx.now()),
         walkId,
@@ -297,4 +305,9 @@ export function getRunningWalkId(db: SqlDb): string | null {
     "SELECT id FROM walk WHERE status = 'active' AND deleted_at IS NULL ORDER BY started_at DESC LIMIT 1",
   )[0];
   return row === undefined ? null : String(row['id']);
+}
+
+/** Seconds of a finished walk spent riding (a car, a taxi, a bike); 0 for a walk without rides. */
+export function walkRideSeconds(db: SqlDb, walkId: string): number {
+  return Number(db.all('SELECT ride_s FROM walk WHERE id = ?', [walkId])[0]?.['ride_s'] ?? 0);
 }

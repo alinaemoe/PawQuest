@@ -239,4 +239,10 @@ export {
   type PhotoOwner,
 } from './photos';
 export { MIN_CALM_MS, weekBounds, weekRecap, type CalmMoment, type WeekRecap } from './recap';
-export { walkChronology, type WalkChronology } from './chronology';
+export {
+  walkBaseArrival,
+  walkChronology,
+  type WalkBaseArrival,
+  type WalkChronology,
+} from './chronology';
+export { walkRideSeconds } from './recorder';
