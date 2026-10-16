@@ -305,4 +305,4 @@ export {
   type CardWalk,
   type WalkPatterns,
 } from './analysis';
-export { dogFacts } from './dogFacts';
+export { MIN_FACT_WALK_S, dogFacts } from './dogFacts';

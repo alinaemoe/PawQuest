@@ -609,6 +609,15 @@ describe('dogFacts (step 3.4)', () => {
     expect(dogFacts(env.db, dog.id, START, 0).totals.walks).toBe(8);
   });
 
+  it('a walk shorter than two minutes is a slip, not a walk: it is not counted', () => {
+    [0, 1, 2].forEach((d) => manual(d, 30));
+    manual(3, 1);
+    manual(4, 2);
+    const facts = dogFacts(env.db, dog.id, START + 5 * DAY, 0);
+    expect(facts.totals.walks).toBe(4);
+    expect(facts.longestWalk?.value).toBe(1800);
+  });
+
   it('a dog without walks has nothing to say', () => {
     expect(dogFacts(env.db, dog.id, START, 0).totals.walks).toBe(0);
   });
