@@ -35,6 +35,8 @@ import {
   walkBaseArrival,
   walkCutSuggestion,
   walkRoutePasses,
+  walkUsual,
+  refreshDerived,
   type PlaceCategory,
   type Walk,
 } from '@pawquest/data';
@@ -42,6 +44,7 @@ import { useToast } from '@pawquest/rn-ui';
 import {
   ActiveWalkScreen,
   BaseArrivalSheet,
+  usualModel,
   NewRouteSheet,
   suggestedRouteName,
   versusUsual,
@@ -395,9 +398,18 @@ const SCALE_CATEGORY: Readonly<Record<'small' | 'medium' | 'large', PlaceCategor
 const FOREVER = 3650 * DAY;
 
 export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDone: () => void }) {
-  const { db, ctx, i18n, bump } = useApp();
+  const { db, ctx, dog, i18n, bump } = useApp();
   const toast = useToast();
   const walk = useMemo(() => getWalk(db, walkId), [db, walkId]);
+  // the walk against walks like it: the walk that has just ended is worked out first, so that
+  // the comparison is there when the summary opens
+  const [usual] = useState(() => {
+    if (dog === null) {
+      return null;
+    }
+    refreshDerived(db, ctx, dog.id, { limit: 3 });
+    return usualModel(walkUsual(db, dog.id, walkId), i18n);
+  });
   const [naming, setNaming] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [cutDone, setCutDone] = useState(false);
@@ -553,6 +565,7 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
                 keepLabel: i18n.t('cut.keep'),
               }
         }
+        usual={usual}
         routeLine={routeLine}
         routeCard={
           routeProposal === null || routeDismissed

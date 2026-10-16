@@ -1,5 +1,7 @@
+import { weatherDimensions, type WeatherFacts } from '@pawquest/weather';
 import {
   MIN_SIMILAR,
+  SIMILAR_WEATHER_LEVELS,
   compareToUsual,
   similarWalks,
   usualStats,
@@ -139,5 +141,51 @@ export function walkUsual(db: SqlDb, dogId: string, walkId: string): WalkUsual |
       pick((n) => n.paceMinKm),
       USUAL_RULES.pace,
     ),
+  };
+}
+
+export interface WeatherUsual {
+  /** The weather the comparison was made in: the dimensions the walks share with the conditions. */
+  readonly keys: SimilarityLevel;
+  /** The values of those dimensions now ("wet", "0_10"). */
+  readonly values: Readonly<Record<string, string>>;
+  readonly widened: boolean;
+  /** How many walks were in weather like this. */
+  readonly circleSize: number;
+  /** How long walks lasted in such weather, in seconds: the usual with its spread. */
+  readonly duration: UsualStats | null;
+}
+
+/**
+ * "In weather like today's": the walks of a dog that were made in weather like the given
+ * conditions (the same ground, temperature band and light; wider when there are too few) and how
+ * long they usually lasted. `null` when fewer than five walks are like it.
+ */
+export function weatherUsual(db: SqlDb, dogId: string, facts: WeatherFacts): WeatherUsual | null {
+  const dims = weatherDimensions(facts);
+  const target = {
+    id: 'now',
+    startedAt: Number.MAX_SAFE_INTEGER,
+    dims: { ground: dims.ground, temp: dims.temp, light: dims.light },
+  };
+  const all = listWalkDims(db, dogId).map((d) => ({
+    id: d.walkId,
+    startedAt: d.startedAt,
+    dims: d.dims.dims,
+  }));
+  const circle = similarWalks(all, target, SIMILAR_WEATHER_LEVELS);
+  if (circle === null) {
+    return null;
+  }
+  const numbers = numbersOfWalks(db, dogId);
+  const durations = circle.walks.flatMap((w) => numbers.get(w.id)?.durationS ?? []);
+  return {
+    keys: circle.keys,
+    values: Object.fromEntries(
+      circle.keys.map((k) => [k, target.dims[k as 'ground' | 'temp' | 'light']]),
+    ),
+    widened: circle.widened,
+    circleSize: circle.walks.length,
+    duration: durations.length >= MIN_SIMILAR ? usualStats(durations) : null,
   };
 }

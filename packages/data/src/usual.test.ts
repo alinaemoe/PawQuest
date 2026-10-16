@@ -4,7 +4,9 @@ import { refreshDerived } from './derived';
 import { createDog, type Dog } from './dogs';
 import { createPlace, setWalkPlace } from './places';
 import { START, testEnv, type TestEnv } from './test-utils';
-import { walkUsual } from './usual';
+import { walkUsual, weatherUsual } from './usual';
+import { saveWeatherSnapshot } from './weather';
+import type { WeatherFacts } from '@pawquest/weather';
 import { createManualWalk } from './walks';
 
 const DAY = 86_400_000;
@@ -112,5 +114,69 @@ describe('walkUsual', () => {
     const usual = walkUsual(env.db, dog.id, target);
     expect(usual?.distance?.usual.median).toBe(2000);
     expect(usual?.distance?.comparison).toEqual({ kind: 'longer', diff: 1200 });
+  });
+});
+
+const facts = (extra: Partial<WeatherFacts> = {}): WeatherFacts => ({
+  at: START,
+  gridDistanceKm: 1,
+  tempC: 8,
+  apparentC: 6,
+  humidityPct: 70,
+  windMs: 2,
+  gustMs: 4,
+  code: 1,
+  isDay: true,
+  rain3hMm: 0,
+  rain24hMm: 0,
+  rain72hMm: 0,
+  snow24hCm: 0,
+  raining: false,
+  nextRainMin: null,
+  lastRainAt: null,
+  surfaceTempC: 12,
+  soilMoisture: 0.2,
+  uv: 1,
+  sunrise: null,
+  sunset: null,
+  daylightLeftMin: 300,
+  untilSunriseMin: null,
+  aqi: 25,
+  pm25: 5,
+  pollen: [],
+  ...extra,
+});
+
+describe('weatherUsual', () => {
+  const dayWith = (minutes: number, weather: Partial<WeatherFacts>, day: number) => {
+    const id = walk(day, minutes, null);
+    saveWeatherSnapshot(env.db, id, facts(weather));
+    return id;
+  };
+
+  it('in weather like today: how many walks and how long they usually lasted', () => {
+    [25, 28, 30, 32, 35, 29].forEach((m, i) => dayWith(m, { rain24hMm: 5 }, i));
+    [60, 70, 50].forEach((m, i) => dayWith(m, {}, 10 + i));
+    settle();
+    const found = weatherUsual(env.db, dog.id, facts({ rain24hMm: 6, tempC: 7 }));
+    expect(found).toMatchObject({
+      keys: ['ground', 'temp', 'light'],
+      values: { ground: 'wet', temp: '0_10', light: 'day' },
+      widened: false,
+      circleSize: 6,
+    });
+    expect(found?.duration?.median).toBe(29.5 * 60);
+  });
+
+  it('widens when few are exactly like it, and says nothing when almost none are', () => {
+    [25, 28, 30].forEach((m, i) => dayWith(m, { rain24hMm: 5, tempC: 8 }, i));
+    [31, 33, 35].forEach((m, i) => dayWith(m, { rain24hMm: 5, tempC: 15 }, 5 + i));
+    settle();
+    expect(weatherUsual(env.db, dog.id, facts({ rain24hMm: 6, tempC: 7 }))).toMatchObject({
+      keys: ['ground'],
+      widened: true,
+      circleSize: 6,
+    });
+    expect(weatherUsual(env.db, dog.id, facts({ tempC: -15, snow24hCm: 3 }))).toBeNull();
   });
 });

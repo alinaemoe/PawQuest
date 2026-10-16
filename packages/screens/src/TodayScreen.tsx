@@ -35,6 +35,8 @@ export interface TodayScreenProps {
   readonly weather: WeatherView | null;
   readonly weatherHint: string | null;
   readonly onWeather: () => void;
+  /** "In weather like this there were 7 walks, usually 28 min"; null when too few. */
+  readonly weatherUsual?: string | null;
   readonly recent: readonly FeedRowModel[];
   /** No records yet: show the "where to start" card instead of an empty feed (G-05). */
   readonly firstRun: boolean;
@@ -79,6 +81,9 @@ export function TodayScreen(props: TodayScreenProps) {
       </View>
 
       <WeatherCard view={props.weather} hint={props.weatherHint} onPress={props.onWeather} />
+      {props.weatherUsual === undefined || props.weatherUsual === null ? null : (
+        <AppText variant="muted">{props.weatherUsual}</AppText>
+      )}
 
       {props.careCard === null ? null : (
         <Card variant="stripe">

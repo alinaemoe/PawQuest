@@ -11,6 +11,7 @@ import {
   listEventTypes,
   recentFeed,
   softDelete,
+  weatherUsual,
 } from '@pawquest/data';
 import { useToast } from '@pawquest/rn-ui';
 import {
@@ -24,6 +25,7 @@ import {
   WalkSheet,
   WeatherSheet,
   WeightSheet,
+  weatherUsualLine,
   weatherView,
   weightCardTitle,
   type AddChoice,
@@ -71,6 +73,14 @@ export function TodayContainer({
   const [now, setNow] = useState(() => Date.now());
   const weather = useWeather();
   const [weatherOpen, setWeatherOpen] = useState(false);
+  // how many walks were in weather like this, and how long they usually lasted
+  const weatherUsualText = useMemo(
+    () =>
+      dog === null || weather.facts === null
+        ? null
+        : weatherUsualLine(weatherUsual(db, dog.id, weather.facts), i18n),
+    [db, dog, weather.facts, i18n, version],
+  );
   const weatherModel = useMemo(
     () =>
       weather.facts === null
@@ -230,6 +240,7 @@ export function TodayContainer({
         }}
         weightCard={data.weightCard}
         weather={weatherModel}
+        weatherUsual={weatherUsualText}
         weatherHint={
           weatherModel !== null
             ? null

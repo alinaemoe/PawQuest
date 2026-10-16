@@ -2,6 +2,7 @@ import { AppText, Button, Card, Chip, Screen, TextField, useI18n } from '@pawque
 import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
+import type { UsualModel } from './usualModel';
 import type { WalkFacts } from './walksModel';
 
 export interface WalkSummaryModel {
@@ -30,6 +31,8 @@ export interface WalkSummaryScreenProps {
   } | null;
   /** "По маршруту «До мамы», 5-й раз, на 3 мин дольше обычного": facts only. */
   readonly routeLine?: string | null;
+  /** "Как обычно": the walk against walks like it (docs/23, step 3.7). */
+  readonly usual?: UsualModel | null;
   /** "Вы часто ходите этим путём. Назвать маршрут?" */
   readonly routeCard?: { readonly text: string; readonly facts: string } | null;
   readonly onRouteName?: () => void;
@@ -72,6 +75,15 @@ export function WalkSummaryScreen(props: WalkSummaryScreenProps) {
           ))}
         </View>
       </Card>
+      {props.usual === undefined || props.usual === null ? null : (
+        <Card variant="flat">
+          <AppText variant="eyebrow">{i18n.t('usual.title')}</AppText>
+          {props.usual.lines.map((text) => (
+            <AppText key={text}>{text}</AppText>
+          ))}
+          <AppText variant="muted">{props.usual.caption}</AppText>
+        </Card>
+      )}
       {props.routeLine === undefined || props.routeLine === null ? null : (
         <AppText variant="muted">{props.routeLine}</AppText>
       )}

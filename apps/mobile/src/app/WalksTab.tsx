@@ -11,6 +11,7 @@ import {
   updateWalk,
   walkChronology,
   walkEventIds,
+  walkUsual,
   walkTotals,
 } from '@pawquest/data';
 import { useToast } from '@pawquest/rn-ui';
@@ -20,6 +21,7 @@ import {
   IndoorSheet,
   type TimelineRow,
   timelineRows,
+  usualModel,
   totalsLine,
   walkFacts,
   WalkDetailsSheet,
@@ -84,6 +86,7 @@ export function WalksTab() {
       })(),
       manual: open.mode === 'manual',
       route: chrono?.title ?? null,
+      usual: usualModel(walkUsual(db, dogId, open.id), i18n),
       timeline: chrono === null ? [] : timelineRows(chrono.steps, chrono.placeNames, i18n),
     };
   }, [db, open, i18n]);

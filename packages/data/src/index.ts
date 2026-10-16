@@ -310,7 +310,9 @@ export { dogFacts } from './dogFacts';
 export {
   USUAL_RULES,
   walkUsual,
+  weatherUsual,
   type UsualMeasure,
   type UsualMetric,
   type WalkUsual,
+  type WeatherUsual,
 } from './usual';

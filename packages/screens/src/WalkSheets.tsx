@@ -5,6 +5,7 @@ import { Pressable, View } from 'react-native';
 
 import { distanceToMeters, parseMinutes } from './input';
 import type { TimelineRow } from './chronologyRows';
+import type { UsualModel } from './usualModel';
 import type { WalkFacts } from './walksModel';
 
 export interface WalkDetailsModel {
@@ -18,6 +19,8 @@ export interface WalkDetailsModel {
   readonly weather?: string | null;
   /** "Дом → Магазин → Парк": the saved places visited, when there were any. */
   readonly route?: string | null;
+  /** The walk against walks like it. */
+  readonly usual?: UsualModel | null;
   /** What the walk consisted of: visits and legs, for GPS walks. */
   readonly timeline?: readonly TimelineRow[];
   readonly manual: boolean;
@@ -64,6 +67,15 @@ export function WalkDetailsSheet({
           </View>
         ))}
       </View>
+      {walk.usual === undefined || walk.usual === null ? null : (
+        <View style={{ gap: 2 }}>
+          <AppText variant="eyebrow">{i18n.t('usual.title')}</AppText>
+          {walk.usual.lines.map((text) => (
+            <AppText key={text}>{text}</AppText>
+          ))}
+          <AppText variant="muted">{walk.usual.caption}</AppText>
+        </View>
+      )}
       {walk.weather === undefined || walk.weather === null ? null : (
         <AppText variant="muted">{walk.weather}</AppText>
       )}

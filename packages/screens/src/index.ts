@@ -213,3 +213,4 @@ export {
   type InsightCardModel,
   type InsightsModel,
 } from './insightsModel';
+export { usualModel, weatherUsualLine, type UsualModel } from './usualModel';
