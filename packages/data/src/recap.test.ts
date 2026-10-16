@@ -41,7 +41,7 @@ describe('weekRecap', () => {
   let dog: Dog;
   beforeEach(() => {
     env = testEnv();
-    dog = createDog(env.db, env.ctx, { name: 'Луна' });
+    dog = createDog(env.db, env.ctx, { name: 'Фрэнни' });
   });
   afterEach(() => {
     env.db.close();
@@ -149,7 +149,7 @@ describe('listAlbum', () => {
   let dog: Dog;
   beforeEach(() => {
     env = testEnv();
-    dog = createDog(env.db, env.ctx, { name: 'Луна' });
+    dog = createDog(env.db, env.ctx, { name: 'Фрэнни' });
   });
   afterEach(() => {
     env.db.close();

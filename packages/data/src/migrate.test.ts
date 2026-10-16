@@ -126,7 +126,7 @@ describe('migrate', () => {
 
   it('0002 keeps data written under version 1 and adds the new columns as NULL', () => {
     migrate(db, MIGRATIONS.slice(0, 1), now);
-    db.run("INSERT INTO dog (id, name, created_at, updated_at) VALUES ('d1', 'Луна', ?, ?)", [
+    db.run("INSERT INTO dog (id, name, created_at, updated_at) VALUES ('d1', 'Фрэнни', ?, ?)", [
       NOW,
       NOW,
     ]);
@@ -149,7 +149,7 @@ describe('migrate', () => {
 
     expect(migrate(db, MIGRATIONS, now).applied).toEqual(MIGRATIONS.slice(1).map((m) => m.version));
 
-    expect(db.all('SELECT name FROM dog')).toEqual([{ name: 'Луна' }]);
+    expect(db.all('SELECT name FROM dog')).toEqual([{ name: 'Фрэнни' }]);
     expect(db.all('SELECT project_id, engagement FROM training_session')).toEqual([
       { project_id: null, engagement: null },
     ]);
@@ -165,7 +165,7 @@ describe('migrate', () => {
 describe('schema rules from the spec', () => {
   beforeEach(() => {
     migrate(db, MIGRATIONS, now);
-    db.run("INSERT INTO dog (id, name, created_at, updated_at) VALUES ('d1', 'Луна', ?, ?)", [
+    db.run("INSERT INTO dog (id, name, created_at, updated_at) VALUES ('d1', 'Фрэнни', ?, ?)", [
       NOW,
       NOW,
     ]);

@@ -99,7 +99,7 @@ export const en = {
   'onb.demo': 'Look around with a demo dog',
   'onb.nameTitle': "What is your dog's name?",
   'onb.nameLabel': 'Name',
-  'onb.namePlaceholder': 'For example, Luna',
+  'onb.namePlaceholder': 'For example, Franny',
   'onb.aboutTitle': 'Tell us about your dog',
   'onb.aboutHint': 'Everything is optional and can be filled in later.',
   'onb.ageYears': 'Age, years',

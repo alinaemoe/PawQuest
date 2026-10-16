@@ -46,7 +46,7 @@ export function MockToday() {
   return (
     <TodayScreen
       now={NOW}
-      dogName="Луна"
+      dogName="Фрэнни"
       dogPhotoUri={null}
       gpsWalks={false}
       lastWalk={{ startedAt: NOW - 4 * HOUR, durationS: 1920 }}

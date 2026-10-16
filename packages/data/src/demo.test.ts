@@ -55,7 +55,7 @@ describe('demo data', () => {
   });
 
   it('deleteDemoData removes demo records and the demo dog but keeps real ones', () => {
-    const real = createDog(env.db, env.ctx, { name: 'Луна' });
+    const real = createDog(env.db, env.ctx, { name: 'Фрэнни' });
     const demo = createDog(env.db, env.ctx, { name: 'Демо', isDemo: true });
     createManualWalk(env.db, env.ctx, { dogId: real.id, startedAt: START, durationS: 600 });
     createEvent(env.db, env.ctx, { dogId: real.id, typeId: 'note', note: 'моё' });

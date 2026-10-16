@@ -33,7 +33,7 @@ let dog: Dog;
 let skill: Skill;
 beforeEach(() => {
   env = testEnv();
-  dog = createDog(env.db, env.ctx, { name: 'Луна' });
+  dog = createDog(env.db, env.ctx, { name: 'Фрэнни' });
   skill = createSkill(env.db, env.ctx, {
     dogId: dog.id,
     name: 'Подзыв',

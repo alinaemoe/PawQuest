@@ -62,7 +62,7 @@ export function GalleryScreen() {
     >
       <Section title="Текст">
         <AppText variant="title">Заголовок Unbounded</AppText>
-        <AppText>Основной текст Onest: «Привет, Луна»</AppText>
+        <AppText>Основной текст Onest: «Привет, Фрэнни»</AppText>
         <AppText variant="muted">Второстепенный текст и подписи</AppText>
         <AppText variant="mono">00:23:41 · 1,84 км</AppText>
         <AppText variant="numBig">12 прогулок</AppText>

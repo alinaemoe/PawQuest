@@ -25,7 +25,7 @@ const foreignKeys = (): unknown => db.all('PRAGMA foreign_keys')[0]?.['foreign_k
 
 function seedAtVersion5(): void {
   migrate(db, V5, now);
-  db.run("INSERT INTO dog (id, name, created_at, updated_at) VALUES ('d1', 'Луна', ?, ?)", [
+  db.run("INSERT INTO dog (id, name, created_at, updated_at) VALUES ('d1', 'Фрэнни', ?, ?)", [
     NOW,
     NOW,
   ]);

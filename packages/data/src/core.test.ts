@@ -150,14 +150,14 @@ describe('settings', () => {
 describe('dogs', () => {
   it('creates a dog with trimmed name and optional details', () => {
     const dog = createDog(env.db, env.ctx, {
-      name: '  Луна ',
+      name: '  Фрэнни ',
       birthDate: '2025-09-01',
       sex: 'female',
       size: 'small',
       breed: 'цвергшнауцер',
     });
     expect(dog).toMatchObject({
-      name: 'Луна',
+      name: 'Фрэнни',
       birthDate: '2025-09-01',
       sex: 'female',
       size: 'small',
@@ -195,7 +195,7 @@ describe('dogs', () => {
   });
 
   it('updates only the given fields, and can clear one with null', () => {
-    const dog = createDog(env.db, env.ctx, { name: 'Луна', breed: 'цверг', sex: 'female' });
+    const dog = createDog(env.db, env.ctx, { name: 'Фрэнни', breed: 'цверг', sex: 'female' });
     env.advance(1000);
     const updated = updateDog(env.db, env.ctx, dog.id, { name: ' Луня ', breed: null });
     expect(updated).toMatchObject({ name: 'Луня', breed: null, sex: 'female' });
@@ -205,14 +205,14 @@ describe('dogs', () => {
   });
 
   it('an empty update changes nothing and an unknown id gives null', () => {
-    const dog = createDog(env.db, env.ctx, { name: 'Луна' });
+    const dog = createDog(env.db, env.ctx, { name: 'Фрэнни' });
     expect(updateDog(env.db, env.ctx, dog.id, {})).toEqual(dog);
     expect(updateDog(env.db, env.ctx, 'missing', { name: 'X' })).toBeNull();
   });
 
   it('refuses to rename a dog to nothing', () => {
-    const dog = createDog(env.db, env.ctx, { name: 'Луна' });
+    const dog = createDog(env.db, env.ctx, { name: 'Фрэнни' });
     expect(() => updateDog(env.db, env.ctx, dog.id, { name: ' ' })).toThrow(/name/);
-    expect(getDog(env.db, dog.id)?.name).toBe('Луна');
+    expect(getDog(env.db, dog.id)?.name).toBe('Фрэнни');
   });
 });

@@ -25,7 +25,7 @@ let dog: Dog;
 let walkId: string;
 beforeEach(() => {
   env = testEnv();
-  dog = createDog(env.db, env.ctx, { name: 'Луна' });
+  dog = createDog(env.db, env.ctx, { name: 'Фрэнни' });
   walkId = createManualWalk(env.db, env.ctx, {
     dogId: dog.id,
     startedAt: START,

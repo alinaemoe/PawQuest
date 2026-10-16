@@ -125,7 +125,7 @@ export const ru = {
   'onb.demo': 'Посмотреть на демо-собаке',
   'onb.nameTitle': 'Как зовут вашу собаку?',
   'onb.nameLabel': 'Имя',
-  'onb.namePlaceholder': 'Например, Луна',
+  'onb.namePlaceholder': 'Например, Фрэнни',
   'onb.aboutTitle': 'Расскажите о собаке',
   'onb.aboutHint': 'Всё необязательно, можно дополнить позже.',
   'onb.ageYears': 'Возраст, лет',

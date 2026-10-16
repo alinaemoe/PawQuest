@@ -522,7 +522,7 @@ var BYID={}; SCREENS.forEach(function(s){BYID[s.id]=s;});
 /* Today */
 function todayHTML(){
   return '<div class="stack">'+
-  '<div class="row between"><div class="row"><div class="avatar">'+ic('paw')+'</div><div><div class="muted" style="font-size:12px">Среда, 14 октября</div><h3 class="t">Привет, Луна</h3></div></div><button class="chip sm" aria-label="Поиск" style="min-width:36px">'+ic('search','width="16" height="16"')+'</button></div>'+
+  '<div class="row between"><div class="row"><div class="avatar">'+ic('paw')+'</div><div><div class="muted" style="font-size:12px">Среда, 14 октября</div><h3 class="t">Привет, Фрэнни</h3></div></div><button class="chip sm" aria-label="Поиск" style="min-width:36px">'+ic('search','width="16" height="16"')+'</button></div>'+
   '<div class="row wrap" style="gap:6px"><span class="tag">+9° ощущается +7°</span><span class="tag">без осадков</span><span class="tag">до заката 3 ч 10 мин</span><span class="tag">воздух: хороший</span></div>'+
   '<button class="start" data-go="prewalk">'+ic('paw')+'Начать прогулку</button>'+
   '<div class="muted" style="margin-top:-4px">Последняя прогулка 4 ч назад · 32 мин</div>'+
@@ -1401,7 +1401,7 @@ function rFrisbee(el){
 
 /* Dog hub */
 function rDog(el){
-  el.innerHTML='<div class="stack"><div class="card" style="text-align:center"><div class="avatar" style="width:84px;height:84px;margin:0 auto 8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:50px;height:50px">'+IC.paw+'</svg></div><h3 class="t" style="font-size:18px">Луна</h3><div class="muted">Цвергшнауцер · девочка · 1 год 2 мес</div></div>'+
+  el.innerHTML='<div class="stack"><div class="card" style="text-align:center"><div class="avatar" style="width:84px;height:84px;margin:0 auto 8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:50px;height:50px">'+IC.paw+'</svg></div><h3 class="t" style="font-size:18px">Фрэнни</h3><div class="muted">Цвергшнауцер · девочка · 1 год 2 мес</div></div>'+
    '<div class="card flat"><div class="eyebrow">Цели</div><div class="row wrap" style="margin-top:6px"><span class="tag">Подзыв</span><span class="tag">Спокойствие</span><span class="tag">Социализация</span></div></div>'+
    '<div class="card flat"><div class="eyebrow">Особенности (со слов владельца)</div><div class="row wrap" style="margin-top:6px"><span class="tag">любит мячик</span><span class="tag">самокаты</span><span class="tag">лакомство: курица</span></div></div>'+
    ['journal|note|Дневник поведения','frisbee|disc|Проект: Фризби','quests|star|Цели и награды','care|heart|Здоровье и вес','nutrition|cookie|Питание и вкусняшки','places|map|Библиотека мест','dog|cal|Календарь (S18)','settings|cog|Настройки и данные'].map(function(r){var p=r.split('|');return row(p[1],p[2],'',p[0]);}).join('')+

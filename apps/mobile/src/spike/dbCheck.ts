@@ -71,7 +71,7 @@ export function runDbCheck(points: number): DbCheckResult {
 
     steps.push(
       step('данные версии 1 записаны', () => {
-        db.run("INSERT INTO dog (id, name, created_at, updated_at) VALUES ('d1', 'Луна', ?, ?)", [
+        db.run("INSERT INTO dog (id, name, created_at, updated_at) VALUES ('d1', 'Фрэнни', ?, ?)", [
           NOW,
           NOW,
         ]);
@@ -91,7 +91,7 @@ export function runDbCheck(points: number): DbCheckResult {
         return r.applied.join() === '2' &&
           row?.['weight_g'] === 6200 &&
           row['conditions'] === null &&
-          name === 'Луна'
+          name === 'Фрэнни'
           ? null
           : `applied=${r.applied.join()} row=${JSON.stringify(row)} name=${String(name)}`;
       }),
