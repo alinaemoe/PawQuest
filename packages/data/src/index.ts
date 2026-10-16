@@ -324,3 +324,4 @@ export {
   type Period,
   type PeriodComparison,
 } from './periods';
+export { thresholdSeries, type ThresholdSeries, type TriggerDistance } from './thresholds';

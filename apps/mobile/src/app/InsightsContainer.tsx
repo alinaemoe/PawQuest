@@ -8,6 +8,7 @@ import {
   listPlaces,
   listWalksPage,
   periodComparison,
+  thresholdSeries,
   walkCalendar,
   walkPatterns,
 } from '@pawquest/data';
@@ -22,6 +23,7 @@ import {
   DayWalksSheet,
   HideInsightSheet,
   InsightsScreen,
+  thresholdCharts,
   type CalendarCellModel,
   type InsightCardModel,
 } from '@pawquest/screens';
@@ -71,6 +73,12 @@ export function InsightsContainer() {
     const tz = -new Date(now).getTimezoneOffset();
     return chartModels(chartData(db, dogId, now, tz), localDay(now, tz), i18n);
   }, [db, dogId, i18n, version, tick]);
+
+  const dynamics = useMemo(() => {
+    const now = Date.now();
+    const tz = -new Date(now).getTimezoneOffset();
+    return thresholdCharts(thresholdSeries(db, dogId), localDay(now, tz), i18n);
+  }, [db, dogId, i18n, version]);
 
   const dayList = useMemo(
     () => (openDay === null ? [] : dayRows(dayWalks(db, dogId, openDay.day), i18n)),
@@ -124,6 +132,7 @@ export function InsightsContainer() {
         onDay={setOpenDay}
         compare={{ model: compare, days, onDays: setDays }}
         charts={charts}
+        dynamics={dynamics}
         onShowWalks={setShowing}
         onHide={setHiding}
       />

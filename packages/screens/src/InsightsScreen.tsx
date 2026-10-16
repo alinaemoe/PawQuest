@@ -21,6 +21,8 @@ export interface InsightsScreenProps {
     readonly onDays: (days: number) => void;
   };
   readonly charts?: readonly ChartModel[];
+  /** Reaction distance and recovery time by week; nothing is drawn when empty. */
+  readonly dynamics?: readonly ChartModel[];
 }
 
 function InsightCard(props: {
@@ -74,6 +76,7 @@ export function InsightsScreen({
   onDay,
   compare,
   charts,
+  dynamics,
 }: InsightsScreenProps) {
   const i18n = useI18n();
   return (
@@ -168,6 +171,9 @@ export function InsightsScreen({
 
       {compare === undefined ? null : (
         <PeriodCompare model={compare.model} days={compare.days} onDays={compare.onDays} />
+      )}
+      {dynamics === undefined || dynamics.length === 0 ? null : (
+        <InsightCharts charts={dynamics} heading={i18n.t('thresholds.section')} />
       )}
       {charts === undefined ? null : <InsightCharts charts={charts} />}
 

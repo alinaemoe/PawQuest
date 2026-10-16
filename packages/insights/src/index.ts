@@ -92,3 +92,14 @@ export { comparePeriods } from './periods';
 export type { ComparisonKey, ComparisonRow, PeriodWalk } from './periods';
 export { groupShares, groupSpreads, weeklyBars } from './charts';
 export type { ChartUnit, ChartWalk, ShareBar, SpreadBar, WeekBar } from './charts';
+export {
+  BUCKET_METERS,
+  MIN_WEEK_EVENTS,
+  reactionDistanceSeries,
+  recoverySeries,
+  type ReactionEvent,
+  type RecoveryEvent,
+  type RecoverySeries,
+  type WeekPoint,
+  type WeeklySeries,
+} from './thresholds';

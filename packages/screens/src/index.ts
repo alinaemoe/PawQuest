@@ -242,3 +242,4 @@ export {
   type CompareRowModel,
 } from './chartsModel';
 export { InsightCharts, PeriodCompare } from './ChartViews';
+export { thresholdCharts } from './thresholdsModel';

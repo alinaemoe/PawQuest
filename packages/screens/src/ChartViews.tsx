@@ -136,14 +136,16 @@ function Bar({ bar }: { readonly bar: BarModel }) {
 
 export interface InsightChartsProps {
   readonly charts: readonly ChartModel[];
+  /** The heading of the section; "Графики" when not given. */
+  readonly heading?: string;
 }
 
 /** The three charts: bars with the middle half or the interval, never smoothed curves. */
-export function InsightCharts({ charts }: InsightChartsProps) {
+export function InsightCharts({ charts, heading }: InsightChartsProps) {
   const i18n = useI18n();
   return (
     <View style={{ gap: 16 }}>
-      <AppText variant="eyebrow">{i18n.t('charts.title')}</AppText>
+      <AppText variant="eyebrow">{heading ?? i18n.t('charts.title')}</AppText>
       {charts.map((chart) => (
         <Card key={chart.key} variant="flat">
           <View style={{ gap: 8 }}>

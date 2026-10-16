@@ -101,7 +101,7 @@ export interface BarModel {
 }
 
 export interface ChartModel {
-  readonly key: 'weeks' | 'temp' | 'place';
+  readonly key: string;
   readonly title: string;
   readonly hint: string;
   readonly bars: readonly BarModel[];
