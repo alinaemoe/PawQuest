@@ -10,12 +10,15 @@ import {
   latestWeight,
   listEventTypes,
   recentFeed,
+  onThisDay,
   softDelete,
   weatherUsual,
 } from '@pawquest/data';
 import { useToast } from '@pawquest/rn-ui';
 import {
   AddSheet,
+  memoryModels,
+  PhotoViewer,
   feedRow,
   planCard,
   planTitle,
@@ -73,6 +76,18 @@ export function TodayContainer({
   const [now, setNow] = useState(() => Date.now());
   const weather = useWeather();
   const [weatherOpen, setWeatherOpen] = useState(false);
+  // "on this day": what happened on today's date in earlier years
+  const memories = useMemo(
+    () =>
+      dog === null
+        ? []
+        : memoryModels(onThisDay(db, dog.id, Date.now(), -new Date().getTimezoneOffset()), i18n),
+    [db, dog, i18n, version],
+  );
+  const [viewer, setViewer] = useState<{
+    photos: readonly { id: string; uri: string }[];
+    index: number;
+  } | null>(null);
   // how many walks were in weather like this, and how long they usually lasted
   const weatherUsualText = useMemo(
     () =>
@@ -241,6 +256,10 @@ export function TodayContainer({
         weightCard={data.weightCard}
         weather={weatherModel}
         weatherUsual={weatherUsualText}
+        memories={memories}
+        onOpenMemoryPhoto={(photos, index) => {
+          setViewer({ photos, index });
+        }}
         weatherHint={
           weatherModel !== null
             ? null
@@ -284,6 +303,15 @@ export function TodayContainer({
         onFab={() => {
           setSheet('add');
         }}
+      />
+      <PhotoViewer
+        photos={viewer?.photos ?? []}
+        openAt={viewer === null ? null : viewer.index}
+        onClose={() => {
+          setViewer(null);
+        }}
+        onRemove={() => undefined}
+        canRemove={false}
       />
       {weatherOpen ? (
         <WeatherSheet

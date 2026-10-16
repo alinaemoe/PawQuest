@@ -19,8 +19,10 @@ import {
   refreshDerived,
 } from './derived';
 import { createDog, type Dog } from './dogs';
+import { dayWalks, onThisDay, walkCalendar } from './calendar';
 import { dogFacts } from './dogFacts';
 import { createEvent } from './events';
+import { addPhoto } from './photos';
 import { createPlace, setPlaceBoundary, setWalkPlace } from './places';
 import { appendTrackPoints, finishWalk, startWalk, type TrackPointInput } from './recorder';
 import { START, testEnv, type TestEnv } from './test-utils';
@@ -662,5 +664,89 @@ describe('hiding a card and showing its walks', () => {
     expect(
       cardWalks(env.db, dog.id, { dimension: 'duration', value: 'nope', outcome: 'hard_moment' }),
     ).toEqual([]);
+  });
+});
+
+describe('the calendar and "on this day" (step 3.8)', () => {
+  const at = (year: number, month: number, day: number, hour = 10) =>
+    Date.UTC(year, month, day, hour);
+  const walkAt = (startedAt: number, minutes = 30) =>
+    createManualWalk(env.db, env.ctx, {
+      dogId: dog.id,
+      startedAt,
+      durationS: minutes * 60,
+      distanceM: 2000,
+    }).id;
+
+  it('a cell per day of the last weeks, coloured by the time walked, the walks of a day added up', () => {
+    const now = at(2026, 9, 16); // Friday
+    walkAt(at(2026, 9, 12), 30);
+    walkAt(at(2026, 9, 12, 17), 20);
+    walkAt(at(2026, 9, 14), 100);
+    walkAt(at(2026, 9, 15), 1); // a slip: not a walk
+    const weeks = walkCalendar(env.db, dog.id, now, 0, 4);
+    expect(weeks).toHaveLength(4);
+    const thisWeek = weeks[3]?.days ?? [];
+    expect(thisWeek.map((d) => d?.level ?? null)).toEqual([3, 0, 4, 0, 0, null, null]);
+    expect(thisWeek[0]).toMatchObject({ walks: 2, durationS: 3000, distanceM: 4000 });
+  });
+
+  it('the walks of one day, by the local day of each walk', () => {
+    const a = walkAt(at(2026, 9, 12, 5), 30);
+    const b = walkAt(at(2026, 9, 12, 20), 25);
+    walkAt(at(2026, 9, 13, 10), 30);
+    const day = Math.floor(at(2026, 9, 12) / 86_400_000);
+    expect(dayWalks(env.db, dog.id, day).map((w) => w.id)).toEqual([a, b]);
+    expect(dayWalks(env.db, dog.id, day + 5)).toEqual([]);
+    // 22:30 UTC on Sunday is already Monday in Minsk, and the walk keeps the offset it had
+    const late = createManualWalk(env.db, env.ctx, {
+      dogId: dog.id,
+      startedAt: at(2026, 9, 18, 22) + 30 * 60_000,
+      durationS: 1800,
+      tzOffsetMin: 180,
+    }).id;
+    expect(
+      dayWalks(env.db, dog.id, Math.floor(at(2026, 9, 19) / 86_400_000)).map((w) => w.id),
+    ).toEqual([late]);
+  });
+
+  it('on this day: the same date in earlier years, walks and pictures together, the nearest year first', () => {
+    const now = at(2026, 9, 16, 9);
+    const lastYear = walkAt(at(2025, 9, 16), 40);
+    walkAt(at(2025, 9, 17), 40); // the day after
+    const old = walkAt(at(2023, 9, 16), 90);
+    addPhoto(
+      env.db,
+      env.ctx,
+      { table: 'walk', id: lastYear },
+      { uri: 'file:///a.jpg', takenAt: at(2025, 9, 16, 11) },
+    );
+    addPhoto(
+      env.db,
+      env.ctx,
+      { table: 'walk', id: old },
+      { uri: 'file:///b.jpg', takenAt: at(2023, 9, 16, 12) },
+    );
+    walkAt(at(2026, 9, 16, 8)); // today is not a memory
+    const memories = onThisDay(env.db, dog.id, now, 0);
+    expect(memories.map((m) => [m.yearsAgo, m.walks.map((w) => w.id), m.photos.length])).toEqual([
+      [1, [lastYear], 1],
+      [3, [old], 1],
+    ]);
+  });
+
+  it('a year with only a picture still counts; nothing on the day gives nothing', () => {
+    const now = at(2026, 9, 16, 9);
+    const id = walkAt(at(2025, 9, 20), 30);
+    addPhoto(
+      env.db,
+      env.ctx,
+      { table: 'walk', id },
+      { uri: 'file:///c.jpg', takenAt: at(2025, 9, 16, 10) },
+    );
+    expect(
+      onThisDay(env.db, dog.id, now, 0).map((m) => [m.yearsAgo, m.walks.length, m.photos.length]),
+    ).toEqual([[1, 0, 1]]);
+    expect(onThisDay(env.db, dog.id, at(2026, 2, 3), 0)).toEqual([]);
   });
 });

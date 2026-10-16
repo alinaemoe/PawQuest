@@ -316,3 +316,4 @@ export {
   type WalkUsual,
   type WeatherUsual,
 } from './usual';
+export { dayWalks, onThisDay, walkCalendar, type DayWalk, type Memory } from './calendar';

@@ -1,20 +1,27 @@
 import {
   cardWalks,
+  dayWalks,
   dogFacts,
   hiddenInsightKeys,
   hideInsight,
   listPlaces,
   listWalksPage,
+  walkCalendar,
   walkPatterns,
 } from '@pawquest/data';
 import { useToast } from '@pawquest/rn-ui';
 import {
   buildInsights,
+  calendarModel,
   CardWalksSheet,
+  dayRows,
+  DayWalksSheet,
   HideInsightSheet,
   InsightsScreen,
+  type CalendarCellModel,
   type InsightCardModel,
 } from '@pawquest/screens';
+import { localDay } from '@pawquest/insights';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useApp } from './AppContext';
@@ -29,6 +36,7 @@ export function InsightsContainer() {
   const [tick, setTick] = useState(0);
   const [hiding, setHiding] = useState<InsightCardModel | null>(null);
   const [showing, setShowing] = useState<InsightCardModel | null>(null);
+  const [openDay, setOpenDay] = useState<CalendarCellModel | null>(null);
 
   const model = useMemo(() => {
     const now = Date.now();
@@ -41,6 +49,17 @@ export function InsightsContainer() {
       i18n,
     );
   }, [db, dogId, i18n, version, tick]);
+
+  const calendar = useMemo(() => {
+    const now = Date.now();
+    const tz = -new Date(now).getTimezoneOffset();
+    return calendarModel(walkCalendar(db, dogId, now, tz, 12), localDay(now, tz), i18n);
+  }, [db, dogId, i18n, version]);
+
+  const dayList = useMemo(
+    () => (openDay === null ? [] : dayRows(dayWalks(db, dogId, openDay.day), i18n)),
+    [db, dogId, i18n, openDay, version],
+  );
 
   // while the background counting is still going, look again from time to time
   useEffect(() => {
@@ -83,7 +102,20 @@ export function InsightsContainer() {
 
   return (
     <>
-      <InsightsScreen model={model} onShowWalks={setShowing} onHide={setHiding} />
+      <InsightsScreen
+        model={model}
+        calendar={calendar}
+        onDay={setOpenDay}
+        onShowWalks={setShowing}
+        onHide={setHiding}
+      />
+      <DayWalksSheet
+        title={openDay === null ? null : openDay.title}
+        rows={dayList}
+        onClose={() => {
+          setOpenDay(null);
+        }}
+      />
       <HideInsightSheet
         card={hiding}
         onWeek={() => {

@@ -1,12 +1,17 @@
 import { AppText, Button, Card, Chip, Screen, Sheet, Tag, useI18n } from '@pawquest/rn-ui';
 import { View } from 'react-native';
 
+import type { CalendarCellModel, CalendarModel } from './calendarModel';
+import { WalkCalendar } from './CalendarViews';
 import type { InsightCardModel, InsightsModel } from './insightsModel';
 
 export interface InsightsScreenProps {
   readonly model: InsightsModel;
   readonly onShowWalks: (card: InsightCardModel) => void;
   readonly onHide: (card: InsightCardModel) => void;
+  /** The calendar of the last weeks; absent while it is not ready. */
+  readonly calendar?: CalendarModel;
+  readonly onDay?: (cell: CalendarCellModel) => void;
 }
 
 function InsightCard(props: {
@@ -52,12 +57,28 @@ function InsightCard(props: {
  * Insights (docs/23, step 3.5): honest statistics in plain words, the facts first, then the
  * patterns that were found, then very preliminary observations, then what something else explains.
  */
-export function InsightsScreen({ model, onShowWalks, onHide }: InsightsScreenProps) {
+export function InsightsScreen({
+  model,
+  onShowWalks,
+  onHide,
+  calendar,
+  onDay,
+}: InsightsScreenProps) {
   const i18n = useI18n();
   return (
     <Screen>
       <AppText variant="numBig">{i18n.t('tab.insights')}</AppText>
       <AppText variant="muted">{model.status}</AppText>
+
+      {calendar === undefined || calendar.rows.length === 0 ? null : (
+        <View style={{ gap: 8 }}>
+          <AppText variant="eyebrow">{i18n.t('calendar.title')}</AppText>
+          <Card variant="flat">
+            <WalkCalendar model={calendar} onDay={onDay ?? (() => undefined)} />
+          </Card>
+          <AppText variant="muted">{calendar.legend}</AppText>
+        </View>
+      )}
 
       {model.empty === null ? null : (
         <Card variant="soft">

@@ -214,3 +214,21 @@ export {
   type InsightsModel,
 } from './insightsModel';
 export { usualModel, weatherUsualLine, type UsualModel } from './usualModel';
+export {
+  calendarModel,
+  dayRows,
+  memoryModels,
+  type CalendarCellModel,
+  type CalendarModel,
+  type CalendarRowModel,
+  type DayRowModel,
+  type MemoryModel,
+} from './calendarModel';
+export {
+  DayWalksSheet,
+  MemoriesCard,
+  WalkCalendar,
+  type DayWalksSheetProps,
+  type MemoriesCardProps,
+  type WalkCalendarProps,
+} from './CalendarViews';

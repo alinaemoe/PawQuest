@@ -86,3 +86,5 @@ export type {
   UsualRule,
   UsualStats,
 } from './similar';
+export { CALENDAR_BANDS_S, calendarDays, calendarWeeks, dayLevel, mondayOf } from './calendar';
+export type { CalendarDay, CalendarWalk, CalendarWeek } from './calendar';

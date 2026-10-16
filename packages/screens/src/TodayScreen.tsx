@@ -15,6 +15,8 @@ import {
 import { View } from 'react-native';
 
 import { lastWalkLine, type FeedRowModel } from './model';
+import type { MemoryModel } from './calendarModel';
+import { MemoriesCard } from './CalendarViews';
 import type { WeatherView } from './weatherModel';
 import { WeatherCard } from './WeatherViews';
 
@@ -37,6 +39,9 @@ export interface TodayScreenProps {
   readonly onWeather: () => void;
   /** "In weather like this there were 7 walks, usually 28 min"; null when too few. */
   readonly weatherUsual?: string | null;
+  /** "On this day" in earlier years; none when there is no memory. */
+  readonly memories?: readonly MemoryModel[];
+  readonly onOpenMemoryPhoto?: (photos: MemoryModel['photos'], index: number) => void;
   readonly recent: readonly FeedRowModel[];
   /** No records yet: show the "where to start" card instead of an empty feed (G-05). */
   readonly firstRun: boolean;
@@ -81,6 +86,10 @@ export function TodayScreen(props: TodayScreenProps) {
       </View>
 
       <WeatherCard view={props.weather} hint={props.weatherHint} onPress={props.onWeather} />
+      <MemoriesCard
+        memories={props.memories ?? []}
+        onOpenPhoto={props.onOpenMemoryPhoto ?? (() => undefined)}
+      />
       {props.weatherUsual === undefined || props.weatherUsual === null ? null : (
         <AppText variant="muted">{props.weatherUsual}</AppText>
       )}
