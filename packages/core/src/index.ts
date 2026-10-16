@@ -68,6 +68,7 @@ export {
   baseArrival,
   buildChronology,
   chronologyTitle,
+  forgottenBaseStay,
   placeContaining,
   visitsByPlace,
 } from './track/chronology';

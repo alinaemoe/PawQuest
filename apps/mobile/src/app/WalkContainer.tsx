@@ -22,10 +22,13 @@ import {
   resumeWalk,
   setWalkPlace,
   softDelete,
+  splitWalkAroundStay,
+  trimWalkEnd,
   updateEvent,
   updateWalk,
   walkAnchor,
   walkBaseArrival,
+  walkCutSuggestion,
   type PlaceCategory,
   type Walk,
 } from '@pawquest/data';
@@ -386,6 +389,14 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
   const walk = useMemo(() => getWalk(db, walkId), [db, walkId]);
   const [naming, setNaming] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [cutDone, setCutDone] = useState(false);
+  const cut = useMemo(
+    () =>
+      isPromptHidden(db, `walk-cut:${walkId}`, Date.now())
+        ? null
+        : walkCutSuggestion(db, walkId, Date.now()),
+    [db, walkId, cutDone],
+  );
   const eventsLine = useMemo(() => {
     const types = new Map(listEventTypes(db, true).map((t) => [t.id, t]));
     return db
@@ -453,6 +464,45 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
         summary={{
           facts: walkFacts(walk, i18n),
           eventsLine: eventsLine === '' ? null : eventsLine,
+        }}
+        cutCard={
+          cut === null || cutDone
+            ? null
+            : {
+                text:
+                  cut.kind === 'trim'
+                    ? i18n.t('cut.trimText', {
+                        place: cut.placeName,
+                        stay: i18n.formatDuration(Math.round(cut.stayS)),
+                        time: i18n.formatTime(cut.at),
+                      })
+                    : i18n.t('cut.splitText', {
+                        place: cut.placeName,
+                        stay: i18n.formatDuration(Math.round(cut.stayS)),
+                      }),
+                actionLabel:
+                  cut.kind === 'trim'
+                    ? i18n.t('cut.trim', { time: i18n.formatTime(cut.at) })
+                    : i18n.t('cut.split'),
+                keepLabel: i18n.t('cut.keep'),
+              }
+        }
+        onCut={() => {
+          if (cut === null) {
+            return;
+          }
+          if (cut.kind === 'trim') {
+            trimWalkEnd(db, ctx, walkId, cut.at);
+          } else {
+            splitWalkAroundStay(db, ctx, walkId, cut.arrivedAt, cut.leftAt);
+          }
+          setCutDone(true);
+          bump();
+          toast.show({ message: i18n.t(cut.kind === 'trim' ? 'cut.trimmed' : 'cut.splitted') });
+        }}
+        onCutKeep={() => {
+          hidePrompt(db, ctx, `walk-cut:${walkId}`, Date.now() + FOREVER);
+          setCutDone(true);
         }}
         placeCard={
           shown

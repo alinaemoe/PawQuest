@@ -2,6 +2,7 @@ import {
   baseArrival,
   buildChronology,
   chronologyTitle,
+  forgottenBaseStay,
   filterTrack,
   findRides,
   type BaseArrival,
@@ -76,4 +77,57 @@ export function walkBaseArrival(db: SqlDb, walkId: string, now: number): WalkBas
   return found === null
     ? null
     : { ...found, placeName: chronology.placeNames.get(found.placeId) ?? '' };
+}
+
+export type WalkCutSuggestion =
+  | {
+      readonly kind: 'trim';
+      /** The walk should have ended here: the moment the owner came to the base. */
+      readonly at: number;
+      readonly placeName: string;
+      readonly stayS: number;
+    }
+  | {
+      readonly kind: 'split';
+      readonly arrivedAt: number;
+      readonly leftAt: number;
+      readonly placeName: string;
+      readonly stayS: number;
+    };
+
+/** After the stay the walk must go on for at least this long to be worth a walk of its own. */
+const MIN_REST_MS = 5 * 60_000;
+
+/**
+ * For a finished walk that was not ended at a base (D-62, 5.1 item 5; S-11): cut the end off when
+ * the stay in the base is what remains, split the walk in two when it went on afterwards.
+ */
+export function walkCutSuggestion(
+  db: SqlDb,
+  walkId: string,
+  now: number,
+): WalkCutSuggestion | null {
+  const walk = getWalk(db, walkId);
+  const chronology = walkChronology(db, walkId, now);
+  if (walk?.endedAt == null || chronology === null) {
+    return null;
+  }
+  const places = listPlaces(db);
+  const bases = new Set(places.filter((p) => isBasePlace(p.category)).map((p) => p.id));
+  const stay = forgottenBaseStay(chronology.steps, bases);
+  if (stay === null) {
+    return null;
+  }
+  const placeName = chronology.placeNames.get(stay.placeId) ?? '';
+  const { visit } = stay;
+  if (stay.isLast || walk.endedAt - visit.toTs < MIN_REST_MS) {
+    return { kind: 'trim', at: visit.fromTs, placeName, stayS: visit.durationS };
+  }
+  return {
+    kind: 'split',
+    arrivedAt: visit.fromTs,
+    leftAt: visit.toTs,
+    placeName,
+    stayS: visit.durationS,
+  };
 }

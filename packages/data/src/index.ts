@@ -242,7 +242,10 @@ export { MIN_CALM_MS, weekBounds, weekRecap, type CalmMoment, type WeekRecap } f
 export {
   walkBaseArrival,
   walkChronology,
+  walkCutSuggestion,
+  type WalkCutSuggestion,
   type WalkBaseArrival,
   type WalkChronology,
 } from './chronology';
 export { walkRideSeconds } from './recorder';
+export { TRIMMED_FIX, splitWalk, splitWalkAroundStay, trimWalkEnd } from './walkStructure';

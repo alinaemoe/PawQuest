@@ -675,6 +675,14 @@ export const en = {
   'arrival.finish': 'Finish the walk',
   'arrival.keep': 'We are still walking',
 
+  'cut.trimText': 'You stayed here: {place}, {stay}. The walk should have ended at {time}.',
+  'cut.trim': 'End at {time}',
+  'cut.splitText': 'The walk went on after the visit: {place}, {stay}. Split it in two?',
+  'cut.split': 'Split in two',
+  'cut.keep': 'Keep as it is',
+  'cut.trimmed': 'Walk trimmed',
+  'cut.splitted': 'Walk split in two',
+
   'dog.album': 'Photo album',
   'dog.albumHint': 'Every photo from your walks',
   'dog.recap': 'Week in review',

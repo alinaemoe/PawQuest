@@ -17,6 +17,14 @@ export interface WalkSummaryScreenProps {
   readonly summary: WalkSummaryModel;
   /** "Вы часто останавливаетесь здесь. Назвать место?" or "Назвать это место?"; null for none. */
   readonly placeCard?: { readonly text: string; readonly canDecline: boolean } | null;
+  /** "Прогулка должна была закончиться в 12:19": the walk went on after coming to a base. */
+  readonly cutCard?: {
+    readonly text: string;
+    readonly actionLabel: string;
+    readonly keepLabel: string;
+  } | null;
+  readonly onCut?: () => void;
+  readonly onCutKeep?: () => void;
   readonly onPlaceName?: () => void;
   readonly onPlaceLater?: () => void;
   readonly onPlaceNever?: () => void;
@@ -52,6 +60,15 @@ export function WalkSummaryScreen(props: WalkSummaryScreenProps) {
           ))}
         </View>
       </Card>
+      {props.cutCard === undefined || props.cutCard === null ? null : (
+        <Card variant="soft">
+          <AppText>{props.cutCard.text}</AppText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <Chip label={props.cutCard.actionLabel} onPress={props.onCut ?? noop} />
+            <Chip label={props.cutCard.keepLabel} onPress={props.onCutKeep ?? noop} />
+          </View>
+        </Card>
+      )}
       {props.placeCard === undefined || props.placeCard === null ? null : (
         <Card variant="stripe">
           <AppText>{props.placeCard.text}</AppText>

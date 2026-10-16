@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { walkBaseArrival, walkChronology } from './chronology';
+import { walkBaseArrival, walkChronology, walkCutSuggestion } from './chronology';
 import { createDog, type Dog } from './dogs';
 import { createPlace } from './places';
 import { appendTrackPoints, finishWalk, startWalk, type TrackPointInput } from './recorder';
+import { splitWalkAroundStay } from './walkStructure';
 import { START, testEnv, type TestEnv } from './test-utils';
 import { createManualWalk } from './walks';
 
@@ -142,5 +143,87 @@ describe('walkBaseArrival', () => {
   it('a walk without points has nothing to ask', () => {
     const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
     expect(walkBaseArrival(env.db, walk.id, START)).toBeNull();
+  });
+});
+
+describe('walkCutSuggestion (S-11)', () => {
+  /** Walks 150 s, stands `stopS` seconds at the spot, then walks `afterS` seconds on. */
+  function finishedWalk(stopS: number, afterS: number): { id: string; end: number } {
+    const points: TrackPointInput[] = [];
+    let t = START;
+    for (let i = 0; i < 150; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: SHOP.lat - (150 - i) * STEP,
+        lon: SHOP.lon,
+        accuracyM: 5,
+        speedMps: 1.2,
+      });
+    }
+    for (let i = 0; i < stopS; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: SHOP.lat + (i % 2) * 0.000004,
+        lon: SHOP.lon,
+        accuracyM: 5,
+        speedMps: 0,
+      });
+    }
+    for (let i = 1; i <= afterS; i++, t += 1000) {
+      points.push({ ts: t, lat: SHOP.lat + i * STEP, lon: SHOP.lon, accuracyM: 5, speedMps: 1.2 });
+    }
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    appendTrackPoints(env.db, walk.id, points);
+    finishWalk(env.db, env.ctx, walk.id, t);
+    return { id: walk.id, end: t };
+  }
+  const guests = () =>
+    createPlace(env.db, env.ctx, { name: 'Мама', category: 'guests', label: 'Гости', ...SHOP });
+
+  it('a walk that ended in the base after a long stay is cut at the arrival', () => {
+    guests();
+    const { id, end } = finishedWalk(1800, 0);
+    const found = walkCutSuggestion(env.db, id, end);
+    expect(found?.kind).toBe('trim');
+    expect(found?.placeName).toBe('Мама');
+    expect(found?.kind === 'trim' ? found.at : 0).toBeGreaterThan(START + 100_000);
+    expect(found?.kind === 'trim' ? found.at : 0).toBeLessThan(START + 200_000);
+  });
+
+  it('a walk that went on after the stay is split around it', () => {
+    guests();
+    const { id, end } = finishedWalk(1800, 600);
+    const found = walkCutSuggestion(env.db, id, end);
+    expect(found?.kind).toBe('split');
+    if (found?.kind === 'split') {
+      expect(found.leftAt).toBeGreaterThan(found.arrivedAt + 1_500_000);
+      const { first, second } = splitWalkAroundStay(
+        env.db,
+        env.ctx,
+        id,
+        found.arrivedAt,
+        found.leftAt,
+      );
+      expect(first.endedAt).toBe(found.arrivedAt);
+      expect(second.startedAt).toBe(found.leftAt);
+      expect(walkCutSuggestion(env.db, first.id, end)).toBeNull();
+    }
+  });
+
+  it('a few minutes of walking after the stay are not a walk of their own', () => {
+    guests();
+    const { id, end } = finishedWalk(1800, 120);
+    expect(walkCutSuggestion(env.db, id, end)?.kind).toBe('trim');
+  });
+
+  it('a short visit, a shop and a walk that has no base give nothing', () => {
+    guests();
+    expect(walkCutSuggestion(env.db, finishedWalk(480, 300).id, START + 3_600_000)).toBeNull();
+  });
+
+  it('nothing for a missing walk or one still running', () => {
+    expect(walkCutSuggestion(env.db, 'nope', START)).toBeNull();
+    const running = startWalk(env.db, env.ctx, { dogId: dog.id });
+    expect(walkCutSuggestion(env.db, running.id, START)).toBeNull();
   });
 });

@@ -747,6 +747,14 @@ export const ru = {
   'arrival.finish': 'Завершить прогулку',
   'arrival.keep': 'Мы ещё гуляем',
 
+  'cut.trimText': 'Вы пробыли здесь: {place}, {stay}. Прогулка должна была закончиться в {time}.',
+  'cut.trim': 'Закончить в {time}',
+  'cut.splitText': 'Прогулка шла и после визита: {place}, {stay}. Разделить её на две?',
+  'cut.split': 'Разделить на две',
+  'cut.keep': 'Оставить как есть',
+  'cut.trimmed': 'Прогулка подрезана',
+  'cut.splitted': 'Прогулка разделена на две',
+
   'dog.album': 'Фотоальбом',
   'dog.albumHint': 'Все фото с прогулок',
   'dog.recap': 'Итоги недели',

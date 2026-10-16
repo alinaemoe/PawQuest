@@ -248,3 +248,27 @@ export function baseArrival(
   }
   return { visit: last, placeId: last.placeId, arrivedAt: last.fromTs, stayS: last.durationS };
 }
+
+/**
+ * The first long stay in a base inside a walk that was not finished there (D-62, 5.1 item 5):
+ * the walk went on (or was left running) after the owner came to a base for good. Null when the
+ * walk has no such stay. A stay at the very start is not one (the first step of a walk).
+ */
+export function forgottenBaseStay(
+  steps: readonly ChronoStep[],
+  baseIds: ReadonlySet<string>,
+  minStayS = 900,
+): { readonly visit: ChronoVisit; readonly placeId: string; readonly isLast: boolean } | null {
+  for (let i = 1; i < steps.length; i += 1) {
+    const step = steps[i];
+    if (
+      step?.kind === 'visit' &&
+      step.placeId !== null &&
+      baseIds.has(step.placeId) &&
+      step.durationS >= minStayS
+    ) {
+      return { visit: step, placeId: step.placeId, isLast: i === steps.length - 1 };
+    }
+  }
+  return null;
+}
