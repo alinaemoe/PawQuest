@@ -527,6 +527,34 @@ describe('what the dimensions are made from', () => {
     });
   });
 
+  it('with few walks the observations come in a section of their own, and not when there are too few or enough', () => {
+    const build = (count: number) => {
+      for (let i = 0; i < count; i += 1) {
+        const id = manual(i);
+        const wet = i % 2 === 0;
+        saveWeatherSnapshot(env.db, id, facts({ rain24hMm: wet ? 5 : 0 }));
+        event(id, wet && i % 6 !== 0 ? 'hard' : 'dog', i, 2);
+      }
+      refreshDerived(env.db, env.ctx, dog.id, { limit: 500 });
+    };
+    build(10);
+    expect(walkPatterns(env.db, dog.id).preliminary).toEqual([]);
+    for (let i = 10; i < 36; i += 1) {
+      const id = manual(i);
+      const wet = i % 2 === 0;
+      saveWeatherSnapshot(env.db, id, facts({ rain24hMm: wet ? 5 : 0 }));
+      event(id, wet && i % 6 !== 0 ? 'hard' : 'dog', i, 2);
+    }
+    refreshDerived(env.db, env.ctx, dog.id, { limit: 500 });
+    const few = walkPatterns(env.db, dog.id);
+    expect(few.unitCount).toBe(36);
+    expect(few.preliminary.length).toBeGreaterThan(0);
+    expect(few.preliminary.map((c) => c.preliminary)).toEqual(few.preliminary.map(() => true));
+    // what is a finding already is not repeated as an observation
+    const mainKeys = new Set(few.cards.map((c) => c.key));
+    expect(few.preliminary.some((c) => mainKeys.has(c.key))).toBe(false);
+  });
+
   it('the options narrow the cards: since a moment, and without the hidden keys', () => {
     for (let i = 0; i < 16; i += 1) {
       const id = manual(i);

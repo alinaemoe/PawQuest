@@ -2,8 +2,10 @@ import {
   WALK_DIMENSION_KEYS,
   WALK_OUTCOME_KEYS,
   checkedPatternCards,
+  preliminaryCards,
   type AnalysisUnit,
   type CheckedCard,
+  type PreliminaryCard,
 } from '@pawquest/insights';
 
 import { derivedHealth, listWalkDims, type DerivedHealth } from './derived';
@@ -31,6 +33,11 @@ export interface WalkPatterns {
   readonly cards: readonly CheckedCard[];
   /** Patterns that something else explains: "it looks like the weather, but it is the place". */
   readonly explained: readonly CheckedCard[];
+  /**
+   * Observations from a small number of walks, a section of their own, very preliminary (docs/23,
+   * 3.3): only between 15 and 59 walks, and never the ones that are findings already.
+   */
+  readonly preliminary: readonly PreliminaryCard[];
   /** How many walks the cards were found among. */
   readonly unitCount: number;
   /** Where the derived layer stands: `stale > 0` means "still counting". */
@@ -57,5 +64,15 @@ export function walkPatterns(
     WALK_OUTCOME_KEYS,
     options.excludeKeys === undefined ? {} : { excludeKeys: options.excludeKeys },
   );
-  return { cards, explained, unitCount: units.length, health: derivedHealth(db, dogId) };
+  const taken = new Set([...(options.excludeKeys ?? []), ...cards.map((c) => c.key)]);
+  const preliminary = preliminaryCards(units, WALK_DIMENSION_KEYS, WALK_OUTCOME_KEYS, {
+    excludeKeys: taken,
+  });
+  return {
+    cards,
+    explained,
+    preliminary,
+    unitCount: units.length,
+    health: derivedHealth(db, dogId),
+  };
 }

@@ -52,6 +52,7 @@ export function checkedPatternCards(
     ...(options.fdr === undefined ? {} : { fdr: options.fdr }),
     ...(options.minAbsDelta === undefined ? {} : { minAbsDelta: options.minAbsDelta }),
     ...(options.maxCards === undefined ? {} : { maxCards: options.maxCards }),
+    ...(options.minGroup === undefined ? {} : { minGroup: options.minGroup }),
   };
   const attach = (card: PatternCard): CheckedCard => ({ ...card, adjustment: adjustmentOf(card) });
   return {

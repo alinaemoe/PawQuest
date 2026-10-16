@@ -194,6 +194,8 @@ export interface PatternCardOptions {
   readonly minAbsDelta?: number;
   /** Maximum number of cards. Default 5. */
   readonly maxCards?: number;
+  /** Fewest units in each of the two groups. Default 5. */
+  readonly minGroup?: number;
   /**
    * A last test before the one-card-per-dimension choice: a candidate it refuses is passed over
    * and the next best of its dimension may take its place (used to leave out patterns that another
@@ -222,6 +224,7 @@ export function patternCards(
   const fdr = options.fdr ?? 0.2;
   const minAbsDelta = options.minAbsDelta ?? 0.2;
   const maxCards = options.maxCards ?? 5;
+  const minGroup = options.minGroup ?? 5;
 
   interface Candidate {
     card: Omit<PatternCard, 'testedCount'>;
@@ -233,7 +236,7 @@ export function patternCards(
     for (const dimension of dimensions) {
       for (const value of dimensionValues(units, dimension)) {
         const { inGroup, rest } = split(units, dimension, value, outcome);
-        if (Math.min(inGroup.n, rest.n) < 5) {
+        if (Math.min(inGroup.n, rest.n) < minGroup) {
           continue;
         }
         const comparison = compareProportions(
