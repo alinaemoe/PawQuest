@@ -56,6 +56,14 @@ describe('findRides', () => {
     ).toEqual([]);
   });
 
+  it('bursts of GPS noise in a slow walk do not chain into a ride', () => {
+    const pieces: (readonly [number, number])[] = [];
+    for (let i = 0; i < 8; i += 1) {
+      pieces.push([5, 5], [35, 0.5]);
+    }
+    expect(findRides(track(pieces))).toEqual([]);
+  });
+
   it('a jog is not a ride but a bike is', () => {
     expect(findRides(track([[600, 2.6]]))).toEqual([]);
     expect(findRides(track([[600, 5]]))).toHaveLength(1);

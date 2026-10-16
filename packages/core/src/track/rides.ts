@@ -57,7 +57,10 @@ export function findRides(points: readonly TimedPoint[], options: RideOptions = 
           distanceM += haversineDistanceM(a, b);
         }
       }
-      rides.push({ fromTs: start.ts, toTs: lastFastEnd, durationS, distanceM });
+      // GPS noise gives short bursts of "speed": a ride moves fast on average, not just in bursts
+      if (distanceM / durationS >= minSpeed) {
+        rides.push({ fromTs: start.ts, toTs: lastFastEnd, durationS, distanceM });
+      }
     }
     start = null;
   };
