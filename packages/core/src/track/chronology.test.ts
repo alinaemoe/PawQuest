@@ -171,6 +171,19 @@ describe('buildChronology: other shapes', () => {
     expect(chronologyTitle(steps, () => 'x')).toBeNull();
   });
 
+  it('a visit that reaches outside the walk is cut to it, and one left too short is dropped', () => {
+    const track = new Track().stand(600).walkTo(500, 0).stand(300);
+    const stays = findStays(track.points);
+    const inside = { startedAt: T0 + 240_000, endedAt: track.end - 200_000 };
+    const steps = buildChronology(track.points, stays, [], inside);
+    const first = visits(steps)[0];
+    expect(first?.fromTs).toBe(inside.startedAt);
+    expect(first?.durationS).toBeCloseTo((stays[0]?.toTs ?? 0) / 1000 - inside.startedAt / 1000, 0);
+    expect(steps.every((s) => s.fromTs >= inside.startedAt && s.toTs <= inside.endedAt)).toBe(true);
+    // the last visit has only 100 s left inside the walk: dropped
+    expect(visits(steps)).toHaveLength(1);
+  });
+
   it('a walk without stays is one leg of the whole length', () => {
     const track = new Track().walkTo(1000, 0);
     const steps = chronology(track, [HOME]);

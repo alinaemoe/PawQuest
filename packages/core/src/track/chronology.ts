@@ -45,6 +45,8 @@ export interface ChronologyOptions {
   readonly minLegS?: number;
   /** A saved place is "here" when the visit centre is within its radius, at least this far. Default 40 m. */
   readonly minPlaceReachM?: number;
+  /** A visit shorter than this once cut to the walk is dropped. Default 180 s (the smallest stay). */
+  readonly minVisitS?: number;
 }
 
 /** The nearest saved place that contains a position (its radius, but not less than the reach). */
@@ -95,6 +97,7 @@ export function buildChronology(
 ): ChronoStep[] {
   const minLegS = options.minLegS ?? 60;
   const reach = options.minPlaceReachM ?? 40;
+  const minVisitS = options.minVisitS ?? 180;
   const visits = [...stays].sort((a, b) => a.fromTs - b.fromTs);
   const steps: ChronoStep[] = [];
   const leg = (fromTs: number, toTs: number): void => {
@@ -111,12 +114,19 @@ export function buildChronology(
   };
   let cursor = bounds.startedAt;
   for (const stay of visits) {
-    leg(cursor, stay.fromTs);
+    // a stale first fix or a late last one may reach outside the walk: the visit is cut to it
+    const fromTs = Math.max(stay.fromTs, bounds.startedAt, cursor);
+    const toTs = Math.min(stay.toTs, bounds.endedAt);
+    const durationS = (toTs - fromTs) / 1000;
+    if (durationS < minVisitS) {
+      continue;
+    }
+    leg(cursor, fromTs);
     steps.push({
       kind: 'visit',
-      fromTs: stay.fromTs,
-      toTs: stay.toTs,
-      durationS: stay.durationS,
+      fromTs,
+      toTs,
+      durationS,
       lat: stay.lat,
       lon: stay.lon,
       radiusM: stay.radiusM,
@@ -125,7 +135,7 @@ export function buildChronology(
       gapS: stay.gapS,
       innerCount: stay.inner.length,
     });
-    cursor = Math.max(cursor, stay.toTs);
+    cursor = toTs;
   }
   leg(cursor, bounds.endedAt);
   return steps;
