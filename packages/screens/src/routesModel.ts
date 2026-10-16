@@ -1,4 +1,5 @@
 import { median } from '@pawquest/core';
+import { compareToUsual } from '@pawquest/insights';
 
 /** The numbers about a route that its passes give (G-19: counts and spread, no verdicts). */
 export interface PassLike {
@@ -57,11 +58,14 @@ export function versusUsual(pass: PassLike, others: readonly PassLike[]): Versus
     return null;
   }
   const usual = median(alike.map((o) => o.walkingS));
-  const diff = pass.walkingS - usual;
-  if (Math.abs(diff) <= Math.max(USUAL_FLOOR_S, usual * USUAL_SHARE)) {
-    return { kind: 'usual', minutes: 0 };
-  }
-  return { kind: diff > 0 ? 'longer' : 'shorter', minutes: Math.round(Math.abs(diff) / 60) };
+  const compared = compareToUsual(
+    pass.walkingS,
+    { median: usual },
+    { floor: USUAL_FLOOR_S, share: USUAL_SHARE },
+  );
+  return compared.kind === 'usual'
+    ? { kind: 'usual', minutes: 0 }
+    : { kind: compared.kind, minutes: Math.round(compared.diff / 60) };
 }
 
 /** "Дом → Магазин", "Круг от Дом", or null when the ends have no names. */

@@ -307,3 +307,10 @@ export {
   type WalkPatterns,
 } from './analysis';
 export { dogFacts } from './dogFacts';
+export {
+  USUAL_RULES,
+  walkUsual,
+  type UsualMeasure,
+  type UsualMetric,
+  type WalkUsual,
+} from './usual';

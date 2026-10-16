@@ -70,3 +70,19 @@ export {
 export type { PreliminaryCard } from './preliminary';
 export { MIN_WALKS_FOR_FAVOURITES, MIN_WALKS_FOR_RECORDS, computeFacts, weekdayOf } from './facts';
 export type { BusiestWeek, DayStreak, FactWalk, Facts, Favourite, Record1 } from './facts';
+export {
+  MIN_SIMILAR,
+  SIMILAR_WALK_LEVELS,
+  SIMILAR_WEATHER_LEVELS,
+  compareToUsual,
+  similarWalks,
+  usualStats,
+} from './similar';
+export type {
+  SimilarResult,
+  SimilarWalk,
+  SimilarityLevel,
+  UsualComparison,
+  UsualRule,
+  UsualStats,
+} from './similar';
