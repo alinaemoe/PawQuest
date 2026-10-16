@@ -296,4 +296,13 @@ export {
   type StoredDims,
   type StructureJson,
 } from './derived';
-export { buildAnalysisUnits, walkPatterns, type WalkPatterns } from './analysis';
+export {
+  buildAnalysisUnits,
+  cardWalks,
+  hiddenInsightKeys,
+  hideInsight,
+  walkPatterns,
+  type CardWalk,
+  type WalkPatterns,
+} from './analysis';
+export { dogFacts } from './dogFacts';

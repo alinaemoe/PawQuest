@@ -12,7 +12,6 @@ import {
   DogScreen,
   OnboardingFlow,
   RecoverSheet,
-  SoonScreen,
   type DogDraft,
 } from '@pawquest/screens';
 import * as Location from 'expo-location';
@@ -30,6 +29,7 @@ import { HealthContainer } from './HealthContainer';
 import { AlbumContainer } from './AlbumContainer';
 import { PlacesContainer } from './PlacesContainer';
 import { RecapContainer } from './RecapContainer';
+import { InsightsContainer } from './InsightsContainer';
 import { RoutesContainer } from './RoutesContainer';
 import { useDerivedRefresh } from './useDerivedRefresh';
 import { QuickMarksContainer } from './QuickMarksContainer';
@@ -392,9 +392,7 @@ export function Root() {
         ) : null}
         {tab === 'walks' ? <WalksTab /> : null}
         {tab === 'training' ? <TrainingTab openFlow={setFlow} /> : null}
-        {tab === 'insights' ? (
-          <SoonScreen icon="chart" title={i18n.t('tab.insights')} text={i18n.t('soon.insights')} />
-        ) : null}
+        {tab === 'insights' ? <InsightsContainer /> : null}
         {tab === 'dog' ? (
           <DogScreen
             dog={dog}

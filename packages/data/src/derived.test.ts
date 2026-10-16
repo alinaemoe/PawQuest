@@ -2,7 +2,13 @@ import { mulberry32 } from '@pawquest/insights';
 import type { WeatherFacts } from '@pawquest/weather';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { buildAnalysisUnits, walkPatterns } from './analysis';
+import {
+  buildAnalysisUnits,
+  cardWalks,
+  hiddenInsightKeys,
+  hideInsight,
+  walkPatterns,
+} from './analysis';
 import {
   DERIVED_VERSIONS,
   clearDerived,
@@ -13,6 +19,7 @@ import {
   refreshDerived,
 } from './derived';
 import { createDog, type Dog } from './dogs';
+import { dogFacts } from './dogFacts';
 import { createEvent } from './events';
 import { createPlace, setPlaceBoundary, setWalkPlace } from './places';
 import { appendTrackPoints, finishWalk, startWalk, type TrackPointInput } from './recorder';
@@ -568,5 +575,75 @@ describe('what the dimensions are made from', () => {
     const hidden = walkPatterns(env.db, dog.id, { excludeKeys: new Set([top]) });
     expect(hidden.cards.map((c) => c.key)).not.toContain(top);
     expect(walkPatterns(env.db, dog.id, { sinceTs: START + 10 * DAY }).unitCount).toBe(6);
+  });
+});
+
+describe('dogFacts (step 3.4)', () => {
+  it('favourites, records and totals from the walks of a dog, without the removed ones', () => {
+    const park = createPlace(env.db, env.ctx, {
+      category: 'park',
+      label: 'Парк',
+      lat: 55,
+      lon: 37,
+    });
+    const yard = createPlace(env.db, env.ctx, {
+      category: 'yard',
+      label: 'Двор',
+      lat: 55.5,
+      lon: 37,
+    });
+    const ids = Array.from({ length: 8 }, (_, i) => manual(i, i === 3 ? 90 : 30));
+    ids.forEach((id, i) => {
+      setWalkPlace(env.db, env.ctx, id, { placeId: i < 5 ? park.id : yard.id, placeKind: null });
+    });
+    // a hard moment ten minutes in splits the third walk's calm stretch
+    event(ids[2] ?? '', 'hard', 2, 3);
+    const gone = manual(9, 600);
+    softDelete(env.db, env.ctx, 'walk', gone);
+    const facts = dogFacts(env.db, dog.id, START + 8 * DAY, 0);
+    expect(facts.totals.walks).toBe(8);
+    expect(facts.favouritePlaces).toEqual({ values: [park.id], count: 5, of: 8 });
+    expect(facts.longestWalk).toEqual({ walkIds: [ids[3] ?? ''], value: 90 * 60 });
+    expect(facts.longestCalm?.walkIds).toEqual([ids[3] ?? '']);
+    expect(facts.streak?.best).toBe(8);
+    expect(dogFacts(env.db, dog.id, START, 0).totals.walks).toBe(8);
+  });
+
+  it('a dog without walks has nothing to say', () => {
+    expect(dogFacts(env.db, dog.id, START, 0).totals.walks).toBe(0);
+  });
+});
+
+describe('hiding a card and showing its walks', () => {
+  it('a card is hidden for a week or for good, and comes back by itself after the week', () => {
+    hideInsight(env.db, env.ctx, 'ground|dry|hard_moment', false);
+    hideInsight(env.db, env.ctx, 'temp|0_10|success', true);
+    const now = env.ctx.now();
+    expect(hiddenInsightKeys(env.db, now)).toEqual(
+      new Set(['ground|dry|hard_moment', 'temp|0_10|success']),
+    );
+    expect(hiddenInsightKeys(env.db, now + 8 * DAY)).toEqual(new Set(['temp|0_10|success']));
+    expect(hiddenInsightKeys(env.db, now + 4000 * DAY)).toEqual(new Set());
+  });
+
+  it('the walks of a group, newest first, with the ones where the outcome happened marked', () => {
+    const hardWalk = manual(0, 40);
+    const calmWalk = manual(1, 25);
+    manual(2, 70);
+    event(hardWalk, 'hard', 0, 3);
+    event(calmWalk, 'dog', 1);
+    refreshDerived(env.db, env.ctx, dog.id);
+    const list = cardWalks(env.db, dog.id, {
+      dimension: 'duration',
+      value: '20_45',
+      outcome: 'hard_moment',
+    });
+    expect(list.map((w) => [w.walkId, w.hit, w.durationS])).toEqual([
+      [calmWalk, false, 25 * 60],
+      [hardWalk, true, 40 * 60],
+    ]);
+    expect(
+      cardWalks(env.db, dog.id, { dimension: 'duration', value: 'nope', outcome: 'hard_moment' }),
+    ).toEqual([]);
   });
 });

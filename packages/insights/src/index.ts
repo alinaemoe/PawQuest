@@ -51,6 +51,7 @@ export {
   WALK_DIMENSIONS_VERSION,
   WALK_DIMENSION_KEYS,
   WALK_OUTCOME_KEYS,
+  timeOfDayOf,
   walkDimensions,
   walkOutcomes,
 } from './dimensions';
@@ -67,3 +68,5 @@ export {
   preliminaryCards,
 } from './preliminary';
 export type { PreliminaryCard } from './preliminary';
+export { MIN_WALKS_FOR_FAVOURITES, MIN_WALKS_FOR_RECORDS, computeFacts, weekdayOf } from './facts';
+export type { BusiestWeek, DayStreak, FactWalk, Facts, Favourite, Record1 } from './facts';

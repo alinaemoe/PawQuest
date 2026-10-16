@@ -46,7 +46,7 @@ function walkEnd(walk: Walk): number {
 }
 
 /** The longest stretch of a walk between its start, its hard moments and its end. */
-function calmestOf(db: SqlDb, walk: Walk): CalmMoment | null {
+export function calmestOf(db: SqlDb, walk: Walk): CalmMoment | null {
   const hard = db
     .all(
       `SELECT ts FROM event WHERE walk_id = ? AND type_id = 'hard' AND deleted_at IS NULL ORDER BY ts`,

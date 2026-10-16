@@ -8,7 +8,9 @@ import {
   type PreliminaryCard,
 } from '@pawquest/insights';
 
+import { hidePrompt } from './demo';
 import { derivedHealth, listWalkDims, type DerivedHealth } from './derived';
+import { fromIso, type Ctx } from './ids';
 import type { SqlDb } from './sql';
 
 /**
@@ -75,4 +77,62 @@ export function walkPatterns(
     unitCount: units.length,
     health: derivedHealth(db, dogId),
   };
+}
+
+const HIDDEN_PREFIX = 'insight:';
+const WEEK = 7 * 86_400_000;
+const FOREVER = 3650 * 86_400_000;
+
+/** Hides a card (its `dimension|value|outcome` key) for a week or for good. */
+export function hideInsight(db: SqlDb, ctx: Ctx, key: string, forever: boolean): void {
+  hidePrompt(db, ctx, `${HIDDEN_PREFIX}${key}`, ctx.now() + (forever ? FOREVER : WEEK));
+}
+
+/** The keys of the cards that are hidden right now. */
+export function hiddenInsightKeys(db: SqlDb, now: number): Set<string> {
+  return new Set(
+    db
+      .all('SELECT key, hidden_until FROM prompt_state WHERE key LIKE ?', [`${HIDDEN_PREFIX}%`])
+      .filter((r) => {
+        const until = r['hidden_until'];
+        return typeof until === 'string' && fromIso(until) > now;
+      })
+      .map((r) => String(r['key']).slice(HIDDEN_PREFIX.length)),
+  );
+}
+
+export interface CardWalk {
+  readonly walkId: string;
+  readonly startedAt: number;
+  readonly durationS: number | null;
+  /** The outcome of the card happened on this walk. */
+  readonly hit: boolean;
+}
+
+/** The walks a card was counted from on its own side (the group), newest first: "Show the walks". */
+export function cardWalks(
+  db: SqlDb,
+  dogId: string,
+  card: { readonly dimension: string; readonly value: string; readonly outcome: string },
+): CardWalk[] {
+  const durations = new Map(
+    db
+      .all(
+        `SELECT w.id, w.duration_s FROM walk w JOIN walk_dog d ON d.walk_id = w.id
+          WHERE d.dog_id = ? AND w.status = 'completed' AND w.deleted_at IS NULL`,
+        [dogId],
+      )
+      .map((r) => [String(r['id']), r['duration_s'] === null ? null : Number(r['duration_s'])]),
+  );
+  return listWalkDims(db, dogId)
+    .filter(
+      (row) => row.dims.dims[card.dimension] === card.value && card.outcome in row.dims.outcomes,
+    )
+    .map((row) => ({
+      walkId: row.walkId,
+      startedAt: row.startedAt,
+      durationS: durations.get(row.walkId) ?? null,
+      hit: row.dims.outcomes[card.outcome] === true,
+    }))
+    .sort((a, b) => b.startedAt - a.startedAt);
 }

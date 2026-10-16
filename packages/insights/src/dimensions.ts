@@ -31,7 +31,7 @@ const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 
 /** morning 5-11, day 11-17, evening 17-22, night 22-5 (local time). */
-function timeOfDay(ts: number, tzOffsetMin: number): string {
+export function timeOfDayOf(ts: number, tzOffsetMin: number): string {
   const hour = Math.floor(((((ts + tzOffsetMin * 60_000) % DAY_MS) + DAY_MS) % DAY_MS) / HOUR_MS);
   if (hour >= 5 && hour < 11) {
     return 'morning';
@@ -112,7 +112,7 @@ export interface WalkDims {
 /** The categories of one walk (without the weather: that is `weatherDimensions`). */
 export function walkDimensions(input: WalkDimensionInput): WalkDims {
   return {
-    time_of_day: timeOfDay(input.startedAt, input.tzOffsetMin),
+    time_of_day: timeOfDayOf(input.startedAt, input.tzOffsetMin),
     day_type: dayType(input.startedAt, input.tzOffsetMin),
     duration: durationBand(input.durationS),
     place_kind: input.placeCategory === null ? undefined : GROUPS[input.placeCategory],
