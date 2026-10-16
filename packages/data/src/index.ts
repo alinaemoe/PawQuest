@@ -281,6 +281,7 @@ export {
 } from './routes';
 export {
   DERIVED_VERSIONS,
+  MIN_ANALYSED_WALK_S,
   clearDerived,
   computeDims,
   computeStructure,
@@ -305,4 +306,4 @@ export {
   type CardWalk,
   type WalkPatterns,
 } from './analysis';
-export { MIN_FACT_WALK_S, dogFacts } from './dogFacts';
+export { dogFacts } from './dogFacts';

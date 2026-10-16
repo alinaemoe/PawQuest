@@ -25,6 +25,10 @@ import { getWeatherSnapshot } from './weather';
 
 export type DerivedKind = 'structure' | 'dims';
 
+/** A walk shorter than this is a slip of the finger or a test, not a walk: no analysis counts it. */
+export const MIN_ANALYSED_WALK_S = 120;
+const LONG_ENOUGH = `(w.duration_s IS NULL OR w.duration_s >= ${String(MIN_ANALYSED_WALK_S)})`;
+
 /** The rule version of each kind: raise it when the rule (or a band it uses) changes. */
 export const DERIVED_VERSIONS: Readonly<Record<DerivedKind, number>> = {
   structure: 1,
@@ -284,7 +288,7 @@ export function refreshDerived(
   const walkIds = db
     .all(
       `SELECT w.id FROM walk w JOIN walk_dog d ON d.walk_id = w.id
-        WHERE d.dog_id = ? AND w.status = 'completed' AND w.deleted_at IS NULL
+        WHERE d.dog_id = ? AND w.status = 'completed' AND w.deleted_at IS NULL AND ${LONG_ENOUGH}
         ORDER BY w.started_at DESC`,
       [dogId],
     )
@@ -348,7 +352,7 @@ export function derivedHealth(db: SqlDb, dogId: string): DerivedHealth {
   const walkIds = db
     .all(
       `SELECT w.id FROM walk w JOIN walk_dog d ON d.walk_id = w.id
-        WHERE d.dog_id = ? AND w.status = 'completed' AND w.deleted_at IS NULL`,
+        WHERE d.dog_id = ? AND w.status = 'completed' AND w.deleted_at IS NULL AND ${LONG_ENOUGH}`,
       [dogId],
     )
     .map((r) => String(r['id']));
@@ -396,7 +400,7 @@ export function listWalkDims(
          FROM walk w
          JOIN walk_dog d ON d.walk_id = w.id
          JOIN walk_derived x ON x.walk_id = w.id AND x.kind = 'dims'
-        WHERE d.dog_id = ? AND w.status = 'completed' AND w.deleted_at IS NULL
+        WHERE d.dog_id = ? AND w.status = 'completed' AND w.deleted_at IS NULL AND ${LONG_ENOUGH}
           AND x.status = 'ok' AND x.algo_version = ? AND w.started_at >= ?
         ORDER BY w.started_at, w.id`,
       [dogId, DERIVED_VERSIONS.dims, toIso(options.sinceTs ?? 0)],

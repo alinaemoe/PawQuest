@@ -1,11 +1,9 @@
 import { computeFacts, timeOfDayOf, type FactWalk, type Facts } from '@pawquest/insights';
 
+import { MIN_ANALYSED_WALK_S } from './derived';
 import { calmestOf } from './recap';
 import type { SqlDb } from './sql';
 import { getWalk } from './walks';
-
-/** A walk shorter than this is a slip of the finger or a test, not a walk: it is not counted. */
-export const MIN_FACT_WALK_S = 120;
 
 /**
  * Facts and records of a dog (docs/23, step 3.4): plain counts over the finished walks, none of
@@ -22,7 +20,7 @@ export function dogFacts(db: SqlDb, dogId: string, now: number, tzOffsetMin: num
   );
   const walks: FactWalk[] = rows.flatMap((row) => {
     const walk = getWalk(db, String(row['id']));
-    if (walk === null || (walk.durationS !== null && walk.durationS < MIN_FACT_WALK_S)) {
+    if (walk === null || (walk.durationS !== null && walk.durationS < MIN_ANALYSED_WALK_S)) {
       return [];
     }
     const tz = Number(row['tz_offset_min'] ?? 0);

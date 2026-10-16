@@ -134,6 +134,14 @@ describe('refreshDerived', () => {
     });
   });
 
+  it('a walk shorter than two minutes is no walk for the analysis: it is not worked out or counted', () => {
+    manual(0, 30);
+    manual(1, 1);
+    expect(refreshDerived(env.db, env.ctx, dog.id)).toMatchObject({ total: 1, computed: 1 });
+    expect(derivedHealth(env.db, dog.id)).toEqual({ walks: 1, current: 1, stale: 0, errors: 0 });
+    expect(listWalkDims(env.db, dog.id)).toHaveLength(1);
+  });
+
   it('leaves out running walks, deleted walks and the walks of other dogs', () => {
     manual(0);
     const gone = manual(1);
