@@ -1,7 +1,7 @@
 import type { UnitSystem } from '@pawquest/i18n';
 import { AppText, Button, Chip, Sheet, Tag, TextField, useI18n } from '@pawquest/rn-ui';
 import { useEffect, useState, type ReactNode } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { distanceToMeters, parseMinutes } from './input';
 import type { TimelineRow } from './chronologyRows';
@@ -27,6 +27,8 @@ export interface WalkDetailsSheetProps {
   readonly map?: ReactNode;
   /** The pictures of the walk (strip and viewer). */
   readonly photos?: ReactNode;
+  /** A tap on a visit row of the timeline (to mark it as spent indoors). */
+  readonly onTimelineRow?: (row: TimelineRow) => void;
   readonly walk: WalkDetailsModel | null;
   readonly onClose: () => void;
   readonly onEdit: () => void;
@@ -38,6 +40,7 @@ export function WalkDetailsSheet({
   walk,
   map,
   photos,
+  onTimelineRow,
   onClose,
   onEdit,
   onDelete,
@@ -70,15 +73,29 @@ export function WalkDetailsSheet({
       {walk.timeline === undefined || walk.timeline.length === 0 ? null : (
         <View style={{ gap: 4 }}>
           <AppText variant="eyebrow">{i18n.t('walk.timeline')}</AppText>
-          {walk.timeline.map((row) => (
-            <AppText
-              key={row.key}
-              variant="body"
-              style={row.kind === 'leg' ? { opacity: 0.65 } : {}}
-            >
-              {row.time} · {row.text} · {row.detail}
-            </AppText>
-          ))}
+          {walk.timeline.map((row) =>
+            row.canMark && onTimelineRow !== undefined ? (
+              <Pressable
+                key={row.key}
+                accessibilityRole="button"
+                onPress={() => {
+                  onTimelineRow(row);
+                }}
+              >
+                <AppText>
+                  {row.time} · {row.text} · {row.detail} ›
+                </AppText>
+              </Pressable>
+            ) : (
+              <AppText
+                key={row.key}
+                variant="body"
+                style={row.kind === 'leg' ? { opacity: 0.65 } : {}}
+              >
+                {row.time} · {row.text} · {row.detail}
+              </AppText>
+            ),
+          )}
         </View>
       )}
       <View style={{ gap: 4 }}>

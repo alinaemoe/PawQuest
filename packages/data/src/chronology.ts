@@ -15,6 +15,7 @@ import { staysOfWalk } from './placeSuggest';
 import { lastTrackPoint, listTrackPoints } from './recorder';
 import type { SqlDb } from './sql';
 import { getWalk } from './walks';
+import { listIndoor } from './walkStructure';
 
 export interface WalkChronology {
   readonly steps: ChronoStep[];
@@ -51,7 +52,7 @@ export function walkChronology(db: SqlDb, walkId: string, now: number): WalkChro
     staysOfWalk(db, walkId, now),
     known,
     { startedAt: walk.startedAt, endedAt: walk.endedAt ?? now },
-    { rides: findRides(points) },
+    { rides: findRides(points), indoor: listIndoor(db, walkId) },
   );
   const placeNames = new Map(places.map((p) => [p.id, p.name]));
   return { steps, title: chronologyTitle(steps, (id) => placeNames.get(id)), placeNames };

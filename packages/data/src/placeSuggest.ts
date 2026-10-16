@@ -49,9 +49,10 @@ export function staysOfWalk(db: SqlDb, walkId: string, now: number): Stay[] {
     return [];
   }
   const pausedIntervals = db
-    .all("SELECT started_at, ended_at FROM walk_segment WHERE walk_id = ? AND kind = 'paused'", [
-      walkId,
-    ])
+    .all(
+      "SELECT started_at, ended_at FROM walk_segment WHERE walk_id = ? AND kind = 'paused' AND indoor = 0",
+      [walkId],
+    )
     .map((r) => ({
       fromTs: fromIso(String(r['started_at'])),
       toTs: r['ended_at'] === null ? now : fromIso(String(r['ended_at'])),

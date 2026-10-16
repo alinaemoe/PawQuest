@@ -13,7 +13,14 @@ import {
 } from './recorder';
 import { START, testEnv, type TestEnv } from './test-utils';
 import { getWalk } from './walks';
-import { splitWalk, trimWalkEnd, trimWalkEndUndoable } from './walkStructure';
+import {
+  clearIndoor,
+  listIndoor,
+  markIndoor,
+  splitWalk,
+  trimWalkEnd,
+  trimWalkEndUndoable,
+} from './walkStructure';
 
 const M_PER_DEG = 111_195;
 const MIN = 60_000;
@@ -217,5 +224,69 @@ describe('trimWalkEndUndoable', () => {
     const id = forgottenWalk();
     trimWalkEndUndoable(env.db, env.ctx, id, START + 10 * MIN).undo();
     expect(trimWalkEnd(env.db, env.ctx, id, START + 12 * MIN).durationS).toBe(720);
+  });
+});
+
+describe('markIndoor and clearIndoor', () => {
+  const pausedS = (id: string): number =>
+    Number(
+      getWalk(env.db, id) &&
+        env.db.all('SELECT paused_s FROM walk WHERE id = ?', [id])[0]?.['paused_s'],
+    );
+
+  it('puts the time inside out of the moving time, the duration of the walk stays', () => {
+    const id = forgottenWalk();
+    const before = env.db.all('SELECT moving_s, paused_s FROM walk WHERE id = ?', [id])[0];
+    const marked = markIndoor(env.db, env.ctx, id, START + 12 * MIN, START + 28 * MIN);
+    expect(marked.durationS).toBe(1800);
+    expect(pausedS(id)).toBe(Math.round((16 * MIN) / 1000));
+    expect(Number(before?.['paused_s'])).toBe(0);
+    expect(listIndoor(env.db, id)).toEqual([{ fromTs: START + 12 * MIN, toTs: START + 28 * MIN }]);
+  });
+
+  it('moving time shrinks by the marked time when it was spent moving', () => {
+    const id = forgottenWalk();
+    const moving = (): number =>
+      Number(env.db.all('SELECT moving_s FROM walk WHERE id = ?', [id])[0]?.['moving_s']);
+    const before = moving();
+    markIndoor(env.db, env.ctx, id, START + 2 * MIN, START + 6 * MIN);
+    expect(moving()).toBeLessThan(before);
+  });
+
+  it('can be taken back, and the walk is as it was', () => {
+    const id = forgottenWalk();
+    const before = env.db.all('SELECT moving_s, paused_s, distance_m FROM walk WHERE id = ?', [
+      id,
+    ])[0];
+    markIndoor(env.db, env.ctx, id, START + 12 * MIN, START + 28 * MIN);
+    clearIndoor(env.db, env.ctx, id, START + 13 * MIN, START + 14 * MIN);
+    expect(listIndoor(env.db, id)).toEqual([]);
+    const after = env.db.all('SELECT moving_s, paused_s, distance_m FROM walk WHERE id = ?', [
+      id,
+    ])[0];
+    expect(after).toEqual(before);
+  });
+
+  it('an ordinary pause is not an inside mark and survives clearing', () => {
+    const id = forgottenWalk();
+    env.db.run(
+      "INSERT INTO walk_segment (id, walk_id, kind, started_at, ended_at) VALUES ('p', ?, 'paused', ?, ?)",
+      [id, new Date(START + 40 * MIN).toISOString(), new Date(START + 41 * MIN).toISOString()],
+    );
+    clearIndoor(env.db, env.ctx, id, START, START + 60 * MIN);
+    expect(
+      env.db.all("SELECT id FROM walk_segment WHERE id = 'p' AND kind = 'paused'"),
+    ).toHaveLength(1);
+  });
+
+  it('refuses a stretch outside the walk or an empty one', () => {
+    const id = forgottenWalk();
+    expect(() => markIndoor(env.db, env.ctx, id, START + 10 * MIN, START + 10 * MIN)).toThrow(
+      RangeError,
+    );
+    expect(() => markIndoor(env.db, env.ctx, id, START + 10 * MIN, START + 99 * MIN)).toThrow(
+      RangeError,
+    );
+    expect(() => markIndoor(env.db, env.ctx, id, START - MIN, START + 5 * MIN)).toThrow(RangeError);
   });
 });

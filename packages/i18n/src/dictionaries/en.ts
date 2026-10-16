@@ -671,6 +671,15 @@ export const en = {
   'walk.timeline.gap': 'no signal',
   'walk.timeline.ride': 'On the road',
 
+  'walk.timeline.indoor': 'indoors',
+  'indoor.text':
+    'If you went inside without the dog, this time will not count as walking: it leaves the moving time and the pace. The visit stays in the timeline.',
+  'indoor.markedText': 'This time is marked as indoors and does not count as walking.',
+  'indoor.mark': 'Do not count as walking',
+  'indoor.clear': 'Count as walking again',
+  'indoor.marked': 'Marked as indoors',
+  'indoor.cleared': 'Mark removed',
+
   'arrival.title': 'You have arrived: {place}',
   'arrival.text':
     'You have been here for {stay}. Finish the walk? It will end at the moment you arrived.',

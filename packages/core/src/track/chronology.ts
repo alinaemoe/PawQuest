@@ -29,6 +29,8 @@ export interface ChronoVisit extends LatLon {
   readonly gapS: number;
   /** Smaller stays inside this visit (a stand at the clearing during a walk through the park). */
   readonly innerCount: number;
+  /** The owner marked this time as spent indoors without the dog. */
+  readonly indoor: boolean;
 }
 
 export interface ChronoLeg {
@@ -59,6 +61,8 @@ export interface ChronologyOptions {
   readonly minVisitS?: number;
   /** Rides found in the track: the legs are split around them. */
   readonly rides?: readonly Ride[];
+  /** Stretches the owner marked as spent indoors without the dog. */
+  readonly indoor?: readonly { readonly fromTs: number; readonly toTs: number }[];
 }
 
 /** The nearest saved place that contains a position (its radius, but not less than the reach). */
@@ -78,6 +82,19 @@ export function placeContaining(
     }
   }
   return best?.place ?? null;
+}
+
+/** The share of [fromTs, toTs] that lies in the marked indoor stretches. */
+function indoorShare(
+  spans: readonly { readonly fromTs: number; readonly toTs: number }[],
+  fromTs: number,
+  toTs: number,
+): number {
+  let covered = 0;
+  for (const span of spans) {
+    covered += Math.max(0, Math.min(span.toTs, toTs) - Math.max(span.fromTs, fromTs));
+  }
+  return toTs > fromTs ? Math.min(1, covered / (toTs - fromTs)) : 0;
 }
 
 function pathLengthM(points: readonly TimedPoint[], fromTs: number, toTs: number): number {
@@ -168,6 +185,7 @@ export function buildChronology(
       scale: stay.scale,
       gapS: stay.gapS,
       innerCount: stay.inner.length,
+      indoor: indoorShare(options.indoor ?? [], fromTs, toTs) >= 0.5,
     });
     cursor = toTs;
   }

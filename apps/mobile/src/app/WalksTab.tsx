@@ -1,8 +1,10 @@
 import {
+  clearIndoor,
   createManualWalk,
   getWalk,
   getWeatherSnapshot,
   listEventTypes,
+  markIndoor,
   listWalksPage,
   restore,
   softDelete,
@@ -15,6 +17,8 @@ import { useToast } from '@pawquest/rn-ui';
 import {
   eventTypeLabel,
   groupWalksByDay,
+  IndoorSheet,
+  type TimelineRow,
   timelineRows,
   totalsLine,
   walkFacts,
@@ -44,6 +48,8 @@ export function WalksTab() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [logging, setLogging] = useState(false);
+  // the visit row whose "inside" mark is being decided
+  const [indoorRow, setIndoorRow] = useState<TimelineRow | null>(null);
 
   const data = useMemo(() => {
     const now = Date.now();
@@ -116,6 +122,7 @@ export function WalksTab() {
       <WalkDetailsSheet
         map={open === null ? null : <WalkRouteMap walkId={open.id} mode="fit" height={200} />}
         photos={open === null ? null : <WalkPhotos walkId={open.id} />}
+        onTimelineRow={setIndoorRow}
         walk={editing ? null : details}
         onClose={() => {
           setOpenId(null);
@@ -129,6 +136,28 @@ export function WalksTab() {
           }
         }}
       />
+      {indoorRow === null || open === null ? null : (
+        <IndoorSheet
+          visible
+          title={`${indoorRow.text} · ${indoorRow.time}`}
+          marked={indoorRow.indoor}
+          onMark={() => {
+            markIndoor(db, ctx, open.id, indoorRow.fromTs, indoorRow.toTs);
+            setIndoorRow(null);
+            bump();
+            toast.show({ message: i18n.t('indoor.marked') });
+          }}
+          onClear={() => {
+            clearIndoor(db, ctx, open.id, indoorRow.fromTs, indoorRow.toTs);
+            setIndoorRow(null);
+            bump();
+            toast.show({ message: i18n.t('indoor.cleared') });
+          }}
+          onClose={() => {
+            setIndoorRow(null);
+          }}
+        />
+      )}
       <WalkEditSheet
         visible={editing && open !== null}
         units={settings.units}

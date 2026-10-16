@@ -252,8 +252,12 @@ export {
 export { walkRideSeconds } from './recorder';
 export {
   TRIMMED_FIX,
+  clearIndoor,
+  listIndoor,
+  markIndoor,
   splitWalk,
   splitWalkAroundStay,
   trimWalkEnd,
   trimWalkEndUndoable,
+  type IndoorSpan,
 } from './walkStructure';

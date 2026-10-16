@@ -1,4 +1,4 @@
-import { expectFound, toIso, type Ctx } from './ids';
+import { expectFound, fromIso, toIso, type Ctx } from './ids';
 import { computeWalkMetrics } from './recorder';
 import type { SqlDb } from './sql';
 import { getWalk, type Walk } from './walks';
@@ -226,4 +226,89 @@ export function trimWalkEndUndoable(
       });
     },
   };
+}
+
+export interface IndoorSpan {
+  readonly fromTs: number;
+  readonly toTs: number;
+}
+
+/** The stretches of a walk the owner marked as spent indoors without the dog. */
+export function listIndoor(db: SqlDb, walkId: string): IndoorSpan[] {
+  return db
+    .all(
+      `SELECT started_at, ended_at FROM walk_segment
+        WHERE walk_id = ? AND indoor = 1 AND ended_at IS NOT NULL ORDER BY started_at`,
+      [walkId],
+    )
+    .map((row) => ({
+      fromTs: fromIso(String(row['started_at'])),
+      toTs: fromIso(String(row['ended_at'])),
+    }));
+}
+
+/**
+ * "Inside" (D-62, 5.3): the owner went in without the dog between `fromTs` and `toTs`. The time is
+ * a pause put in afterwards: it leaves the moving time and the pace, the visit stays in the
+ * timeline. Marks can be taken back with `clearIndoor`.
+ */
+export function markIndoor(
+  db: SqlDb,
+  ctx: Ctx,
+  walkId: string,
+  fromTs: number,
+  toTs: number,
+): Walk {
+  const walk = assertCuttable(getWalk(db, walkId), fromTs);
+  const end = walk.endedAt ?? toTs;
+  if (!(toTs > fromTs) || toTs > end) {
+    throw new RangeError('The inside time must lie inside the walk');
+  }
+  db.transaction(() => {
+    const crossing = db.all(
+      `SELECT id, started_at, ended_at FROM walk_segment
+        WHERE walk_id = ? AND kind = 'moving' AND started_at < ? AND COALESCE(ended_at, ?) > ?`,
+      [walkId, toIso(toTs), toIso(end), toIso(fromTs)],
+    );
+    for (const row of crossing) {
+      const from = fromIso(String(row['started_at']));
+      const to = row['ended_at'] === null ? end : fromIso(String(row['ended_at']));
+      db.run('DELETE FROM walk_segment WHERE id = ?', [String(row['id'])]);
+      const piece = (kind: 'moving' | 'paused', a: number, b: number, indoor: 0 | 1): void => {
+        if (b > a) {
+          db.run(
+            'INSERT INTO walk_segment (id, walk_id, kind, started_at, ended_at, indoor) VALUES (?, ?, ?, ?, ?, ?)',
+            [ctx.newId(), walkId, kind, toIso(a), toIso(b), indoor],
+          );
+        }
+      };
+      piece('moving', from, Math.min(to, fromTs), 0);
+      piece('paused', Math.max(from, fromTs), Math.min(to, toTs), 1);
+      piece('moving', Math.max(from, toTs), to, 0);
+    }
+    refreshTotals(db, ctx, walkId, end);
+  });
+  return expectFound(getWalk(db, walkId), 'walk');
+}
+
+/** Takes the "inside" marks that touch the given time back: that time counts as walking again. */
+export function clearIndoor(
+  db: SqlDb,
+  ctx: Ctx,
+  walkId: string,
+  fromTs: number,
+  toTs: number,
+): Walk {
+  const walk = expectFound(getWalk(db, walkId), 'walk');
+  db.transaction(() => {
+    db.run(
+      `UPDATE walk_segment SET kind = 'moving', indoor = 0
+        WHERE walk_id = ? AND indoor = 1 AND started_at < ? AND ended_at > ?`,
+      [walkId, toIso(toTs), toIso(fromTs)],
+    );
+    if (walk.endedAt !== null) {
+      refreshTotals(db, ctx, walkId, walk.endedAt);
+    }
+  });
+  return expectFound(getWalk(db, walkId), 'walk');
 }

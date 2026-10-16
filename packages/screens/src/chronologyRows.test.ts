@@ -7,7 +7,13 @@ import { timelineRows } from './chronologyRows';
 const ru = createI18n({ locale: 'ru', units: 'metric', tzOffsetMin: () => 180 });
 const T = Date.UTC(2026, 9, 16, 7, 0, 0); // 10:00 in UTC+3
 
-const visit = (fromMin: number, minutes: number, placeId: string | null, gapS = 0): ChronoStep => ({
+const visit = (
+  fromMin: number,
+  minutes: number,
+  placeId: string | null,
+  gapS = 0,
+  indoor = false,
+): ChronoStep => ({
   kind: 'visit',
   fromTs: T + fromMin * 60_000,
   toTs: T + (fromMin + minutes) * 60_000,
@@ -19,6 +25,7 @@ const visit = (fromMin: number, minutes: number, placeId: string | null, gapS = 
   scale: 'small',
   gapS,
   innerCount: 0,
+  indoor,
 });
 const leg = (fromMin: number, minutes: number, lengthM: number): ChronoStep => ({
   kind: 'leg',
@@ -50,6 +57,17 @@ describe('timelineRows', () => {
       '20 мин · без сигнала',
     );
     expect(timelineRows([visit(0, 20, 'shop', 60)], names, ru)[0]?.detail).toBe('20 мин');
+  });
+
+  it('a visit of three minutes or more can be marked, a leg or a short stay cannot', () => {
+    const rows = timelineRows([visit(0, 3, null), visit(10, 2, null), leg(20, 5, 300)], names, ru);
+    expect(rows.map((r) => r.canMark)).toEqual([true, false, false]);
+    expect(rows[0]).toMatchObject({ fromTs: T, toTs: T + 3 * 60_000 });
+  });
+
+  it('says so when the time was marked as spent indoors', () => {
+    const rows = timelineRows([visit(0, 20, 'shop', 0, true)], names, ru);
+    expect(rows[0]).toMatchObject({ indoor: true, detail: '20 мин · внутри' });
   });
 
   it('keys are unique and nothing gives nothing', () => {

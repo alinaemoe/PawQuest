@@ -262,6 +262,29 @@ describe('buildChronology: other shapes', () => {
   });
 });
 
+describe('buildChronology: indoor marks', () => {
+  const track = new Track().walkTo(300, 0).stand(900).walkTo(900, 0);
+  const stays = findStays(track.points);
+  const bounds = { startedAt: T0, endedAt: track.end };
+
+  it('a visit is indoor when most of it was marked', () => {
+    const visit = stays[0];
+    const span = { fromTs: (visit?.fromTs ?? 0) + 60_000, toTs: (visit?.toTs ?? 0) - 60_000 };
+    const marked = buildChronology(track.points, stays, [], bounds, { indoor: [span] });
+    expect(visits(marked)[0]?.indoor).toBe(true);
+    const half = buildChronology(track.points, stays, [], bounds, {
+      indoor: [{ fromTs: visit?.fromTs ?? 0, toTs: (visit?.fromTs ?? 0) + 200_000 }],
+    });
+    expect(visits(half)[0]?.indoor).toBe(false);
+  });
+
+  it('without marks nothing is indoor', () => {
+    expect(visits(buildChronology(track.points, stays, [], bounds)).every((v) => !v.indoor)).toBe(
+      true,
+    );
+  });
+});
+
 describe('baseArrival', () => {
   const MOM = place('mom', 'Мама', 1200, 0, 40);
   const bases = new Set(['home', 'mom']);
