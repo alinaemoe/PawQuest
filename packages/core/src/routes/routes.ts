@@ -210,8 +210,12 @@ export function findRoutes(
       }
       const m = matchRoutes(a, b, options);
       if (m !== null) {
-        (share[i] as number[])[j] = m.share;
-        (share[j] as number[])[i] = m.share;
+        const rowI = share[i];
+        const rowJ = share[j];
+        if (rowI !== undefined && rowJ !== undefined) {
+          rowI[j] = m.share;
+          rowJ[i] = m.share;
+        }
         parent[find(i)] = find(j);
       }
     }

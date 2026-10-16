@@ -30,6 +30,7 @@ import { HealthContainer } from './HealthContainer';
 import { AlbumContainer } from './AlbumContainer';
 import { PlacesContainer } from './PlacesContainer';
 import { RecapContainer } from './RecapContainer';
+import { RoutesContainer } from './RoutesContainer';
 import { QuickMarksContainer } from './QuickMarksContainer';
 import { TodayContainer } from './TodayContainer';
 import { TrashContainer } from './TrashContainer';
@@ -72,6 +73,7 @@ export function Root() {
     | { kind: 'places' }
     | { kind: 'marks' }
     | { kind: 'album' }
+    | { kind: 'routes' }
     | { kind: 'recap' }
     | { kind: 'diary'; open: string | null }
     | null
@@ -305,6 +307,19 @@ export function Root() {
     );
   }
 
+  if (overlay?.kind === 'routes') {
+    return (
+      <>
+        {statusBar}
+        <RoutesContainer
+          onBack={() => {
+            setOverlay(null);
+          }}
+        />
+      </>
+    );
+  }
+
   if (overlay?.kind === 'recap' && dogId !== null) {
     return (
       <>
@@ -414,6 +429,9 @@ export function Root() {
             }}
             onPlaces={() => {
               setOverlay({ kind: 'places' });
+            }}
+            onRoutes={() => {
+              setOverlay({ kind: 'routes' });
             }}
             onAlbum={() => {
               setOverlay({ kind: 'album' });

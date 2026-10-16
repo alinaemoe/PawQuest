@@ -19,7 +19,10 @@ import {
   pauseWalk,
   proposeBases,
   proposePlaces,
+  proposeRoutes,
+  createRoute,
   restore,
+  routePasses,
   resumeWalk,
   setWalkPlace,
   softDelete,
@@ -31,6 +34,7 @@ import {
   walkAnchor,
   walkBaseArrival,
   walkCutSuggestion,
+  walkRoutePasses,
   type PlaceCategory,
   type Walk,
 } from '@pawquest/data';
@@ -38,6 +42,9 @@ import { useToast } from '@pawquest/rn-ui';
 import {
   ActiveWalkScreen,
   BaseArrivalSheet,
+  NewRouteSheet,
+  suggestedRouteName,
+  versusUsual,
   eventTypeLabel,
   EventDetailsSheet,
   walkFacts,
@@ -394,6 +401,43 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
   const [naming, setNaming] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [cutDone, setCutDone] = useState(false);
+  // a way walked again and again: offered a name, at most once a day (A-27)
+  const [routeNaming, setRouteNaming] = useState(false);
+  const [routeDismissed, setRouteDismissed] = useState(false);
+  const routeProposal = useMemo(() => {
+    const now = Date.now();
+    if (isPromptHidden(db, 'route-suggest:daily', now)) {
+      return null;
+    }
+    return (
+      proposeRoutes(db, now).find(
+        (p) => p.walkIds.includes(walkId) && !isPromptHidden(db, p.key, now),
+      ) ?? null
+    );
+  }, [db, walkId]);
+  // which saved routes this walk went along, and how it compares with their other passes
+  const routeLine = useMemo(() => {
+    const found = walkRoutePasses(db, walkId, Date.now())[0];
+    if (found === undefined) {
+      return null;
+    }
+    const others = routePasses(db, found.route, Date.now()).filter((p) => p.walkId !== walkId);
+    const versus = versusUsual(found.pass, others);
+    const words =
+      versus === null
+        ? null
+        : i18n.t(
+            versus.kind === 'usual'
+              ? 'routes.versusUsual'
+              : versus.kind === 'longer'
+                ? 'routes.versusLonger'
+                : 'routes.versusShorter',
+            { n: versus.minutes },
+          );
+    return words === null
+      ? i18n.t('routes.thisWalk', { name: found.route.name, n: found.index })
+      : i18n.t('routes.thisWalkVs', { name: found.route.name, n: found.index, versus: words });
+  }, [db, walkId, i18n]);
   const cut = useMemo(
     () =>
       isPromptHidden(db, `walk-cut:${walkId}`, Date.now())
@@ -509,6 +553,31 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
                 keepLabel: i18n.t('cut.keep'),
               }
         }
+        routeLine={routeLine}
+        routeCard={
+          routeProposal === null || routeDismissed
+            ? null
+            : {
+                text: i18n.t('routes.suggest'),
+                facts: i18n.t('routes.suggestFacts', {
+                  length: i18n.formatDistance(routeProposal.lengthM),
+                  times: i18n.t('routes.times', { n: routeProposal.legCount }),
+                }),
+              }
+        }
+        onRouteName={() => {
+          setRouteNaming(true);
+        }}
+        onRouteLater={() => {
+          hidePrompt(db, ctx, 'route-suggest:daily', Date.now() + DAY);
+          setRouteDismissed(true);
+        }}
+        onRouteNever={() => {
+          if (routeProposal !== null) {
+            hidePrompt(db, ctx, routeProposal.key, Date.now() + FOREVER);
+          }
+          setRouteDismissed(true);
+        }}
         onCut={() => {
           if (cut === null) {
             return;
@@ -594,6 +663,38 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
           onDone();
         }}
       />
+      {routeProposal === null || !routeNaming ? null : (
+        <NewRouteSheet
+          visible
+          suggestedName={
+            suggestedRouteName(
+              routeProposal.loop,
+              routeProposal.startName,
+              routeProposal.endName,
+              i18n.t('routes.loopWord'),
+            ) ?? ''
+          }
+          facts={i18n.t('routes.suggestFacts', {
+            length: i18n.formatDistance(routeProposal.lengthM),
+            times: i18n.t('routes.times', { n: routeProposal.legCount }),
+          })}
+          onSave={(name) => {
+            createRoute(db, ctx, {
+              name,
+              points: routeProposal.line,
+              startPlaceId: routeProposal.startPlaceId,
+              endPlaceId: routeProposal.endPlaceId,
+            });
+            setRouteNaming(false);
+            setRouteDismissed(true);
+            bump();
+            toast.show({ message: i18n.t('routes.saved') });
+          }}
+          onClose={() => {
+            setRouteNaming(false);
+          }}
+        />
+      )}
       {card === null ? null : (
         <NewPlaceFlow
           visible={naming}

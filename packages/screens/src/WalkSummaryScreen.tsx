@@ -28,6 +28,13 @@ export interface WalkSummaryScreenProps {
     readonly actionLabel: string;
     readonly keepLabel: string;
   } | null;
+  /** "По маршруту «До мамы», 5-й раз, на 3 мин дольше обычного": facts only. */
+  readonly routeLine?: string | null;
+  /** "Вы часто ходите этим путём. Назвать маршрут?" */
+  readonly routeCard?: { readonly text: string; readonly facts: string } | null;
+  readonly onRouteName?: () => void;
+  readonly onRouteLater?: () => void;
+  readonly onRouteNever?: () => void;
   readonly onCut?: () => void;
   readonly onCutKeep?: () => void;
   readonly onPlaceName?: () => void;
@@ -65,6 +72,9 @@ export function WalkSummaryScreen(props: WalkSummaryScreenProps) {
           ))}
         </View>
       </Card>
+      {props.routeLine === undefined || props.routeLine === null ? null : (
+        <AppText variant="muted">{props.routeLine}</AppText>
+      )}
       {props.cutCard === undefined || props.cutCard === null ? null : (
         <Card variant="soft">
           <AppText>{props.cutCard.text}</AppText>
@@ -95,6 +105,29 @@ export function WalkSummaryScreen(props: WalkSummaryScreenProps) {
                 onPress={props.onPlaceNever ?? noop}
               />
             ) : null}
+          </View>
+        </Card>
+      )}
+      {props.routeCard === undefined || props.routeCard === null ? null : (
+        <Card variant="stripe">
+          <AppText>{props.routeCard.text}</AppText>
+          <AppText variant="muted">{props.routeCard.facts}</AppText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+            <Chip
+              size="sm"
+              label={i18n.t('routes.suggestName')}
+              onPress={props.onRouteName ?? noop}
+            />
+            <Chip
+              size="sm"
+              label={i18n.t('place.suggest.later')}
+              onPress={props.onRouteLater ?? noop}
+            />
+            <Chip
+              size="sm"
+              label={i18n.t('place.suggest.never')}
+              onPress={props.onRouteNever ?? noop}
+            />
           </View>
         </Card>
       )}

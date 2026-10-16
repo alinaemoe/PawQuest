@@ -39,6 +39,7 @@ export interface DogScreenProps {
   readonly onPlaces: () => void;
   readonly onMarks: () => void;
   readonly onAlbum: () => void;
+  readonly onRoutes: () => void;
   readonly onRecap: () => void;
   readonly onEditProfile: () => void;
   readonly onDiagnostics: () => void;
@@ -199,6 +200,12 @@ export function DogScreen(props: DogScreenProps) {
           title={i18n.t('dog.places')}
           subtitle={i18n.t('dog.placesHint')}
           onPress={props.onPlaces}
+        />
+        <ListRow
+          icon="map"
+          title={i18n.t('dog.routes')}
+          subtitle={i18n.t('dog.routesHint')}
+          onPress={props.onRoutes}
         />
         <ListRow
           icon="camera"
