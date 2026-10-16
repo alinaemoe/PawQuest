@@ -5,6 +5,8 @@ import { createEvent } from './events';
 import {
   PHOTO_EVENT_WINDOW_MS,
   WALK_PHOTO_SLACK_MS,
+  allPhotoUris,
+  walkShots,
   addPhoto,
   addWalkPhoto,
   listPhotos,
@@ -216,5 +218,52 @@ describe('walkAround', () => {
     expect(walkAround(env.db, other.id, START + 600_000)).toBeNull();
     softDelete(env.db, env.ctx, 'walk', walkId);
     expect(walkAround(env.db, dog.id, START + 600_000)).toBeNull();
+  });
+});
+
+describe('allPhotoUris and walkShots', () => {
+  const shot = (name: string, at: number) => ({
+    uri: `content://media/${name}`,
+    filename: `${name}.jpg`,
+    takenAt: at,
+  });
+
+  it('knows every stored location, removed pictures included', () => {
+    const kept = addPhoto(env.db, env.ctx, { table: 'walk', id: walkId }, { uri: 'content://a' });
+    const gone = addPhoto(env.db, env.ctx, { table: 'walk', id: walkId }, { uri: 'content://b' });
+    removePhoto(env.db, env.ctx, gone.id);
+    expect(allPhotoUris(env.db)).toEqual(new Set(['content://a', 'content://b']));
+    expect(kept.uri).toBe('content://a');
+  });
+
+  it('keeps pictures taken within the walk and the slack, oldest first', () => {
+    const list = [
+      shot('late', START + 1900_000),
+      shot('inside', START + 600_000),
+      shot('before', START - WALK_PHOTO_SLACK_MS),
+      shot('too-early', START - WALK_PHOTO_SLACK_MS - 1),
+      shot('too-late', START + 1800_000 + WALK_PHOTO_SLACK_MS + 1),
+    ];
+    expect(walkShots(list, new Set(), START, START + 1800_000).map((s) => s.filename)).toEqual([
+      'before.jpg',
+      'inside.jpg',
+      'late.jpg',
+    ]);
+  });
+
+  it('leaves out known pictures and screenshots', () => {
+    const list = [
+      shot('a', START + 1000),
+      shot('b', START + 2000),
+      { uri: 'content://s', filename: 'Screenshot_20261016.jpg', takenAt: START + 3000 },
+      { uri: 'content://r', filename: 'screen-record.jpg', takenAt: START + 4000 },
+    ];
+    expect(
+      walkShots(list, new Set(['content://media/a']), START, START + 60_000).map((s) => s.uri),
+    ).toEqual(['content://media/b']);
+  });
+
+  it('nothing in, nothing out', () => {
+    expect(walkShots([], new Set(), START, START + 1)).toEqual([]);
   });
 });

@@ -669,16 +669,21 @@ export const en = {
   'dog.recapHint': 'Walks, distance and the calmest stretch',
 
   'album.title': 'Photo album',
-  'album.hint': 'Photos are kept in the app even if you delete them from the gallery.',
+  'album.hint':
+    'Photos stay in your gallery; the app keeps only links, so it takes no space on the phone.',
   'album.count': { one: '{n} photo', other: '{n} photos' },
   'album.emptyTitle': 'No photos yet',
-  'album.emptyText': 'Tap the camera during a walk or add pictures from the gallery.',
+  'album.emptyText':
+    'Take photos during a walk, in the phone camera or with the app button, and they are found on their own.',
   'album.memories': 'On this day',
   'album.yearsAgo': { one: '{n} year ago', other: '{n} years ago' },
-  'album.fromGallery': 'Add from gallery',
-  'album.imported': 'Photos added: {added}',
-  'album.importedSkipped': 'Photos added: {added}. {skipped} have no walk at that time',
-  'album.importedNone': 'None of these photos match a walk by time',
+  'album.fromGallery': 'Find photos of walks',
+  'album.imported': 'Photos found: {n}',
+  'album.importedNone': 'No new photos from the time of your walks',
+  'photo.find': 'Find photos in the gallery',
+  'photo.found': 'Photos added from the gallery: {n}',
+  'photo.foundNone': 'No new photos from this walk',
+  'photo.galleryDenied': 'No access to the gallery. Allow it in the phone settings.',
 
   'recap.title': 'Week in review',
   'recap.prev': 'Earlier',

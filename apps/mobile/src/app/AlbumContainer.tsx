@@ -1,10 +1,10 @@
-import { addWalkPhoto, getWalk, listAlbum, photosOnThisDay, walkAround } from '@pawquest/data';
+import { getWalk, listAlbum, photosOnThisDay } from '@pawquest/data';
 import { useToast } from '@pawquest/rn-ui';
 import { PhotoAlbumScreen, PhotoViewer, type AlbumSection } from '@pawquest/screens';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useApp } from './AppContext';
-import { pickFromGallery } from './photoCapture';
+import { galleryAccess, linkRecentWalkPhotos, pruneMissingPhotos } from './galleryPhotos';
 
 /** Dog -> Photo album: all pictures by walk, "on this day", and adding from the gallery by time. */
 export function AlbumContainer({ dogId, onBack }: { dogId: string; onBack: () => void }) {
@@ -48,6 +48,15 @@ export function AlbumContainer({ dogId, onBack }: { dogId: string; onBack: () =>
     };
   }, [db, dogId, i18n, version]);
 
+  useEffect(() => {
+    void pruneMissingPhotos(db, ctx, data.flat).then((hidden) => {
+      if (hidden > 0) {
+        bump();
+      }
+    });
+    // once, when the album opens
+  }, []);
+
   const openAt = openId === null ? -1 : data.flat.findIndex((p) => p.id === openId);
 
   return (
@@ -60,28 +69,17 @@ export function AlbumContainer({ dogId, onBack }: { dogId: string; onBack: () =>
         onOpen={setOpenId}
         onImport={() => {
           void (async () => {
-            const picked = await pickFromGallery(() => ctx.newId());
-            if (picked.length === 0) {
+            if ((await galleryAccess(true)) !== 'granted') {
+              toast.show({ message: i18n.t('photo.galleryDenied'), durationMs: 4000 });
               return;
             }
-            let added = 0;
-            for (const photo of picked) {
-              const takenAt = photo.takenAt;
-              const walk = takenAt === null ? null : walkAround(db, dogId, takenAt);
-              if (walk !== null && takenAt !== null) {
-                addWalkPhoto(db, ctx, walk.id, { ...photo, takenAt });
-                added += 1;
-              }
-            }
+            const found = await linkRecentWalkPhotos(db, ctx, dogId, 60);
             bump();
-            const skipped = picked.length - added;
             toast.show({
               message:
-                added === 0
+                found.length === 0
                   ? i18n.t('album.importedNone')
-                  : skipped === 0
-                    ? i18n.t('album.imported', { added })
-                    : i18n.t('album.importedSkipped', { added, skipped }),
+                  : i18n.t('album.imported', { n: found.length }),
               durationMs: 4000,
             });
           })();

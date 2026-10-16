@@ -220,6 +220,8 @@ export {
 export {
   PHOTO_EVENT_WINDOW_MS,
   WALK_PHOTO_SLACK_MS,
+  allPhotoUris,
+  walkShots,
   addPhoto,
   addWalkPhoto,
   listAlbum,
@@ -231,6 +233,7 @@ export {
   removePhoto,
   restorePhoto,
   type AlbumPhoto,
+  type GalleryShot,
   type Photo,
   type PhotoInput,
   type PhotoOwner,

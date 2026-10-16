@@ -238,3 +238,40 @@ export function walkAround(
   }
   return best?.walk ?? null;
 }
+
+/** Every stored picture location, removed ones included: a removed photo must not come back. */
+export function allPhotoUris(db: SqlDb): Set<string> {
+  return new Set(db.all('SELECT uri FROM attachment').map((row) => String(row['uri'])));
+}
+
+export interface GalleryShot {
+  readonly uri: string;
+  readonly filename: string;
+  /** When the picture was taken. */
+  readonly takenAt: number;
+}
+
+/** Screenshots and screen recordings are taken during a walk too, but they are not its photos. */
+const NOT_A_PHOTO = /^(screenshot|screen[ _-]?record)/i;
+
+/**
+ * Pictures from the gallery that belong to a walk: taken from a little before its start to a
+ * little after its end, not yet in the app (or removed from it), not screenshots. Oldest first.
+ */
+export function walkShots<T extends GalleryShot>(
+  shots: readonly T[],
+  known: ReadonlySet<string>,
+  startedAt: number,
+  endedAt: number,
+  slackMs = WALK_PHOTO_SLACK_MS,
+): T[] {
+  return shots
+    .filter(
+      (shot) =>
+        shot.takenAt >= startedAt - slackMs &&
+        shot.takenAt <= endedAt + slackMs &&
+        !known.has(shot.uri) &&
+        !NOT_A_PHOTO.test(shot.filename),
+    )
+    .sort((a, b) => a.takenAt - b.takenAt);
+}

@@ -20,6 +20,8 @@ export interface WalkDetailsModel {
 
 export interface WalkDetailsSheetProps {
   readonly map?: ReactNode;
+  /** The pictures of the walk (strip and viewer). */
+  readonly photos?: ReactNode;
   readonly walk: WalkDetailsModel | null;
   readonly onClose: () => void;
   readonly onEdit: () => void;
@@ -27,7 +29,14 @@ export interface WalkDetailsSheetProps {
 }
 
 /** One walk: when, the numbers, its events and note; edit and delete (the latter with undo). */
-export function WalkDetailsSheet({ walk, map, onClose, onEdit, onDelete }: WalkDetailsSheetProps) {
+export function WalkDetailsSheet({
+  walk,
+  map,
+  photos,
+  onClose,
+  onEdit,
+  onDelete,
+}: WalkDetailsSheetProps) {
   const i18n = useI18n();
   if (walk === null) {
     return null;
@@ -36,6 +45,7 @@ export function WalkDetailsSheet({ walk, map, onClose, onEdit, onDelete }: WalkD
     <Sheet visible onClose={onClose} title={walk.whenText}>
       {walk.manual ? <Tag tone="plain" label={i18n.t('walk.manual')} /> : null}
       {walk.manual ? null : map}
+      {photos}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 20 }}>
         {walk.facts.map((fact) => (
           <View key={fact.label}>

@@ -403,7 +403,7 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
     <>
       <WalkSummaryScreen
         map={<WalkRouteMap walkId={walk.id} mode="fit" height={220} />}
-        photos={<WalkPhotos walkId={walk.id} />}
+        photos={<WalkPhotos walkId={walk.id} autoFind />}
         summary={{
           facts: walkFacts(walk, i18n),
           eventsLine: eventsLine === '' ? null : eventsLine,

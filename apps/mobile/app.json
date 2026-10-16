@@ -13,7 +13,10 @@
     },
     "android": {
       "package": "app.pawquest",
-      "permissions": ["android.permission.RECEIVE_BOOT_COMPLETED"],
+      "permissions": [
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.READ_MEDIA_IMAGES"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -32,7 +35,16 @@
       ],
       "expo-sqlite",
       "@maplibre/maplibre-react-native",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow PawQuest to find the photos you took during walks",
+          "savePhotosPermission": "Allow PawQuest to save photos taken in the app",
+          "isAccessMediaLocationEnabled": false,
+          "granularPermissions": ["photo"]
+        }
+      ]
     ],
     "web": {
       "favicon": "./assets/favicon.png"
