@@ -2,8 +2,8 @@ import { overpassQuery, parseOverpassAreas, type LatLon, type MapArea } from '@p
 
 /** Public Overpass servers of OpenStreetMap, tried in turn: any of them may be busy (G-13). */
 const ENDPOINTS = [
+  'https://overpass.openstreetmap.fr/api/interpreter',
   'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
 ];
 const TIMEOUT_MS = 25_000;
 const MAX_CANDIDATES = 6;
@@ -16,7 +16,12 @@ async function ask(endpoint: string, query: string): Promise<unknown> {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      // the public servers refuse a request that does not say who it is and what it accepts
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json',
+        'User-Agent': 'PawQuest/0.1 (dog walk diary app)',
+      },
       body: `data=${encodeURIComponent(query)}`,
       signal: controller.signal,
     });
