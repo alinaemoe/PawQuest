@@ -9,6 +9,8 @@ export interface Walk {
   readonly startedAt: number;
   readonly endedAt: number | null;
   readonly durationS: number | null;
+  /** Time in movement, without stops and pauses: the pace is measured over it (A-04). */
+  readonly movingS: number | null;
   readonly distanceM: number | null;
   readonly placeKind: string | null;
   readonly mood: number | null;
@@ -43,6 +45,7 @@ function toWalk(row: SqlRow): Walk {
     startedAt: fromIso(String(row['started_at'])),
     endedAt: ended === null ? null : fromIso(ended),
     durationS: num(row['duration_s']),
+    movingS: num(row['moving_s']),
     distanceM: num(row['distance_m']),
     placeKind: str(row['place_kind']),
     mood: num(row['mood']),

@@ -17,6 +17,7 @@ const walk = (id: string, startedAt: number, extra: Partial<Walk> = {}): Walk =>
   startedAt,
   endedAt: null,
   durationS: 1800,
+  movingS: 1500,
   distanceM: 2100,
   placeKind: null,
   mood: null,
@@ -98,7 +99,22 @@ describe('walkFacts', () => {
     expect(walkFacts(walk('a', NOW), ruI).map((f) => [f.label, f.value])).toEqual([
       ['Длительность', '30 мин'],
       ['Дистанция', '2,1 км'],
-      ['Темп', '14:17 /км'],
+      ['Темп', '11:54 /км'],
+    ]);
+  });
+
+  it('measures the pace over the time spent moving, not the whole walk (a long stop is not pace)', () => {
+    const facts = walkFacts(
+      walk('a', NOW, { durationS: 6120, movingS: 3600, distanceM: 4270 }),
+      ruI,
+    );
+    expect(facts.map((f) => f.value)).toEqual(['1 ч 42 мин', '4,27 км', '14:03 /км']);
+  });
+
+  it('no pace without moving time (a walk written by hand)', () => {
+    expect(walkFacts(walk('a', NOW, { movingS: null }), ruI).map((f) => f.label)).toEqual([
+      'Длительность',
+      'Дистанция',
     ]);
   });
 
@@ -110,8 +126,8 @@ describe('walkFacts', () => {
     expect(walkFacts(walk('a', NOW, { distanceM: null }), ruI).map((f) => f.label)).toEqual([
       'Длительность',
     ]);
-    expect(walkFacts(walk('a', NOW, { durationS: null }), ruI).map((f) => f.label)).toEqual([
-      'Дистанция',
-    ]);
+    expect(
+      walkFacts(walk('a', NOW, { durationS: null, movingS: null }), ruI).map((f) => f.label),
+    ).toEqual(['Дистанция']);
   });
 });

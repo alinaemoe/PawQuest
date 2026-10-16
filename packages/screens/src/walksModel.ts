@@ -72,8 +72,8 @@ export function walkFacts(walk: Walk, i18n: I18n): WalkFacts[] {
   }
   if (walk.distanceM !== null) {
     facts.push({ label: i18n.t('walk.distance'), value: i18n.formatDistance(walk.distanceM) });
-    const pace =
-      walk.durationS === null ? null : averagePaceMinPerKm(walk.durationS, walk.distanceM);
+    // over the time spent moving: standing at a bench or at Mom's door is not pace
+    const pace = walk.movingS === null ? null : averagePaceMinPerKm(walk.movingS, walk.distanceM);
     if (pace !== null) {
       facts.push({ label: i18n.t('walk.pace'), value: i18n.formatPace(pace) });
     }
