@@ -27,7 +27,9 @@ import { ClickerContainer } from './ClickerContainer';
 import { CareFlow, type CareTarget } from './CareFlow';
 import { DiaryContainer } from './DiaryContainer';
 import { HealthContainer } from './HealthContainer';
+import { AlbumContainer } from './AlbumContainer';
 import { PlacesContainer } from './PlacesContainer';
+import { RecapContainer } from './RecapContainer';
 import { QuickMarksContainer } from './QuickMarksContainer';
 import { TodayContainer } from './TodayContainer';
 import { TrashContainer } from './TrashContainer';
@@ -69,6 +71,8 @@ export function Root() {
     | { kind: 'health' }
     | { kind: 'places' }
     | { kind: 'marks' }
+    | { kind: 'album' }
+    | { kind: 'recap' }
     | { kind: 'diary'; open: string | null }
     | null
   >(null);
@@ -287,6 +291,34 @@ export function Root() {
     );
   }
 
+  if (overlay?.kind === 'album' && dogId !== null) {
+    return (
+      <>
+        {statusBar}
+        <AlbumContainer
+          dogId={dogId}
+          onBack={() => {
+            setOverlay(null);
+          }}
+        />
+      </>
+    );
+  }
+
+  if (overlay?.kind === 'recap' && dogId !== null) {
+    return (
+      <>
+        {statusBar}
+        <RecapContainer
+          dogId={dogId}
+          onBack={() => {
+            setOverlay(null);
+          }}
+        />
+      </>
+    );
+  }
+
   if (overlay?.kind === 'places') {
     return (
       <>
@@ -382,6 +414,12 @@ export function Root() {
             }}
             onPlaces={() => {
               setOverlay({ kind: 'places' });
+            }}
+            onAlbum={() => {
+              setOverlay({ kind: 'album' });
+            }}
+            onRecap={() => {
+              setOverlay({ kind: 'recap' });
             }}
             onMarks={() => {
               setOverlay({ kind: 'marks' });

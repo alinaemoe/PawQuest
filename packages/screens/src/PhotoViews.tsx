@@ -53,10 +53,18 @@ export interface PhotoViewerProps {
   readonly openAt: number | null;
   readonly onClose: () => void;
   readonly onRemove: (id: string) => void;
+  /** False hides the delete button (a viewer that only looks). */
+  readonly canRemove?: boolean;
 }
 
 /** One picture at a time on black, with the neighbours one tap away and a delete button. */
-export function PhotoViewer({ photos, openAt, onClose, onRemove }: PhotoViewerProps) {
+export function PhotoViewer({
+  photos,
+  openAt,
+  onClose,
+  onRemove,
+  canRemove = true,
+}: PhotoViewerProps) {
   const i18n = useI18n();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -118,7 +126,7 @@ export function PhotoViewer({ photos, openAt, onClose, onRemove }: PhotoViewerPr
             }}
           />
         </View>
-        {photo === undefined ? null : (
+        {photo === undefined || !canRemove ? null : (
           <View style={{ paddingHorizontal: 16 }}>
             <Button
               label={i18n.t('photo.delete')}

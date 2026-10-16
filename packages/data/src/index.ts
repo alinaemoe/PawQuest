@@ -219,14 +219,20 @@ export {
 } from './quickMarks';
 export {
   PHOTO_EVENT_WINDOW_MS,
+  WALK_PHOTO_SLACK_MS,
   addPhoto,
   addWalkPhoto,
+  listAlbum,
   listPhotos,
   listWalkPhotos,
   nearestEventId,
+  photosOnThisDay,
+  walkAround,
   removePhoto,
   restorePhoto,
+  type AlbumPhoto,
   type Photo,
   type PhotoInput,
   type PhotoOwner,
 } from './photos';
+export { MIN_CALM_MS, weekBounds, weekRecap, type CalmMoment, type WeekRecap } from './recap';

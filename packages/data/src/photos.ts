@@ -1,4 +1,5 @@
 import { fromIso, toIso, type Ctx } from './ids';
+import { listWalks, type Walk } from './walks';
 import type { SqlDb, SqlRow, SqlValue } from './sql';
 
 export type PhotoOwner = 'walk' | 'event';
@@ -160,4 +161,80 @@ export function restorePhoto(db: SqlDb, id: string): boolean {
     db.run('UPDATE attachment SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL', [id])
       .changes > 0
   );
+}
+
+export interface AlbumPhoto extends Photo {
+  /** The walk the picture belongs to, directly or through its event. */
+  readonly walkId: string | null;
+}
+
+/** Every picture of a dog, newest first, each with its walk. */
+export function listAlbum(db: SqlDb, dogId: string): AlbumPhoto[] {
+  return db
+    .all(
+      `SELECT a.*, COALESCE(e.walk_id, CASE WHEN a.owner_table = 'walk' THEN a.owner_id END) AS album_walk
+         FROM attachment a
+         LEFT JOIN event e ON a.owner_table = 'event' AND e.id = a.owner_id
+        WHERE a.deleted_at IS NULL
+          AND ((a.owner_table = 'walk' AND a.owner_id IN (SELECT walk_id FROM walk_dog WHERE dog_id = ?))
+            OR (a.owner_table = 'event' AND e.dog_id = ? AND e.deleted_at IS NULL))
+        ORDER BY a.taken_at DESC, a.id DESC`,
+      [dogId, dogId],
+    )
+    .map((row) => {
+      const walk = row['album_walk'];
+      return { ...toPhoto(row), walkId: typeof walk === 'string' ? walk : null };
+    });
+}
+
+/** Pictures taken on today's date in earlier years, the most recent year first. */
+export function photosOnThisDay<T extends { readonly takenAt: number }>(
+  photos: readonly T[],
+  now: number,
+  tzOffsetMin: number,
+): { readonly yearsAgo: number; readonly photos: T[] }[] {
+  const shift = tzOffsetMin * 60_000;
+  const today = new Date(now + shift);
+  const groups = new Map<number, T[]>();
+  for (const photo of photos) {
+    const day = new Date(photo.takenAt + shift);
+    const yearsAgo = today.getUTCFullYear() - day.getUTCFullYear();
+    if (
+      yearsAgo > 0 &&
+      day.getUTCMonth() === today.getUTCMonth() &&
+      day.getUTCDate() === today.getUTCDate()
+    ) {
+      groups.set(yearsAgo, [...(groups.get(yearsAgo) ?? []), photo]);
+    }
+  }
+  return [...groups.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([yearsAgo, list]) => ({ yearsAgo, photos: list }));
+}
+
+/** Picture time may be a little off the walk's edges (the camera clock, a photo at the door). */
+export const WALK_PHOTO_SLACK_MS = 15 * 60_000;
+
+/**
+ * The walk of a dog that a picture taken at `ts` belongs to: the one whose time (widened by the
+ * slack at both ends) contains it, the nearest start if several do; null when none does.
+ */
+export function walkAround(
+  db: SqlDb,
+  dogId: string,
+  ts: number,
+  slackMs = WALK_PHOTO_SLACK_MS,
+): Walk | null {
+  const day = 86_400_000;
+  let best: { walk: Walk; distance: number } | null = null;
+  for (const walk of listWalks(db, dogId, ts - day, ts + slackMs + 1)) {
+    const end = walk.endedAt ?? walk.startedAt + (walk.durationS ?? 0) * 1000;
+    if (ts >= walk.startedAt - slackMs && ts <= end + slackMs) {
+      const distance = Math.abs(ts - walk.startedAt);
+      if (best === null || distance < best.distance) {
+        best = { walk, distance };
+      }
+    }
+  }
+  return best?.walk ?? null;
 }

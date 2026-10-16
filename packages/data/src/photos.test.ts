@@ -4,6 +4,7 @@ import { createDog, type Dog } from './dogs';
 import { createEvent } from './events';
 import {
   PHOTO_EVENT_WINDOW_MS,
+  WALK_PHOTO_SLACK_MS,
   addPhoto,
   addWalkPhoto,
   listPhotos,
@@ -11,6 +12,7 @@ import {
   nearestEventId,
   removePhoto,
   restorePhoto,
+  walkAround,
 } from './photos';
 import { START, testEnv, type TestEnv } from './test-utils';
 import { softDelete } from './trash';
@@ -186,5 +188,33 @@ describe('removePhoto and restorePhoto', () => {
   it('a missing photo is reported, not thrown', () => {
     expect(removePhoto(env.db, env.ctx, 'nope')).toBe(false);
     expect(restorePhoto(env.db, 'nope')).toBe(false);
+  });
+});
+
+describe('walkAround', () => {
+  it('finds the walk a picture was taken in, with a little slack at both ends', () => {
+    const end = START + 1800_000;
+    expect(walkAround(env.db, dog.id, START + 600_000)?.id).toBe(walkId);
+    expect(walkAround(env.db, dog.id, START - WALK_PHOTO_SLACK_MS)?.id).toBe(walkId);
+    expect(walkAround(env.db, dog.id, end + WALK_PHOTO_SLACK_MS)?.id).toBe(walkId);
+    expect(walkAround(env.db, dog.id, START - WALK_PHOTO_SLACK_MS - 1)).toBeNull();
+    expect(walkAround(env.db, dog.id, end + WALK_PHOTO_SLACK_MS + 1)).toBeNull();
+  });
+
+  it('takes the walk that started nearest when slack makes two overlap', () => {
+    const second = createManualWalk(env.db, env.ctx, {
+      dogId: dog.id,
+      startedAt: START + 1800_000 + 600_000,
+      durationS: 600,
+    });
+    expect(walkAround(env.db, dog.id, START + 1800_000 + 500_000)?.id).toBe(second.id);
+    expect(walkAround(env.db, dog.id, START + 1200_000)?.id).toBe(walkId);
+  });
+
+  it('ignores the walks of other dogs and removed walks', () => {
+    const other = createDog(env.db, env.ctx, { name: 'Рекс' });
+    expect(walkAround(env.db, other.id, START + 600_000)).toBeNull();
+    softDelete(env.db, env.ctx, 'walk', walkId);
+    expect(walkAround(env.db, dog.id, START + 600_000)).toBeNull();
   });
 });
