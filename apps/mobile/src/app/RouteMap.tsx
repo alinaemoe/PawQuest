@@ -126,7 +126,7 @@ export function WalkRouteMap({ walkId, mode, height = 190, refreshKey = 0 }: Wal
         typeId: String(row['type_id']),
         lngLat: [Number(row['lon']), Number(row['lat'])] as [number, number],
       }));
-    const types = new Map(listEventTypes(db).map((t) => [t.id, t]));
+    const types = new Map(listEventTypes(db, true).map((t) => [t.id, t]));
     return { coordinates, markers, types, last: coordinates[coordinates.length - 1] };
   }, [db, walkId, refreshKey, version]);
 

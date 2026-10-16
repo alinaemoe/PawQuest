@@ -2,6 +2,7 @@ import {
   AppText,
   Button,
   EventButton,
+  HoldButton,
   Icon,
   Screen,
   useI18n,
@@ -9,7 +10,7 @@ import {
   type EventKind,
 } from '@pawquest/rn-ui';
 import type { ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { useEffect, useState } from 'react';
 
 export type GpsStatus = 'good' | 'weak' | 'none' | 'off';
@@ -35,6 +36,8 @@ export interface ActiveWalkScreenProps {
   /** Set while the recovery timer runs (a hard moment): "Реакция 0:24 [Успокоилась]". */
   readonly recovery: { readonly since: number } | null;
   readonly onEvent: (id: string) => void;
+  /** Long press on an event button (400 ms): record it and open its details (S04). */
+  readonly onEventLong?: (id: string) => void;
   readonly onCalm: () => void;
   readonly onTraining: () => void;
   readonly onTogglePause: () => void;
@@ -157,6 +160,13 @@ export function ActiveWalkScreen(props: ActiveWalkScreenProps) {
                 onPress={() => {
                   props.onEvent(event.id);
                 }}
+                {...(props.onEventLong === undefined
+                  ? {}
+                  : {
+                      onLongPress: () => {
+                        props.onEventLong?.(event.id);
+                      },
+                    })}
               />
             ))}
             {row.length < 3
@@ -177,29 +187,19 @@ export function ActiveWalkScreen(props: ActiveWalkScreenProps) {
             onPress={props.onTogglePause}
           />
         </View>
-        <Pressable
-          accessibilityRole="button"
+        <HoldButton
+          flex={1.3}
+          holdMs={1000}
           accessibilityLabel={i18n.t('active.finish')}
           accessibilityHint={i18n.t('active.finishHint')}
-          delayLongPress={1000}
-          onPress={props.onFinishHint}
-          onLongPress={props.onFinish}
-          style={({ pressed }) => ({
-            flex: 1.3,
-            minHeight: 48,
-            borderRadius: 16,
-            backgroundColor: pressed ? colors.accent : colors.surface2,
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            gap: 10,
-          })}
+          onComplete={props.onFinish}
+          onTap={props.onFinishHint}
         >
           <Icon name="stop" color={colors.ink} size={22} />
           <AppText weight={600} style={{ fontSize: 16 }}>
             {i18n.t('active.finish')}
           </AppText>
-        </Pressable>
+        </HoldButton>
       </View>
     </Screen>
   );

@@ -698,6 +698,35 @@ export const ru = {
   'place.grooming': 'Груминг',
   'place.home': 'Дом',
   'place.guests': 'Гости',
+
+  'walk.eventDelete': 'Удалить событие',
+  'walk.eventDeleted': 'Событие удалено',
+
+  'dog.marks': 'Быстрые метки',
+  'dog.marksHint': 'Какие кнопки на экране прогулки',
+  'marks.title': 'Быстрые метки',
+  'marks.hint':
+    'Кнопки на экране прогулки, до 9. Тап записывает событие сразу, долгое нажатие открывает детали.',
+  'marks.panel': 'На панели · {n} из {max}',
+  'marks.catalog': 'Можно добавить',
+  'marks.add': 'На панель',
+  'marks.remove': 'Убрать',
+  'marks.full': 'Панель заполнена: уберите одну метку, чтобы добавить другую.',
+  'marks.new': 'Своя метка',
+  'marks.newTitle': 'Новая метка',
+  'marks.name': 'Название',
+  'marks.look': 'Вид кнопки',
+  'marks.toPanel': 'Сразу на панель',
+  'marks.reset': 'Вернуть стандартные',
+  'marks.look.dog': 'Оранжевый круг',
+  'marks.look.person': 'Синий круг',
+  'marks.look.animal': 'Зелёный круг',
+  'marks.look.child': 'Розовый треугольник',
+  'marks.look.ok': 'Золотая звезда',
+  'marks.look.hard': 'Красный ромб',
+  'marks.look.ex': 'Фиолетовый квадрат',
+
+  'marks.deleted': 'Метка удалена, события остались',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof ru;

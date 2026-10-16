@@ -21,6 +21,12 @@ function shapeXml(kind: EventKind, color: string): string {
   return `<svg viewBox="0 0 24 24" fill="${color}">${shapes[kind]}</svg>`;
 }
 
+/** Just the shape and color of a mark (what the owner sees on its button and on the map). */
+export function MarkShape({ kind, size = 24 }: { kind: EventKind; size?: number }) {
+  const { colors } = useTheme().theme;
+  return <SvgXml xml={shapeXml(kind, colors.events[kind])} width={size} height={size} />;
+}
+
 export interface EventButtonProps {
   readonly kind: EventKind;
   readonly label: string;
@@ -44,7 +50,9 @@ export function EventButton({ kind, label, count = 0, onPress, onLongPress }: Ev
       delayLongPress={400}
       style={({ pressed }) => ({
         flex: 1,
-        minHeight: 68,
+        minHeight: 72,
+        paddingHorizontal: 6,
+        paddingVertical: 8,
         borderRadius: metrics.radius.event,
         borderWidth: 1,
         borderColor: colors.line,
@@ -55,7 +63,15 @@ export function EventButton({ kind, label, count = 0, onPress, onLongPress }: Ev
       })}
     >
       <SvgXml xml={shapeXml(kind, colors.events[kind])} width={24} height={24} />
-      <AppText weight={600} style={{ fontSize: 13 }}>
+      {/* a long label ("Сложный момент") shrinks a little or takes two centered lines, and does not follow a huge system font */}
+      <AppText
+        weight={600}
+        numberOfLines={2}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+        maxFontSizeMultiplier={1.15}
+        style={{ fontSize: 13, lineHeight: 16, textAlign: 'center' }}
+      >
         {label}
       </AppText>
       {count > 0 ? (

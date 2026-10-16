@@ -625,4 +625,33 @@ export const en = {
   'place.grooming': 'Grooming',
   'place.home': 'Home',
   'place.guests': 'Guests',
+
+  'walk.eventDelete': 'Delete event',
+  'walk.eventDeleted': 'Event deleted',
+
+  'dog.marks': 'Quick marks',
+  'dog.marksHint': 'Which buttons the walk screen shows',
+  'marks.title': 'Quick marks',
+  'marks.hint':
+    'The buttons on the walk screen, up to 9. A tap records the event at once, a long press opens its details.',
+  'marks.panel': 'On the panel · {n} of {max}',
+  'marks.catalog': 'Available to add',
+  'marks.add': 'To panel',
+  'marks.remove': 'Remove',
+  'marks.full': 'The panel is full: remove one mark to add another.',
+  'marks.new': 'Your own mark',
+  'marks.newTitle': 'New mark',
+  'marks.name': 'Name',
+  'marks.look': 'Look of the button',
+  'marks.toPanel': 'Put it on the panel',
+  'marks.reset': 'Back to the standard ones',
+  'marks.look.dog': 'Orange circle',
+  'marks.look.person': 'Blue circle',
+  'marks.look.animal': 'Green circle',
+  'marks.look.child': 'Pink triangle',
+  'marks.look.ok': 'Gold star',
+  'marks.look.hard': 'Red diamond',
+  'marks.look.ex': 'Purple square',
+
+  'marks.deleted': 'Mark removed, the events stay',
 } as const satisfies Record<MessageKey, Message>;

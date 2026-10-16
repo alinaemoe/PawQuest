@@ -202,3 +202,18 @@ export {
   type PlaceProposal,
   type ProposeOptions,
 } from './placeSuggest';
+export {
+  DEFAULT_PANEL,
+  MARK_LOOKS,
+  MAX_MARK_LABEL,
+  PANEL_SLOTS,
+  archiveCustomMark,
+  createCustomMark,
+  resetPanel,
+  restoreCustomMark,
+  setPanelOrder,
+  updateMark,
+  type CustomMarkInput,
+  type MarkChanges,
+  type MarkLook,
+} from './quickMarks';

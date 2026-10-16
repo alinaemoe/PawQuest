@@ -28,6 +28,7 @@ import { CareFlow, type CareTarget } from './CareFlow';
 import { DiaryContainer } from './DiaryContainer';
 import { HealthContainer } from './HealthContainer';
 import { PlacesContainer } from './PlacesContainer';
+import { QuickMarksContainer } from './QuickMarksContainer';
 import { TodayContainer } from './TodayContainer';
 import { TrashContainer } from './TrashContainer';
 import { WalkContainer, WalkSummaryContainer } from './WalkContainer';
@@ -67,6 +68,7 @@ export function Root() {
     | { kind: 'trash' }
     | { kind: 'health' }
     | { kind: 'places' }
+    | { kind: 'marks' }
     | { kind: 'diary'; open: string | null }
     | null
   >(null);
@@ -272,6 +274,19 @@ export function Root() {
     );
   }
 
+  if (overlay?.kind === 'marks') {
+    return (
+      <>
+        {statusBar}
+        <QuickMarksContainer
+          onBack={() => {
+            setOverlay(null);
+          }}
+        />
+      </>
+    );
+  }
+
   if (overlay?.kind === 'places') {
     return (
       <>
@@ -367,6 +382,9 @@ export function Root() {
             }}
             onPlaces={() => {
               setOverlay({ kind: 'places' });
+            }}
+            onMarks={() => {
+              setOverlay({ kind: 'marks' });
             }}
             onEditProfile={() => {
               setEditingDog(true);

@@ -91,10 +91,15 @@ export function eventFromRow(row: SqlRow): BehaviorEvent {
   };
 }
 
-/** All non-archived event types in catalog order. */
-export function listEventTypes(db: SqlDb): EventType[] {
+/**
+ * The event types in catalog order. Archived ones (removed custom marks) are left out unless asked
+ * for: pick them up to name the events that were recorded with them.
+ */
+export function listEventTypes(db: SqlDb, includeArchived = false): EventType[] {
   return db
-    .all('SELECT * FROM event_type WHERE archived = 0 ORDER BY sort_order, id')
+    .all(
+      `SELECT * FROM event_type ${includeArchived ? '' : 'WHERE archived = 0'} ORDER BY sort_order, id`,
+    )
     .map(toEventType);
 }
 

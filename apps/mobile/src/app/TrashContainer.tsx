@@ -23,7 +23,7 @@ export function TrashContainer({ onBack }: { onBack: () => void }) {
 
   const rows = useMemo<TrashRowModel[]>(() => {
     const now = Date.now();
-    const types = new Map(listEventTypes(db).map((t) => [t.id, t]));
+    const types = new Map(listEventTypes(db, true).map((t) => [t.id, t]));
     return listTrash(db).map((item) => {
       const left = Math.max(0, TRASH_DAYS - Math.floor((now - item.deletedAt) / DAY));
       return {

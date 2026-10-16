@@ -1,30 +1,36 @@
 import {
   PLACE_CATEGORIES,
+  DETAIL_FIELD_COUNT,
   computeWalkMetrics,
   createEvent,
+  filledFields,
   finishWalk,
+  getEvent,
+  getEventDetail,
   getWalk,
   hidePrompt,
   isPromptHidden,
   lastTrackPoint,
+  listEventTypes,
   linkWalksToPlace,
   panelEventTypes,
   pauseWalk,
   proposePlaces,
+  restore,
   resumeWalk,
   setWalkPlace,
   softDelete,
   updateEvent,
   updateWalk,
   walkAnchor,
-  type EventType,
   type PlaceCategory,
   type Walk,
 } from '@pawquest/data';
-import { useToast, type EventKind } from '@pawquest/rn-ui';
+import { useToast } from '@pawquest/rn-ui';
 import {
   ActiveWalkScreen,
   eventTypeLabel,
+  EventDetailsSheet,
   walkFacts,
   WalkSummaryScreen,
   type GpsStatus,
@@ -34,14 +40,13 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useApp } from './AppContext';
+import { draftOfEvent, saveObservation } from './observation';
 import { NewPlaceFlow } from './NewPlaceFlow';
+import { markLook } from './QuickMarksContainer';
 import { WalkRouteMap } from './RouteMap';
 import { startGpsUpdates, stopGpsUpdates } from './walkRecorder';
 
-const KINDS = new Set<string>(['dog', 'person', 'child', 'animal', 'ok', 'hard', 'ex']);
-const toKind = (type: EventType): EventKind =>
-  KINDS.has(type.color) ? (type.color as EventKind) : 'ex';
-
+const NOT_OBSERVATIONS = new Set(['toilet', 'note', 'exercise']);
 function KeepScreenOn() {
   useKeepAwake();
   return null;
@@ -69,6 +74,8 @@ export function WalkContainer({
   const toast = useToast();
   const [tick, setTick] = useState(0);
   const [recovery, setRecovery] = useState<{ since: number; eventId: string } | null>(null);
+  // the event whose details sheet is open (opened by a long press on its button)
+  const [detailsId, setDetailsId] = useState<string | null>(null);
 
   // refresh the distance and the GPS status every few seconds
   useEffect(() => {
@@ -80,7 +87,7 @@ export function WalkContainer({
     };
   }, []);
 
-  const types = useMemo(() => panelEventTypes(db), [db]);
+  const types = useMemo(() => panelEventTypes(db), [db, version]);
 
   const live = useMemo(() => {
     const now = Date.now();
@@ -105,11 +112,12 @@ export function WalkContainer({
   const buttons: WalkEventButton[] = types.map((type) => ({
     id: type.id,
     label: eventTypeLabel(type, type.id, i18n),
-    kind: toKind(type),
+    kind: markLook(type),
     count: live.counts.get(type.id) ?? 0,
   }));
 
-  const recordEvent = (typeId: string): void => {
+  /** Records an event now (at the last known position); returns its id. */
+  const recordEvent = (typeId: string, quiet = false): string => {
     const type = types.find((t) => t.id === typeId);
     const last = lastTrackPoint(db, walk.id);
     const event = createEvent(db, ctx, {
@@ -124,6 +132,9 @@ export function WalkContainer({
     if (type?.startsRecoveryTimer === true) {
       setRecovery({ since: Date.now(), eventId: event.id });
     }
+    if (quiet) {
+      return event.id;
+    }
     toast.show({
       message: i18n.t('active.recorded', {
         label: type === undefined ? typeId : eventTypeLabel(type, typeId, i18n),
@@ -136,7 +147,37 @@ export function WalkContainer({
         bump();
       },
     });
+    return event.id;
   };
+
+  const typeChoices = useMemo(
+    () =>
+      listEventTypes(db)
+        .filter((t) => !NOT_OBSERVATIONS.has(t.id))
+        .map((t) => ({ id: t.id, label: eventTypeLabel(t, t.id, i18n) })),
+    [db, i18n, version],
+  );
+
+  const details = useMemo(() => {
+    if (detailsId === null) {
+      return null;
+    }
+    const event = getEvent(db, detailsId);
+    if (event === null) {
+      return null;
+    }
+    const detail = getEventDetail(db, event.id);
+    const type = listEventTypes(db, true).find((t) => t.id === event.typeId);
+    return {
+      event,
+      draft: draftOfEvent(event, detail),
+      title: `${eventTypeLabel(type, event.typeId, i18n)} · ${i18n.formatTime(event.ts)}`,
+      filledLine: i18n.t('diary.fieldsFilled', {
+        done: filledFields(event, detail),
+        total: DETAIL_FIELD_COUNT,
+      }),
+    };
+  }, [db, detailsId, i18n, version]);
 
   return (
     <>
@@ -150,7 +191,12 @@ export function WalkContainer({
         gps={live.gps}
         events={buttons}
         recovery={recovery}
-        onEvent={recordEvent}
+        onEvent={(typeId) => {
+          recordEvent(typeId);
+        }}
+        onEventLong={(typeId) => {
+          setDetailsId(recordEvent(typeId, true));
+        }}
         onCalm={() => {
           if (recovery !== null) {
             updateEvent(db, ctx, recovery.eventId, {
@@ -183,6 +229,49 @@ export function WalkContainer({
           bump();
         }}
       />
+      {details === null ? null : (
+        <EventDetailsSheet
+          key={details.event.id}
+          visible
+          title={details.title}
+          filledLine={details.filledLine}
+          initial={details.draft}
+          typeChoices={typeChoices}
+          onSave={(draft) => {
+            const id = details.event.id;
+            saveObservation(db, ctx, { dogId, eventId: id, draft });
+            // a reaction of 2 or more starts the recovery timer (S04-3)
+            const recent = Date.now() - details.event.ts < 10 * 60_000;
+            if (
+              draft.reaction !== null &&
+              draft.reaction >= 2 &&
+              draft.recoveryText === '' &&
+              recent
+            ) {
+              setRecovery((r) => r ?? { since: details.event.ts, eventId: id });
+            }
+            setDetailsId(null);
+            bump();
+            toast.show({ message: i18n.t('diary.saved') });
+          }}
+          onDelete={() => {
+            const id = details.event.id;
+            softDelete(db, ctx, 'event', id);
+            setRecovery((r) => (r?.eventId === id ? null : r));
+            setDetailsId(null);
+            bump();
+            toast.show({
+              message: i18n.t('walk.eventDeleted'),
+              actionLabel: i18n.t('common.undo'),
+              durationMs: 6000,
+              onAction: () => {
+                restore(db, ctx, 'event', id);
+                bump();
+              },
+            });
+          }}
+        />
+      )}
     </>
   );
 }
@@ -226,7 +315,7 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
   const [naming, setNaming] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const eventsLine = useMemo(() => {
-    const types = new Map(panelEventTypes(db).map((t) => [t.id, t]));
+    const types = new Map(listEventTypes(db, true).map((t) => [t.id, t]));
     return db
       .all(
         'SELECT type_id, COUNT(*) AS n FROM event WHERE walk_id = ? AND deleted_at IS NULL GROUP BY type_id',

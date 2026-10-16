@@ -58,7 +58,7 @@ export function WalksTab() {
     if (open === null) {
       return null;
     }
-    const types = new Map(listEventTypes(db).map((t) => [t.id, t]));
+    const types = new Map(listEventTypes(db, true).map((t) => [t.id, t]));
     return {
       id: open.id,
       whenText: `${i18n.formatLongDate(open.startedAt)} · ${i18n.formatTime(open.startedAt)}`,

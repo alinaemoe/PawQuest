@@ -99,7 +99,7 @@ export function TodayContainer({
   const dogId = dog?.id ?? '';
   const data = useMemo(() => {
     const current = Math.max(now, Date.now());
-    const types = new Map(listEventTypes(db).map((t) => [t.id, t]));
+    const types = new Map(listEventTypes(db, true).map((t) => [t.id, t]));
     const weight = latestWeight(db, dogId);
     const due =
       isWeightDue(weight, current, settings.weightIntervalDays) &&

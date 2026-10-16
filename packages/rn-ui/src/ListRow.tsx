@@ -8,6 +8,8 @@ import { useTheme } from './ThemeProvider';
 
 export interface ListRowProps {
   readonly icon?: IconName;
+  /** Any small element in the round icon place (a mark's own shape). */
+  readonly iconNode?: ReactNode;
   readonly title: string;
   readonly subtitle?: string | undefined;
   /** Shown at the right edge, e.g. a Tag. */
@@ -18,7 +20,15 @@ export interface ListRowProps {
 }
 
 /** A record in a list: round icon, two lines of text, optional trailing element. */
-export function ListRow({ icon, title, subtitle, right, onPress, divider = true }: ListRowProps) {
+export function ListRow({
+  icon,
+  iconNode,
+  title,
+  subtitle,
+  right,
+  onPress,
+  divider = true,
+}: ListRowProps) {
   const { colors } = useTheme().theme;
   return (
     <Pressable
@@ -37,6 +47,20 @@ export function ListRow({ icon, title, subtitle, right, onPress, divider = true 
         opacity: pressed ? 0.7 : 1,
       })}
     >
+      {iconNode === undefined ? null : (
+        <View
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 19,
+            backgroundColor: colors.surface2,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {iconNode}
+        </View>
+      )}
       {icon === undefined ? null : <Avatar icon={icon} size={38} />}
       <View style={{ flex: 1, minWidth: 0 }}>
         <AppText numberOfLines={1}>{title}</AppText>

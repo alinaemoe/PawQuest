@@ -1,13 +1,10 @@
 import {
-  createEvent,
   getEvent,
   getEventDetail,
   listDiary,
   listEventTypes,
   restore,
-  saveEventDetail,
   softDelete,
-  updateEvent,
 } from '@pawquest/data';
 import { useToast } from '@pawquest/rn-ui';
 import {
@@ -22,6 +19,7 @@ import {
 import { useMemo, useState } from 'react';
 
 import { useApp } from './AppContext';
+import { draftOfEvent, EMPTY_DRAFT, saveObservation } from './observation';
 
 const PAGE = 30;
 const NOT_OBSERVATIONS = new Set(['toilet', 'note', 'exercise']);
@@ -32,21 +30,6 @@ export interface DiaryContainerProps {
   readonly onBack: () => void;
 }
 
-const EMPTY: ObservationDraft = {
-  typeId: 'dog',
-  distanceBucket: null,
-  reaction: null,
-  distraction: null,
-  behaviors: [],
-  ownerActions: [],
-  outcome: null,
-  recoveryText: '',
-  antecedent: '',
-  note: '',
-  thought: '',
-  agoMs: 0,
-};
-
 /** The behavior diary: the list, and the ABC form for a new or an existing observation. */
 export function DiaryContainer({ initialOpen, onBack }: DiaryContainerProps) {
   const { db, ctx, dog, i18n, version, bump } = useApp();
@@ -56,11 +39,14 @@ export function DiaryContainer({ initialOpen, onBack }: DiaryContainerProps) {
   const [pages, setPages] = useState(1);
   const [open, setOpen] = useState<string | null>(initialOpen);
 
-  const types = useMemo(() => new Map(listEventTypes(db).map((t) => [t.id, t])), [db, version]);
+  const types = useMemo(
+    () => new Map(listEventTypes(db, true).map((t) => [t.id, t])),
+    [db, version],
+  );
   const typeChoices = useMemo(
     () =>
       [...types.values()]
-        .filter((t) => !NOT_OBSERVATIONS.has(t.id))
+        .filter((t) => !NOT_OBSERVATIONS.has(t.id) && !t.archived)
         .map((t) => ({ id: t.id, label: eventTypeLabel(t, t.id, i18n) })),
     [types, i18n],
   );
@@ -85,62 +71,17 @@ export function DiaryContainer({ initialOpen, onBack }: DiaryContainerProps) {
     return { event, detail };
   }, [db, open, version]);
 
-  const initial = useMemo<ObservationDraft>(() => {
-    if (existing === null) {
-      return EMPTY;
-    }
-    const { event, detail } = existing;
-    return {
-      typeId: event.typeId,
-      distanceBucket: event.distanceBucket,
-      reaction: event.reaction,
-      distraction: event.distraction,
-      behaviors: detail.behaviors,
-      ownerActions: detail.ownerActions,
-      outcome: detail.outcome,
-      recoveryText: event.recoveryS === null ? '' : String(event.recoveryS),
-      antecedent: detail.antecedent ?? '',
-      note: event.note ?? '',
-      thought: detail.interpretation ?? '',
-      agoMs: -1, // keep the original time unless another one is chosen
-    };
-  }, [existing]);
+  const initial = useMemo<ObservationDraft>(
+    () => (existing === null ? EMPTY_DRAFT : draftOfEvent(existing.event, existing.detail)),
+    [existing],
+  );
 
   const save = (draft: ObservationDraft): void => {
-    const recovery = /^\d{1,4}$/.test(draft.recoveryText) ? Number(draft.recoveryText) : null;
-    const common = {
-      typeId: draft.typeId,
-      note: draft.note.trim() === '' ? null : draft.note.trim(),
-      distanceBucket: draft.distanceBucket,
-      reaction: draft.reaction,
-      distraction: draft.distraction,
-      recoveryS: recovery,
-      incomplete: false,
-    };
-    const detail = {
-      antecedent: draft.antecedent.trim() === '' ? null : draft.antecedent.trim(),
-      behaviors: draft.behaviors,
-      ownerActions: draft.ownerActions,
-      outcome: draft.outcome,
-      consequenceNote: null,
-      interpretation: draft.thought.trim() === '' ? null : draft.thought.trim(),
-    };
-    let id: string;
-    if (existing === null) {
-      id = createEvent(db, ctx, {
-        dogId,
-        ...common,
-        ts: ctx.now() - Math.max(0, draft.agoMs),
-        tzOffsetMin: -new Date().getTimezoneOffset(),
-      }).id;
-    } else {
-      id = existing.event.id;
-      updateEvent(db, ctx, id, {
-        ...common,
-        ...(draft.agoMs >= 0 ? { ts: ctx.now() - draft.agoMs } : {}),
-      });
-    }
-    saveEventDetail(db, ctx, id, detail);
+    saveObservation(db, ctx, {
+      dogId,
+      eventId: existing === null ? null : existing.event.id,
+      draft,
+    });
     setOpen(null);
     bump();
     toast.show({ message: i18n.t('diary.saved') });
