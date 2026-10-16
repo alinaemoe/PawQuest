@@ -18,6 +18,7 @@ import {
   listIndoor,
   markIndoor,
   splitWalk,
+  splitWalkAroundStayUndoable,
   trimWalkEnd,
   trimWalkEndUndoable,
 } from './walkStructure';
@@ -288,5 +289,64 @@ describe('markIndoor and clearIndoor', () => {
       RangeError,
     );
     expect(() => markIndoor(env.db, env.ctx, id, START - MIN, START + 5 * MIN)).toThrow(RangeError);
+  });
+});
+
+describe('splitWalkAroundStayUndoable', () => {
+  it('puts everything back: one walk, its track, events, segments and totals as before', () => {
+    const id = forgottenWalk();
+    const before = getWalk(env.db, id);
+    const fixes = listTrackPoints(env.db, id).length;
+    const segments = env.db.all(
+      'SELECT id, kind, started_at, ended_at FROM walk_segment WHERE walk_id = ? ORDER BY started_at',
+      [id],
+    );
+    addPhoto(
+      env.db,
+      env.ctx,
+      { table: 'walk', id },
+      { uri: 'file:///b.jpg', takenAt: START + 25 * MIN },
+    );
+    const { first, second, undo } = splitWalkAroundStayUndoable(
+      env.db,
+      env.ctx,
+      id,
+      START + 10 * MIN,
+      START + 20 * MIN,
+    );
+    expect(first.endedAt).toBe(START + 10 * MIN);
+    expect(second.startedAt).toBe(START + 20 * MIN);
+    undo();
+    expect(getWalk(env.db, id)).toEqual(before);
+    expect(getWalk(env.db, second.id)).toBeNull();
+    expect(listTrackPoints(env.db, id)).toHaveLength(fixes);
+    expect(eventCount(id)).toBe(2);
+    expect(
+      env.db.all(
+        'SELECT id, kind, started_at, ended_at FROM walk_segment WHERE walk_id = ? ORDER BY started_at',
+        [id],
+      ),
+    ).toEqual(segments);
+    expect(
+      Number(
+        env.db.all(
+          "SELECT COUNT(*) AS n FROM attachment WHERE owner_table = 'walk' AND owner_id = ?",
+          [id],
+        )[0]?.['n'],
+      ),
+    ).toBe(1);
+  });
+
+  it('can be split again after an undo', () => {
+    const id = forgottenWalk();
+    splitWalkAroundStayUndoable(env.db, env.ctx, id, START + 10 * MIN, START + 20 * MIN).undo();
+    const again = splitWalkAroundStayUndoable(
+      env.db,
+      env.ctx,
+      id,
+      START + 12 * MIN,
+      START + 22 * MIN,
+    );
+    expect(again.first.endedAt).toBe(START + 12 * MIN);
   });
 });

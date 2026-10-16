@@ -204,21 +204,30 @@ export function visitsByPlace(steps: readonly ChronoStep[]): Map<string, number>
   return counts;
 }
 
-/** "Магазин → Парк": the saved places of the visits in order, a place repeated in a row once. */
+/**
+ * "Дом → Магазин → Парк → Дом": the saved place the walk began in, the places of its visits in
+ * order and the saved place it ended in. A place repeated in a row is named once; null when no
+ * saved place is involved at all.
+ */
 export function chronologyTitle(
   steps: readonly ChronoStep[],
   nameOf: (placeId: string) => string | undefined,
+  ends: { readonly startPlaceId?: string | null; readonly endPlaceId?: string | null } = {},
 ): string | null {
   const names: string[] = [];
-  for (const step of steps) {
-    if (step.kind !== 'visit' || step.placeId === null) {
-      continue;
-    }
-    const name = nameOf(step.placeId);
+  const add = (placeId: string | null | undefined): void => {
+    const name = placeId == null ? undefined : nameOf(placeId);
     if (name !== undefined && names[names.length - 1] !== name) {
       names.push(name);
     }
+  };
+  add(ends.startPlaceId);
+  for (const step of steps) {
+    if (step.kind === 'visit') {
+      add(step.placeId);
+    }
   }
+  add(ends.endPlaceId);
   return names.length === 0 ? null : names.join(' → ');
 }
 

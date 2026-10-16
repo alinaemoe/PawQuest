@@ -54,6 +54,8 @@ export const ru = {
   'unit.min': 'мин',
   'unit.s': 'с',
   'unit.perKm': '/км',
+  'unit.kmh': 'км/ч',
+  'unit.mph': 'миль/ч',
   'unit.perMi': '/ми',
 
   'event.dog': 'Собака',
@@ -683,6 +685,10 @@ export const ru = {
   'place.suggest.cluster': 'Вы часто останавливаетесь здесь. Назвать место?',
   'place.suggest.base':
     'Здесь вы часто начинаете и заканчиваете прогулки. Это ваш дом? Назовите место, и прогулки станут «от дома до дома».',
+  'place.suggest.baseHere':
+    'Здесь вы часто начинаете и заканчиваете прогулки. Сделать «{place}» домом?',
+  'place.suggest.makeHome': 'Сделать домом',
+  'place.suggest.madeHome': 'Теперь это дом',
   'place.suggest.type': 'Назвать это место?',
   'place.suggest.name': 'Назвать',
   'place.suggest.later': 'Не сейчас',

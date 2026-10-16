@@ -99,7 +99,7 @@ describe('walkFacts', () => {
     expect(walkFacts(walk('a', NOW), ruI).map((f) => [f.label, f.value])).toEqual([
       ['Длительность', '30 мин'],
       ['Дистанция', '2,1 км'],
-      ['Темп', '11:54 /км'],
+      ['Темп', '11:54 /км · 5 км/ч'],
     ]);
   });
 
@@ -108,7 +108,7 @@ describe('walkFacts', () => {
       walk('a', NOW, { durationS: 6120, movingS: 3600, distanceM: 4270 }),
       ruI,
     );
-    expect(facts.map((f) => f.value)).toEqual(['1 ч 42 мин', '4,27 км', '14:03 /км']);
+    expect(facts.map((f) => f.value)).toEqual(['1 ч 42 мин', '4,27 км', '14:03 /км · 4,3 км/ч']);
   });
 
   it('no pace without moving time (a walk written by hand)', () => {

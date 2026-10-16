@@ -31,6 +31,8 @@ export interface I18n {
   readonly formatClock: (seconds: number) => string;
   /** 12:30 /км for minutes per kilometer, or a dash when the pace is unknown. */
   readonly formatPace: (minPerKm: number | null) => string;
+  /** 4,2 км/ч / 2.6 mph for a pace in minutes per kilometer, or a dash when it is unknown. */
+  readonly formatSpeed: (minPerKm: number | null) => string;
   /** 6,2 кг / 13.7 lb from grams. */
   readonly formatWeight: (grams: number) => string;
   /** 14:05, 24-hour (G-07). */
@@ -100,6 +102,16 @@ export function createI18n(options: I18nOptions): I18n {
     const totalSeconds = Math.round(perUnit * 60);
     const suffix = units === 'imperial' ? t('unit.perMi') : t('unit.perKm');
     return `${String(Math.floor(totalSeconds / 60))}:${pad2(totalSeconds % 60)} ${suffix}`;
+  };
+
+  const formatSpeed = (minPerKm: number | null): string => {
+    if (minPerKm === null || !Number.isFinite(minPerKm) || minPerKm <= 0) {
+      return '—';
+    }
+    const kmh = 60 / minPerKm;
+    return units === 'imperial'
+      ? `${num((kmh * 1000) / M_PER_MI, 1)} ${t('unit.mph')}`
+      : `${num(kmh, 1)} ${t('unit.kmh')}`;
   };
 
   const formatWeight = (grams: number): string => {
@@ -185,6 +197,7 @@ export function createI18n(options: I18nOptions): I18n {
     formatDuration,
     formatClock,
     formatPace,
+    formatSpeed,
     formatWeight,
     formatTime,
     formatDate,

@@ -178,3 +178,18 @@ describe('default time zone', () => {
     expect(device.formatTime(ts)).toMatch(/^\d{2}:\d{2}$/);
   });
 });
+
+describe('formatSpeed', () => {
+  it('turns a pace into a speed', () => {
+    expect(ru.formatSpeed(14.4)).toBe('4,2 км/ч');
+    expect(ru.formatSpeed(10)).toBe('6 км/ч');
+    expect(en.formatSpeed(12)).toBe('5 km/h');
+    expect(enImp.formatSpeed(12)).toBe('3.1 mph');
+  });
+
+  it('is a dash when the pace is unknown', () => {
+    expect(ru.formatSpeed(null)).toBe('—');
+    expect(ru.formatSpeed(0)).toBe('—');
+    expect(ru.formatSpeed(Number.NaN)).toBe('—');
+  });
+});

@@ -245,6 +245,26 @@ describe('buildChronology: other shapes', () => {
     expect(buildChronology([], [], [], { startedAt: T0, endedAt: T0 + 30_000 })).toEqual([]);
   });
 
+  it('the title begins and ends with the saved places the walk began and ended in', () => {
+    const shop = [{ kind: 'visit', placeId: 'shop' }] as unknown as Parameters<
+      typeof chronologyTitle
+    >[0];
+    const names = new Map([
+      ['home', 'Дом'],
+      ['shop', 'Магазин'],
+      ['guests', 'Гости'],
+    ]);
+    const nameOf = (id: string) => names.get(id);
+    expect(chronologyTitle(shop, nameOf, { startPlaceId: 'home', endPlaceId: 'home' })).toBe(
+      'Дом → Магазин → Дом',
+    );
+    expect(chronologyTitle([], nameOf, { startPlaceId: 'guests', endPlaceId: 'home' })).toBe(
+      'Гости → Дом',
+    );
+    expect(chronologyTitle([], nameOf, { startPlaceId: 'home', endPlaceId: 'home' })).toBe('Дом');
+    expect(chronologyTitle([], nameOf, { startPlaceId: null, endPlaceId: 'gone' })).toBeNull();
+  });
+
   it('the title does not repeat a place in a row and skips unknown names', () => {
     const steps = [
       { kind: 'visit', placeId: 'a' },

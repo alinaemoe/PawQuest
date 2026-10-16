@@ -158,6 +158,9 @@ export function linkWalksToPlace(
 }
 
 export interface BaseProposal extends LatLon {
+  /** The saved place that already lies here (a "Двор" that is really home), or null. */
+  readonly placeId: string | null;
+  readonly placeName: string | null;
   /** Remembers that the owner does not want a suggestion at this spot. */
   readonly key: string;
   /** Walks that began or ended here. */
@@ -196,8 +199,15 @@ export function proposeBases(db: SqlDb, now: number, options: ProposeOptions = {
     }
   }
   const saved = db
-    .all('SELECT lat, lon, radius_m FROM place WHERE deleted_at IS NULL')
-    .map((r) => ({ lat: Number(r['lat']), lon: Number(r['lon']), radiusM: Number(r['radius_m']) }));
+    .all('SELECT id, name, category, lat, lon, radius_m FROM place WHERE deleted_at IS NULL')
+    .map((r) => ({
+      id: String(r['id']),
+      name: String(r['name']),
+      category: String(r['category']),
+      lat: Number(r['lat']),
+      lon: Number(r['lon']),
+      radiusM: Number(r['radius_m']),
+    }));
   const found: BaseProposal[] = [];
   for (const cluster of dbscan(ends, BASE_REACH_M, BASE_MIN_WALKS).clusters) {
     const members = cluster.flatMap((i) => (ends[i] === undefined ? [] : [ends[i]]));
@@ -209,10 +219,16 @@ export function proposeBases(db: SqlDb, now: number, options: ProposeOptions = {
       lat: median(members.map((m) => m.lat)),
       lon: median(members.map((m) => m.lon)),
     };
-    if (saved.some((p) => haversineDistanceM(centre, p) <= Math.max(p.radiusM, BASE_REACH_M))) {
+    const here = saved
+      .filter((p) => haversineDistanceM(centre, p) <= Math.max(p.radiusM, BASE_REACH_M))
+      .sort((a, b) => haversineDistanceM(centre, a) - haversineDistanceM(centre, b))[0];
+    // a base that is already named is done; any other place here may be offered to become one
+    if (here !== undefined && (here.category === 'home' || here.category === 'guests')) {
       continue;
     }
     found.push({
+      placeId: here?.id ?? null,
+      placeName: here?.name ?? null,
       ...centre,
       key: `base-suggest:${proposalKey(centre).split(':').slice(1).join(':')}`,
       walkIds: walks,

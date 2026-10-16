@@ -400,10 +400,26 @@ describe('proposeBases (D-62, 5.2)', () => {
     expect(proposeBases(env.db, NOW)).toHaveLength(1);
   });
 
-  it('a spot that is already a saved place is left alone', () => {
+  it('a base that is already named is left alone', () => {
     [0, 1, 2].forEach((d) => loop(HOME, d));
-    createPlace(env.db, env.ctx, { category: 'yard', label: 'Двор', ...HOME });
+    createPlace(env.db, env.ctx, { category: 'home', label: 'Дом', ...HOME });
     expect(proposeBases(env.db, NOW)).toEqual([]);
+    const other = createPlace(env.db, env.ctx, { category: 'guests', label: 'Гости', ...HOME });
+    expect(other.category).toBe('guests');
+    expect(proposeBases(env.db, NOW)).toEqual([]);
+  });
+
+  it('another saved place here is offered to become the base', () => {
+    [0, 1, 2].forEach((d) => loop(HOME, d));
+    const yard = createPlace(env.db, env.ctx, { category: 'yard', label: 'Двор', ...HOME });
+    const found = proposeBases(env.db, NOW);
+    expect(found).toHaveLength(1);
+    expect(found[0]).toMatchObject({ placeId: yard.id, placeName: yard.name });
+  });
+
+  it('a spot without a place has none to offer', () => {
+    [0, 1, 2].forEach((d) => loop(HOME, d));
+    expect(proposeBases(env.db, NOW)[0]).toMatchObject({ placeId: null, placeName: null });
   });
 
   it('walks from places far apart make no base', () => {

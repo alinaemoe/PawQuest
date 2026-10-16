@@ -2,6 +2,7 @@ import {
   baseArrival,
   buildChronology,
   chronologyTitle,
+  placeContaining,
   forgottenBaseStay,
   filterTrack,
   findRides,
@@ -55,7 +56,13 @@ export function walkChronology(db: SqlDb, walkId: string, now: number): WalkChro
     { rides: findRides(points), indoor: listIndoor(db, walkId) },
   );
   const placeNames = new Map(places.map((p) => [p.id, p.name]));
-  return { steps, title: chronologyTitle(steps, (id) => placeNames.get(id)), placeNames };
+  const first = points[0];
+  const last = points[points.length - 1];
+  const title = chronologyTitle(steps, (id) => placeNames.get(id), {
+    startPlaceId: first === undefined ? null : (placeContaining(first, known)?.id ?? null),
+    endPlaceId: last === undefined ? null : (placeContaining(last, known)?.id ?? null),
+  });
+  return { steps, title, placeNames };
 }
 
 export interface WalkBaseArrival extends BaseArrival {

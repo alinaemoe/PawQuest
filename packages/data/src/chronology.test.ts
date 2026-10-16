@@ -97,6 +97,23 @@ describe('walkChronology', () => {
   });
 });
 
+describe('the title of a walk from a base to a base', () => {
+  it('names where the walk began and ended, not only the visits', () => {
+    // 150 s north, 400 s at the spot, 150 s further: begins 165 m south of the spot
+    const home = { lat: SHOP.lat - 150 * STEP, lon: SHOP.lon };
+    createPlace(env.db, env.ctx, {
+      name: 'Дом',
+      category: 'home',
+      label: 'Дом',
+      ...home,
+      radiusM: 60,
+    });
+    createPlace(env.db, env.ctx, { name: 'Магазин', category: 'shop', label: 'Магазин', ...SHOP });
+    const id = recordWalk(SHOP, 420);
+    expect(walkChronology(env.db, id, START + 3_600_000)?.title).toBe('Дом → Магазин');
+  });
+});
+
 describe('walkBaseArrival', () => {
   /** A running walk: 150 s of walking, then `stopS` seconds standing at the spot. */
   function runningWalk(stopS: number): string {

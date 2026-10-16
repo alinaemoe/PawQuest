@@ -39,6 +39,8 @@ export const en = {
   'unit.min': 'min',
   'unit.s': 's',
   'unit.perKm': '/km',
+  'unit.kmh': 'km/h',
+  'unit.mph': 'mph',
   'unit.perMi': '/mi',
 
   'event.dog': 'Dog',
@@ -610,6 +612,9 @@ export const en = {
   'place.suggest.cluster': 'You often stop here. Name this place?',
   'place.suggest.base':
     'You often start and end your walks here. Is this home? Name the place and walks will go from home to home.',
+  'place.suggest.baseHere': 'You often start and end your walks here. Make “{place}” your home?',
+  'place.suggest.makeHome': 'Make it home',
+  'place.suggest.madeHome': 'Now it is home',
   'place.suggest.type': 'Name this place?',
   'place.suggest.name': 'Name it',
   'place.suggest.later': 'Not now',

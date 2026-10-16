@@ -257,6 +257,7 @@ export {
   markIndoor,
   splitWalk,
   splitWalkAroundStay,
+  splitWalkAroundStayUndoable,
   trimWalkEnd,
   trimWalkEndUndoable,
   type IndoorSpan,

@@ -167,62 +167,106 @@ export function splitWalkAroundStay(
 }
 
 /**
- * `trimWalkEnd` that can be taken back: `undo` puts the segments, the totals and the cut fixes
- * as they were. It only holds while nothing else changed the walk (a toast's lifetime).
+ * Remembers a walk's row and segments so that they can be put back exactly (the undo of a cut).
+ * It only holds while nothing else changed the walk: the lifetime of a toast.
  */
+function captureWalk(db: SqlDb, walkId: string): (ctx: Ctx) => void {
+  const before = db.all(
+    'SELECT ended_at, duration_s, moving_s, paused_s, ride_s, distance_m FROM walk WHERE id = ?',
+    [walkId],
+  )[0];
+  const segments = db.all(
+    'SELECT id, kind, started_at, ended_at, indoor FROM walk_segment WHERE walk_id = ?',
+    [walkId],
+  );
+  return (ctx) => {
+    if (before === undefined) {
+      return;
+    }
+    db.run('DELETE FROM walk_segment WHERE walk_id = ?', [walkId]);
+    for (const row of segments) {
+      db.run(
+        'INSERT INTO walk_segment (id, walk_id, kind, started_at, ended_at, indoor) VALUES (?, ?, ?, ?, ?, ?)',
+        [
+          String(row['id']),
+          walkId,
+          String(row['kind']),
+          String(row['started_at']),
+          row['ended_at'] ?? null,
+          row['indoor'] ?? 0,
+        ],
+      );
+    }
+    db.run('UPDATE track_point SET excluded = 0 WHERE walk_id = ? AND excluded = ?', [
+      walkId,
+      TRIMMED_FIX,
+    ]);
+    db.run(
+      `UPDATE walk SET ended_at = ?, duration_s = ?, moving_s = ?, paused_s = ?, ride_s = ?,
+              distance_m = ?, updated_at = ? WHERE id = ?`,
+      [
+        before['ended_at'] ?? null,
+        before['duration_s'] ?? null,
+        before['moving_s'] ?? null,
+        before['paused_s'] ?? null,
+        before['ride_s'] ?? 0,
+        before['distance_m'] ?? null,
+        toIso(ctx.now()),
+        walkId,
+      ],
+    );
+  };
+}
+
+/** `trimWalkEnd` that can be taken back: `undo` puts the segments, the totals and the cut fixes back. */
 export function trimWalkEndUndoable(
   db: SqlDb,
   ctx: Ctx,
   walkId: string,
   at: number,
 ): { walk: Walk; undo: () => void } {
-  const before = db.all(
-    'SELECT ended_at, duration_s, moving_s, paused_s, ride_s, distance_m FROM walk WHERE id = ?',
-    [walkId],
-  )[0];
-  const segments = db.all(
-    'SELECT id, kind, started_at, ended_at FROM walk_segment WHERE walk_id = ?',
-    [walkId],
-  );
+  const restore = captureWalk(db, walkId);
   const walk = trimWalkEnd(db, ctx, walkId, at);
   return {
     walk,
     undo: () => {
-      if (before === undefined) {
-        return;
-      }
       db.transaction(() => {
-        db.run('DELETE FROM walk_segment WHERE walk_id = ?', [walkId]);
-        for (const row of segments) {
-          db.run(
-            'INSERT INTO walk_segment (id, walk_id, kind, started_at, ended_at) VALUES (?, ?, ?, ?, ?)',
-            [
-              String(row['id']),
-              walkId,
-              String(row['kind']),
-              String(row['started_at']),
-              row['ended_at'] ?? null,
-            ],
-          );
+        restore(ctx);
+      });
+    },
+  };
+}
+
+/**
+ * `splitWalkAroundStay` that can be taken back: `undo` moves the track, the events, the sessions
+ * and the pictures of the second walk back to the first, removes the second and restores the first.
+ */
+export function splitWalkAroundStayUndoable(
+  db: SqlDb,
+  ctx: Ctx,
+  walkId: string,
+  arrivedAt: number,
+  leftAt: number,
+): { first: Walk; second: Walk; undo: () => void } {
+  const restore = captureWalk(db, walkId);
+  const { first, second } = splitWalkAroundStay(db, ctx, walkId, arrivedAt, leftAt);
+  return {
+    first,
+    second,
+    undo: () => {
+      db.transaction(() => {
+        for (const table of ['track_point', 'event']) {
+          db.run(`UPDATE ${table} SET walk_id = ? WHERE walk_id = ?`, [walkId, second.id]);
         }
-        db.run('UPDATE track_point SET excluded = 0 WHERE walk_id = ? AND excluded = ?', [
+        db.run('UPDATE training_session SET walk_id = ? WHERE walk_id = ?', [walkId, second.id]);
+        db.run("UPDATE attachment SET owner_id = ? WHERE owner_table = 'walk' AND owner_id = ?", [
           walkId,
-          TRIMMED_FIX,
+          second.id,
         ]);
-        db.run(
-          `UPDATE walk SET ended_at = ?, duration_s = ?, moving_s = ?, paused_s = ?, ride_s = ?,
-                  distance_m = ?, updated_at = ? WHERE id = ?`,
-          [
-            before['ended_at'] ?? null,
-            before['duration_s'] ?? null,
-            before['moving_s'] ?? null,
-            before['paused_s'] ?? null,
-            before['ride_s'] ?? 0,
-            before['distance_m'] ?? null,
-            toIso(ctx.now()),
-            walkId,
-          ],
-        );
+        db.run('DELETE FROM walk_segment WHERE walk_id = ?', [second.id]);
+        db.run('DELETE FROM walk_dog WHERE walk_id = ?', [second.id]);
+        db.run('DELETE FROM walk WHERE id = ?', [second.id]);
+        restore(ctx);
       });
     },
   };

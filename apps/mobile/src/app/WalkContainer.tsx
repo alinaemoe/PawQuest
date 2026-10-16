@@ -23,9 +23,10 @@ import {
   resumeWalk,
   setWalkPlace,
   softDelete,
-  splitWalkAroundStay,
+  splitWalkAroundStayUndoable,
   trimWalkEndUndoable,
   updateEvent,
+  updatePlace,
   updateWalk,
   walkAnchor,
   walkBaseArrival,
@@ -366,6 +367,8 @@ function pausedMs(db: ReturnType<typeof useApp>['db'], walkId: string): number {
 /** The summary shown right after a walk (spec S05): numbers, how it went, one tap to save. */
 interface PlaceCard {
   readonly kind: 'type' | 'cluster' | 'base';
+  /** For a base: the saved place here that may become it ("Двор" → "Дом"). */
+  readonly basePlace?: { readonly id: string; readonly name: string } | undefined;
   readonly at: { readonly lat: number; readonly lon: number };
   readonly category: PlaceCategory | null;
   /** The size proposed from the walks; null to use the type's default. */
@@ -445,6 +448,10 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
         radiusM: null,
         walkIds: [],
         key: base.key,
+        basePlace:
+          base.placeId === null || base.placeName === null
+            ? undefined
+            : { id: base.placeId, name: base.placeName },
       };
     }
     const proposal = proposePlaces(db, now).find((p) => !isPromptHidden(db, p.key, now));
@@ -522,10 +529,19 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
             });
             return;
           }
-          splitWalkAroundStay(db, ctx, walkId, cut.arrivedAt, cut.leftAt);
+          const { undo } = splitWalkAroundStayUndoable(db, ctx, walkId, cut.arrivedAt, cut.leftAt);
           setCutDone(true);
           bump();
-          toast.show({ message: i18n.t('cut.splitted') });
+          toast.show({
+            message: i18n.t('cut.splitted'),
+            actionLabel: i18n.t('common.undo'),
+            durationMs: 8000,
+            onAction: () => {
+              undo();
+              setCutDone(false);
+              bump();
+            },
+          });
         }}
         onCutKeep={() => {
           hidePrompt(db, ctx, `walk-cut:${walkId}`, Date.now() + FOREVER);
@@ -534,18 +550,32 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
         placeCard={
           shown
             ? {
-                text: i18n.t(
-                  card.kind === 'type'
-                    ? 'place.suggest.type'
-                    : card.kind === 'base'
-                      ? 'place.suggest.base'
-                      : 'place.suggest.cluster',
-                ),
+                text:
+                  card.kind === 'base' && card.basePlace !== undefined
+                    ? i18n.t('place.suggest.baseHere', { place: card.basePlace.name })
+                    : i18n.t(
+                        card.kind === 'type'
+                          ? 'place.suggest.type'
+                          : card.kind === 'base'
+                            ? 'place.suggest.base'
+                            : 'place.suggest.cluster',
+                      ),
                 canDecline: card.key !== null,
+                ...(card.kind === 'base' && card.basePlace !== undefined
+                  ? { actionLabel: i18n.t('place.suggest.makeHome') }
+                  : {}),
               }
             : null
         }
         onPlaceName={() => {
+          if (card?.kind === 'base' && card.basePlace !== undefined) {
+            // the place is already named: it only becomes home
+            updatePlace(db, ctx, card.basePlace.id, { category: 'home' });
+            bump();
+            setDismissed(true);
+            toast.show({ message: i18n.t('place.suggest.madeHome') });
+            return;
+          }
           setNaming(true);
         }}
         onPlaceLater={() => {

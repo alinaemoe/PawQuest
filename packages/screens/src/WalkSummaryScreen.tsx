@@ -16,7 +16,12 @@ export interface WalkSummaryScreenProps {
   readonly photos?: ReactNode;
   readonly summary: WalkSummaryModel;
   /** "Вы часто останавливаетесь здесь. Назвать место?" or "Назвать это место?"; null for none. */
-  readonly placeCard?: { readonly text: string; readonly canDecline: boolean } | null;
+  readonly placeCard?: {
+    readonly text: string;
+    readonly canDecline: boolean;
+    /** The main button; "Назвать" when absent. */
+    readonly actionLabel?: string;
+  } | null;
   /** "Прогулка должна была закончиться в 12:19": the walk went on after coming to a base. */
   readonly cutCard?: {
     readonly text: string;
@@ -75,7 +80,7 @@ export function WalkSummaryScreen(props: WalkSummaryScreenProps) {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
             <Chip
               size="sm"
-              label={i18n.t('place.suggest.name')}
+              label={props.placeCard.actionLabel ?? i18n.t('place.suggest.name')}
               onPress={props.onPlaceName ?? noop}
             />
             <Chip
