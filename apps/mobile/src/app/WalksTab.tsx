@@ -33,8 +33,10 @@ import {
   weatherLine,
 } from '@pawquest/screens';
 import { useMemo, useState } from 'react';
+import { View } from 'react-native';
 
 import { useApp } from './AppContext';
+import { ReplayButton } from './ReplayContainer';
 import { WalkRouteMap } from './RouteMap';
 import { WalkPhotos } from './WalkPhotos';
 
@@ -123,7 +125,14 @@ export function WalksTab() {
         }}
       />
       <WalkDetailsSheet
-        map={open === null ? null : <WalkRouteMap walkId={open.id} mode="fit" height={200} />}
+        map={
+          open === null ? null : (
+            <View style={{ gap: 8 }}>
+              <WalkRouteMap walkId={open.id} mode="fit" height={200} />
+              <ReplayButton walkId={open.id} />
+            </View>
+          )
+        }
         photos={open === null ? null : <WalkPhotos walkId={open.id} />}
         onTimelineRow={setIndoorRow}
         walk={editing ? null : details}

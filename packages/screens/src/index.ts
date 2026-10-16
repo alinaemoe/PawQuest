@@ -243,3 +243,24 @@ export {
 } from './chartsModel';
 export { InsightCharts, PeriodCompare } from './ChartViews';
 export { thresholdCharts } from './thresholdsModel';
+export {
+  makeReplayEngine,
+  type ReplayAxisMode,
+  type ReplayEngine,
+  type ReplayFrame,
+  type ReplayTick,
+} from './replayEngine';
+export {
+  replayReadout,
+  speedSummary,
+  speedText,
+  type ReplayReadout,
+  type SpeedSummaryModel,
+} from './replayModel';
+export {
+  REPLAY_SPEEDS,
+  ReplayControls,
+  ReplayReadoutView,
+  ReplaySlider,
+  SpeedSummaryView,
+} from './ReplayViews';

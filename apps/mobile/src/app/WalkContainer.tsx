@@ -57,12 +57,14 @@ import {
 } from '@pawquest/screens';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useEffect, useMemo, useState } from 'react';
+import { View } from 'react-native';
 
 import { useApp } from './AppContext';
 import { draftOfEvent, saveObservation } from './observation';
 import { NewPlaceFlow } from './NewPlaceFlow';
 import { markLook } from './QuickMarksContainer';
 import { takePhoto } from './photoCapture';
+import { ReplayButton } from './ReplayContainer';
 import { WalkRouteMap } from './RouteMap';
 import { WalkPhotos } from './WalkPhotos';
 import { startGpsUpdates, stopGpsUpdates } from './walkRecorder';
@@ -537,7 +539,12 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
   return (
     <>
       <WalkSummaryScreen
-        map={<WalkRouteMap walkId={walk.id} mode="fit" height={220} />}
+        map={
+          <View style={{ gap: 8 }}>
+            <WalkRouteMap walkId={walk.id} mode="fit" height={220} />
+            <ReplayButton walkId={walk.id} />
+          </View>
+        }
         photos={<WalkPhotos walkId={walk.id} autoFind />}
         summary={{
           facts: walkFacts(walk, i18n),

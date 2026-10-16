@@ -115,3 +115,23 @@ export {
 export type { Ring } from './geo/polygon';
 export { areaCentre, overpassQuery, parseOverpassAreas } from './geo/osmAreas';
 export type { MapArea } from './geo/osmAreas';
+export {
+  FAST_START_RATIO,
+  MIN_ZONE_SHOWN_S,
+  PHASE_CHANGE,
+  PROFILE_WINDOW_S,
+  SPEED_ZONES,
+  ZONE_FROM_MPS,
+  speedAt,
+  speedProfile,
+  speedZoneOf,
+  zoneShare,
+} from './track/speedProfile';
+export type {
+  PhasePattern,
+  ProfileWindow,
+  SpeedInterval,
+  SpeedProfile,
+  SpeedProfileOptions,
+  SpeedZone,
+} from './track/speedProfile';

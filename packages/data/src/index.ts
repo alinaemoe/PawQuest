@@ -325,3 +325,11 @@ export {
   type PeriodComparison,
 } from './periods';
 export { thresholdSeries, type ThresholdSeries, type TriggerDistance } from './thresholds';
+export {
+  walkReplay,
+  type ReplayEvent,
+  type ReplayPass,
+  type ReplayPhoto,
+  type ReplayPointData,
+  type WalkReplay,
+} from './replay';
