@@ -55,3 +55,8 @@ export {
   walkOutcomes,
 } from './dimensions';
 export type { Dimensions, Outcomes, WalkDimensionInput, WalkOutcomeInput } from './dimensions';
+export { checkCard, stratifiedDelta } from './adjust';
+export type { Adjustment, AdjustmentStatus, AdjustOptions } from './adjust';
+export { checkedPatternCards } from './checked';
+export type { CheckedCard, CheckedCards, CheckedOptions } from './checked';
+export { DIMENSION_FAMILIES, contextDimensions } from './dimensions';

@@ -1,3 +1,4 @@
+import { mulberry32 } from '@pawquest/insights';
 import type { WeatherFacts } from '@pawquest/weather';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -492,6 +493,38 @@ describe('what the dimensions are made from', () => {
 
   it('a walk that is not there cannot be worked out', () => {
     expect(() => computeDims(env.db, 'nope', null)).toThrow('Walk not found');
+  });
+
+  it('weather that only goes with the place is explained by the place, from real rows to the card', () => {
+    const park = createPlace(env.db, env.ctx, {
+      category: 'park',
+      label: 'Парк',
+      lat: 55,
+      lon: 37,
+    });
+    const yard = createPlace(env.db, env.ctx, {
+      category: 'yard',
+      label: 'Двор',
+      lat: 55.5,
+      lon: 37,
+    });
+    const rand = mulberry32(5);
+    for (let i = 0; i < 160; i += 1) {
+      const inPark = rand() < 0.5;
+      const dry = rand() < (inPark ? 0.85 : 0.2);
+      const id = manual(i, 30);
+      setWalkPlace(env.db, env.ctx, id, { placeId: inPark ? park.id : yard.id, placeKind: null });
+      saveWeatherSnapshot(env.db, id, facts({ rain24hMm: dry ? 0 : 5 }));
+      event(id, rand() < (inPark ? 0.6 : 0.1) ? 'hard' : 'dog', i, 2);
+    }
+    refreshDerived(env.db, env.ctx, dog.id, { limit: 500 });
+    const { cards, explained } = walkPatterns(env.db, dog.id);
+    expect(cards.map((c) => c.dimension)).toContain('place_kind');
+    expect(cards.map((c) => c.dimension)).not.toContain('ground');
+    expect(explained.find((c) => c.dimension === 'ground')?.adjustment).toMatchObject({
+      status: 'confounded',
+      by: 'place_kind',
+    });
   });
 
   it('the options narrow the cards: since a moment, and without the hidden keys', () => {

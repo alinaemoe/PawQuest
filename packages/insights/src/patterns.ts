@@ -194,6 +194,12 @@ export interface PatternCardOptions {
   readonly minAbsDelta?: number;
   /** Maximum number of cards. Default 5. */
   readonly maxCards?: number;
+  /**
+   * A last test before the one-card-per-dimension choice: a candidate it refuses is passed over
+   * and the next best of its dimension may take its place (used to leave out patterns that another
+   * dimension explains).
+   */
+  readonly accept?: (card: Omit<PatternCard, 'testedCount'>) => boolean;
 }
 
 export function patternKey(dimension: string, value: string, outcome: string): string {
@@ -265,6 +271,7 @@ export function patternCards(
   const ranked = candidates
     .filter((c, i) => passed[i] === true && Math.abs(c.card.delta) >= minAbsDelta)
     .filter((c) => options.excludeKeys?.has(c.card.key) !== true)
+    .filter((c) => options.accept === undefined || options.accept(c.card))
     .sort((a, b) => b.score - a.score || a.card.key.localeCompare(b.card.key));
 
   const seenDimensions = new Set<string>();

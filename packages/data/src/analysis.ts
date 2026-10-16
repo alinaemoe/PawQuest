@@ -1,9 +1,9 @@
 import {
   WALK_DIMENSION_KEYS,
   WALK_OUTCOME_KEYS,
-  patternCards,
+  checkedPatternCards,
   type AnalysisUnit,
-  type PatternCard,
+  type CheckedCard,
 } from '@pawquest/insights';
 
 import { derivedHealth, listWalkDims, type DerivedHealth } from './derived';
@@ -27,7 +27,10 @@ export function buildAnalysisUnits(
 }
 
 export interface WalkPatterns {
-  readonly cards: readonly PatternCard[];
+  /** Patterns that hold when the other kinds of dimension are held still (or could not be checked). */
+  readonly cards: readonly CheckedCard[];
+  /** Patterns that something else explains: "it looks like the weather, but it is the place". */
+  readonly explained: readonly CheckedCard[];
   /** How many walks the cards were found among. */
   readonly unitCount: number;
   /** Where the derived layer stands: `stale > 0` means "still counting". */
@@ -35,7 +38,7 @@ export interface WalkPatterns {
 }
 
 /**
- * Pattern cards for the walks of a dog (A-14 over the catalog of dimensions and outcomes). It only
+ * Pattern cards for the walks of a dog (A-14 over the catalog of dimensions and outcomes, each checked against the other families of dimensions: A-32). It only
  * reads: the derived layer is brought up to date by `refreshDerived`, in the background.
  */
 export function walkPatterns(
@@ -48,11 +51,11 @@ export function walkPatterns(
     dogId,
     options.sinceTs === undefined ? {} : { sinceTs: options.sinceTs },
   );
-  const cards = patternCards(
+  const { cards, explained } = checkedPatternCards(
     units,
     WALK_DIMENSION_KEYS,
     WALK_OUTCOME_KEYS,
     options.excludeKeys === undefined ? {} : { excludeKeys: options.excludeKeys },
   );
-  return { cards, unitCount: units.length, health: derivedHealth(db, dogId) };
+  return { cards, explained, unitCount: units.length, health: derivedHealth(db, dogId) };
 }

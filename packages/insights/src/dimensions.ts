@@ -176,3 +176,24 @@ export const WALK_DIMENSION_KEYS = [
 ] as const;
 
 export const WALK_OUTCOME_KEYS = ['hard_moment', 'success', 'strong_reaction'] as const;
+
+/**
+ * Dimensions that belong together. A pattern in one family is checked against the other families
+ * (is it the weather or the place?), never against its own: wet ground and "rained within three
+ * hours" are one cause seen twice, not two causes.
+ */
+export const DIMENSION_FAMILIES = {
+  weather: ['ground', 'rain_recency', 'temp', 'wind', 'light', 'air', 'pollen', 'paw_heat'],
+  place: ['place_kind', 'place_size', 'walk_type', 'shop_visit', 'ride'],
+  time: ['time_of_day', 'day_type', 'duration'],
+} as const;
+
+/** The dimensions a pattern in `dimension` is to be checked against: all of the other families. */
+export function contextDimensions(dimension: string): string[] {
+  const own = Object.values(DIMENSION_FAMILIES).find((family) =>
+    (family as readonly string[]).includes(dimension),
+  );
+  return Object.values(DIMENSION_FAMILIES)
+    .filter((family) => family !== own)
+    .flatMap((family) => [...family]);
+}
