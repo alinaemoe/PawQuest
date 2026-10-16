@@ -727,6 +727,14 @@ export const ru = {
   'marks.look.ex': 'Фиолетовый квадрат',
 
   'marks.deleted': 'Метка удалена, события остались',
+
+  'photo.title': 'Фото',
+  'photo.open': 'Фото {n} из {total}',
+  'photo.delete': 'Удалить фото',
+  'photo.deleted': 'Фото удалено',
+  'photo.added': 'Фото добавлено',
+  'photo.denied': 'Нет доступа к камере. Разрешите его в настройках телефона.',
+  'active.photo': 'Сделать фото',
 } as const satisfies Record<string, Message>;
 
 export type MessageKey = keyof typeof ru;

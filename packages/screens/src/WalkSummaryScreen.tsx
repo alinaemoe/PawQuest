@@ -12,6 +12,8 @@ export interface WalkSummaryModel {
 
 export interface WalkSummaryScreenProps {
   readonly map?: ReactNode;
+  /** Pictures taken during the walk (a PhotoStrip), shown under the map. */
+  readonly photos?: ReactNode;
   readonly summary: WalkSummaryModel;
   /** "Вы часто останавливаетесь здесь. Назвать место?" or "Назвать это место?"; null for none. */
   readonly placeCard?: { readonly text: string; readonly canDecline: boolean } | null;
@@ -37,6 +39,7 @@ export function WalkSummaryScreen(props: WalkSummaryScreenProps) {
     <Screen>
       <AppText variant="numBig">{i18n.t('sumw.title')}</AppText>
       {props.map}
+      {props.photos}
       <Card variant="soft">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 24 }}>
           {summary.facts.map((fact) => (

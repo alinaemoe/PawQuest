@@ -10,7 +10,7 @@ import {
   type EventKind,
 } from '@pawquest/rn-ui';
 import type { ReactNode } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useEffect, useState } from 'react';
 
 export type GpsStatus = 'good' | 'weak' | 'none' | 'off';
@@ -38,6 +38,9 @@ export interface ActiveWalkScreenProps {
   readonly onEvent: (id: string) => void;
   /** Long press on an event button (400 ms): record it and open its details (S04). */
   readonly onEventLong?: (id: string) => void;
+  /** Opens the camera; the button shows how many photos the walk has. */
+  readonly onPhoto?: () => void;
+  readonly photoCount?: number;
   readonly onCalm: () => void;
   readonly onTraining: () => void;
   readonly onTogglePause: () => void;
@@ -187,6 +190,30 @@ export function ActiveWalkScreen(props: ActiveWalkScreenProps) {
             onPress={props.onTogglePause}
           />
         </View>
+        {props.onPhoto === undefined ? null : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('active.photo')}
+            onPress={props.onPhoto}
+            style={({ pressed }) => ({
+              width: 56,
+              minHeight: 48,
+              borderRadius: 16,
+              backgroundColor: pressed ? colors.accentSoft : colors.surface2,
+              alignItems: 'center',
+              justifyContent: 'center',
+            })}
+          >
+            <Icon name="camera" color={colors.ink} size={22} />
+            {(props.photoCount ?? 0) > 0 ? (
+              <View style={{ position: 'absolute', top: 2, right: 6 }}>
+                <AppText variant="mono" style={{ fontSize: 11, color: colors.muted }}>
+                  {String(props.photoCount)}
+                </AppText>
+              </View>
+            ) : null}
+          </Pressable>
+        )}
         <HoldButton
           flex={1.3}
           holdMs={1000}

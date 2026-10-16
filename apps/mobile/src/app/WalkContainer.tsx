@@ -9,10 +9,12 @@ import {
   getEventDetail,
   getWalk,
   hidePrompt,
+  addWalkPhoto,
   isPromptHidden,
   lastTrackPoint,
   listEventTypes,
   linkWalksToPlace,
+  listWalkPhotos,
   panelEventTypes,
   pauseWalk,
   proposePlaces,
@@ -43,7 +45,9 @@ import { useApp } from './AppContext';
 import { draftOfEvent, saveObservation } from './observation';
 import { NewPlaceFlow } from './NewPlaceFlow';
 import { markLook } from './QuickMarksContainer';
+import { takePhoto } from './photoCapture';
 import { WalkRouteMap } from './RouteMap';
+import { WalkPhotos } from './WalkPhotos';
 import { startGpsUpdates, stopGpsUpdates } from './walkRecorder';
 
 const NOT_OBSERVATIONS = new Set(['toilet', 'note', 'exercise']);
@@ -108,6 +112,8 @@ export function WalkContainer({
     );
     return { metrics, gps, counts };
   }, [db, walk.id, walk.mode, tick, version]);
+
+  const photoCount = useMemo(() => listWalkPhotos(db, walk.id).length, [db, walk.id, version]);
 
   const buttons: WalkEventButton[] = types.map((type) => ({
     id: type.id,
@@ -196,6 +202,26 @@ export function WalkContainer({
         }}
         onEventLong={(typeId) => {
           setDetailsId(recordEvent(typeId, true));
+        }}
+        photoCount={photoCount}
+        onPhoto={() => {
+          void (async () => {
+            const id = ctx.newId();
+            const result = await takePhoto(id);
+            if (result.kind === 'denied') {
+              toast.show({ message: i18n.t('photo.denied'), durationMs: 4000 });
+            } else if (result.kind === 'photo') {
+              const last = lastTrackPoint(db, walk.id);
+              addWalkPhoto(db, ctx, walk.id, {
+                ...result.photo,
+                takenAt: Date.now(),
+                lat: last?.lat ?? null,
+                lon: last?.lon ?? null,
+              });
+              bump();
+              toast.show({ message: i18n.t('photo.added') });
+            }
+          })();
         }}
         onCalm={() => {
           if (recovery !== null) {
@@ -377,6 +403,7 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
     <>
       <WalkSummaryScreen
         map={<WalkRouteMap walkId={walk.id} mode="fit" height={220} />}
+        photos={<WalkPhotos walkId={walk.id} />}
         summary={{
           facts: walkFacts(walk, i18n),
           eventsLine: eventsLine === '' ? null : eventsLine,

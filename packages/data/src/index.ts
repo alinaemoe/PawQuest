@@ -217,3 +217,16 @@ export {
   type MarkChanges,
   type MarkLook,
 } from './quickMarks';
+export {
+  PHOTO_EVENT_WINDOW_MS,
+  addPhoto,
+  addWalkPhoto,
+  listPhotos,
+  listWalkPhotos,
+  nearestEventId,
+  removePhoto,
+  restorePhoto,
+  type Photo,
+  type PhotoInput,
+  type PhotoOwner,
+} from './photos';

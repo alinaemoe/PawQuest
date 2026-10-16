@@ -138,3 +138,10 @@ export {
   panelRows,
   removeFromOrder,
 } from './quickMarksModel';
+export {
+  PhotoStrip,
+  PhotoViewer,
+  type PhotoStripProps,
+  type PhotoThumb,
+  type PhotoViewerProps,
+} from './PhotoViews';

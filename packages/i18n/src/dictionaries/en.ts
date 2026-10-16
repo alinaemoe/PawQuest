@@ -654,4 +654,12 @@ export const en = {
   'marks.look.ex': 'Purple square',
 
   'marks.deleted': 'Mark removed, the events stay',
+
+  'photo.title': 'Photos',
+  'photo.open': 'Photo {n} of {total}',
+  'photo.delete': 'Delete photo',
+  'photo.deleted': 'Photo deleted',
+  'photo.added': 'Photo added',
+  'photo.denied': 'No access to the camera. Allow it in the phone settings.',
+  'active.photo': 'Take a photo',
 } as const satisfies Record<MessageKey, Message>;
