@@ -165,3 +165,65 @@ export function splitWalkAroundStay(
     return { first: trimWalkEnd(db, ctx, walkId, arrivedAt), second };
   });
 }
+
+/**
+ * `trimWalkEnd` that can be taken back: `undo` puts the segments, the totals and the cut fixes
+ * as they were. It only holds while nothing else changed the walk (a toast's lifetime).
+ */
+export function trimWalkEndUndoable(
+  db: SqlDb,
+  ctx: Ctx,
+  walkId: string,
+  at: number,
+): { walk: Walk; undo: () => void } {
+  const before = db.all(
+    'SELECT ended_at, duration_s, moving_s, paused_s, ride_s, distance_m FROM walk WHERE id = ?',
+    [walkId],
+  )[0];
+  const segments = db.all(
+    'SELECT id, kind, started_at, ended_at FROM walk_segment WHERE walk_id = ?',
+    [walkId],
+  );
+  const walk = trimWalkEnd(db, ctx, walkId, at);
+  return {
+    walk,
+    undo: () => {
+      if (before === undefined) {
+        return;
+      }
+      db.transaction(() => {
+        db.run('DELETE FROM walk_segment WHERE walk_id = ?', [walkId]);
+        for (const row of segments) {
+          db.run(
+            'INSERT INTO walk_segment (id, walk_id, kind, started_at, ended_at) VALUES (?, ?, ?, ?, ?)',
+            [
+              String(row['id']),
+              walkId,
+              String(row['kind']),
+              String(row['started_at']),
+              row['ended_at'] ?? null,
+            ],
+          );
+        }
+        db.run('UPDATE track_point SET excluded = 0 WHERE walk_id = ? AND excluded = ?', [
+          walkId,
+          TRIMMED_FIX,
+        ]);
+        db.run(
+          `UPDATE walk SET ended_at = ?, duration_s = ?, moving_s = ?, paused_s = ?, ride_s = ?,
+                  distance_m = ?, updated_at = ? WHERE id = ?`,
+          [
+            before['ended_at'] ?? null,
+            before['duration_s'] ?? null,
+            before['moving_s'] ?? null,
+            before['paused_s'] ?? null,
+            before['ride_s'] ?? 0,
+            before['distance_m'] ?? null,
+            toIso(ctx.now()),
+            walkId,
+          ],
+        );
+      });
+    },
+  };
+}

@@ -1,7 +1,10 @@
 import {
   clusterStays,
+  dbscan,
   filterTrack,
   findStays,
+  haversineDistanceM,
+  median,
   type LatLon,
   type Stay,
   type StayScaleName,
@@ -151,4 +154,68 @@ export function linkWalksToPlace(
     }
   });
   return linked;
+}
+
+export interface BaseProposal extends LatLon {
+  /** Remembers that the owner does not want a suggestion at this spot. */
+  readonly key: string;
+  /** Walks that began or ended here. */
+  readonly walkIds: readonly string[];
+}
+
+/** Walks must start or end within this distance of each other to share a base. */
+const BASE_REACH_M = 60;
+const BASE_MIN_WALKS = 3;
+
+/**
+ * Where the owner keeps starting and ending walks (D-62, 5.2): three or more recent walks that
+ * began or ended within 60 m of one spot. Spots that already lie in a saved place are left out
+ * (the owner has named them, a home among them is theirs to set). Most walks first.
+ */
+export function proposeBases(db: SqlDb, now: number, options: ProposeOptions = {}): BaseProposal[] {
+  const since = toIso(now - (options.sinceDays ?? 120) * DAY);
+  const walkIds = db
+    .all(
+      `SELECT id FROM walk
+        WHERE status = 'completed' AND mode = 'gps' AND deleted_at IS NULL AND started_at >= ?
+        ORDER BY started_at DESC LIMIT ?`,
+      [since, options.maxWalks ?? 80],
+    )
+    .map((r) => String(r['id']));
+  const ends: { lat: number; lon: number; walkId: string }[] = [];
+  for (const walkId of walkIds) {
+    const points = filterTrack(listTrackPoints(db, walkId)).points;
+    const first = points[0];
+    const last = points[points.length - 1];
+    if (first !== undefined && last !== undefined && points.length > 1) {
+      ends.push(
+        { lat: first.lat, lon: first.lon, walkId },
+        { lat: last.lat, lon: last.lon, walkId },
+      );
+    }
+  }
+  const saved = db
+    .all('SELECT lat, lon, radius_m FROM place WHERE deleted_at IS NULL')
+    .map((r) => ({ lat: Number(r['lat']), lon: Number(r['lon']), radiusM: Number(r['radius_m']) }));
+  const found: BaseProposal[] = [];
+  for (const cluster of dbscan(ends, BASE_REACH_M, BASE_MIN_WALKS).clusters) {
+    const members = cluster.flatMap((i) => (ends[i] === undefined ? [] : [ends[i]]));
+    const walks = [...new Set(members.map((m) => m.walkId))];
+    if (walks.length < BASE_MIN_WALKS) {
+      continue;
+    }
+    const centre = {
+      lat: median(members.map((m) => m.lat)),
+      lon: median(members.map((m) => m.lon)),
+    };
+    if (saved.some((p) => haversineDistanceM(centre, p) <= Math.max(p.radiusM, BASE_REACH_M))) {
+      continue;
+    }
+    found.push({
+      ...centre,
+      key: `base-suggest:${proposalKey(centre).split(':').slice(1).join(':')}`,
+      walkIds: walks,
+    });
+  }
+  return found.sort((a, b) => b.walkIds.length - a.walkIds.length);
 }

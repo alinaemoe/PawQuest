@@ -681,6 +681,8 @@ export const ru = {
   'pre.suggest': 'Вы здесь: {name}?',
 
   'place.suggest.cluster': 'Вы часто останавливаетесь здесь. Назвать место?',
+  'place.suggest.base':
+    'Здесь вы часто начинаете и заканчиваете прогулки. Это ваш дом? Назовите место, и прогулки станут «от дома до дома».',
   'place.suggest.type': 'Назвать это место?',
   'place.suggest.name': 'Назвать',
   'place.suggest.later': 'Не сейчас',

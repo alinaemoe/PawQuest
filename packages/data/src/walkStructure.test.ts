@@ -13,7 +13,7 @@ import {
 } from './recorder';
 import { START, testEnv, type TestEnv } from './test-utils';
 import { getWalk } from './walks';
-import { splitWalk, trimWalkEnd } from './walkStructure';
+import { splitWalk, trimWalkEnd, trimWalkEndUndoable } from './walkStructure';
 
 const M_PER_DEG = 111_195;
 const MIN = 60_000;
@@ -190,5 +190,32 @@ describe('splitWalk (S-11)', () => {
     expect(() => splitWalk(env.db, env.ctx, id, START)).toThrow(RangeError);
     expect(() => splitWalk(env.db, env.ctx, id, START + 30 * MIN)).toThrow(RangeError);
     expect(() => splitWalk(env.db, env.ctx, 'nope', START + MIN)).toThrow();
+  });
+});
+
+describe('trimWalkEndUndoable', () => {
+  it('takes the cut back: totals, segments and fixes as they were', () => {
+    const id = forgottenWalk();
+    const before = getWalk(env.db, id);
+    const fixes = listTrackPoints(env.db, id).length;
+    const segments = Number(
+      env.db.all('SELECT COUNT(*) AS n FROM walk_segment WHERE walk_id = ?', [id])[0]?.['n'],
+    );
+    const { walk, undo } = trimWalkEndUndoable(env.db, env.ctx, id, START + 10 * MIN);
+    expect(walk.durationS).toBe(600);
+    undo();
+    expect(getWalk(env.db, id)).toEqual(before);
+    expect(listTrackPoints(env.db, id)).toHaveLength(fixes);
+    expect(
+      Number(
+        env.db.all('SELECT COUNT(*) AS n FROM walk_segment WHERE walk_id = ?', [id])[0]?.['n'],
+      ),
+    ).toBe(segments);
+  });
+
+  it('trims again after an undo', () => {
+    const id = forgottenWalk();
+    trimWalkEndUndoable(env.db, env.ctx, id, START + 10 * MIN).undo();
+    expect(trimWalkEnd(env.db, env.ctx, id, START + 12 * MIN).durationS).toBe(720);
   });
 });

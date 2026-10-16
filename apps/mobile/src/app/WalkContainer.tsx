@@ -17,13 +17,14 @@ import {
   listWalkPhotos,
   panelEventTypes,
   pauseWalk,
+  proposeBases,
   proposePlaces,
   restore,
   resumeWalk,
   setWalkPlace,
   softDelete,
   splitWalkAroundStay,
-  trimWalkEnd,
+  trimWalkEndUndoable,
   updateEvent,
   updateWalk,
   walkAnchor,
@@ -364,7 +365,7 @@ function pausedMs(db: ReturnType<typeof useApp>['db'], walkId: string): number {
 
 /** The summary shown right after a walk (spec S05): numbers, how it went, one tap to save. */
 interface PlaceCard {
-  readonly kind: 'type' | 'cluster';
+  readonly kind: 'type' | 'cluster' | 'base';
   readonly at: { readonly lat: number; readonly lon: number };
   readonly category: PlaceCategory | null;
   /** The size proposed from the walks; null to use the type's default. */
@@ -432,6 +433,20 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
     if (isPromptHidden(db, 'place-suggest:daily', now)) {
       return null;
     }
+    // a spot where walks keep starting and ending, and this one did too: is it home?
+    const base = proposeBases(db, now).find(
+      (p) => p.walkIds.includes(walkId) && !isPromptHidden(db, p.key, now),
+    );
+    if (base !== undefined) {
+      return {
+        kind: 'base',
+        at: { lat: base.lat, lon: base.lon },
+        category: 'home',
+        radiusM: null,
+        walkIds: [],
+        key: base.key,
+      };
+    }
     const proposal = proposePlaces(db, now).find((p) => !isPromptHidden(db, p.key, now));
     return proposal === undefined
       ? null
@@ -446,7 +461,7 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
         };
   });
   useEffect(() => {
-    if (card?.kind === 'cluster') {
+    if (card?.kind === 'cluster' || card?.kind === 'base') {
       hidePrompt(db, ctx, 'place-suggest:daily', Date.now() + DAY);
     }
     // once, when the summary opens
@@ -492,13 +507,25 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
             return;
           }
           if (cut.kind === 'trim') {
-            trimWalkEnd(db, ctx, walkId, cut.at);
-          } else {
-            splitWalkAroundStay(db, ctx, walkId, cut.arrivedAt, cut.leftAt);
+            const { undo } = trimWalkEndUndoable(db, ctx, walkId, cut.at);
+            setCutDone(true);
+            bump();
+            toast.show({
+              message: i18n.t('cut.trimmed'),
+              actionLabel: i18n.t('common.undo'),
+              durationMs: 8000,
+              onAction: () => {
+                undo();
+                setCutDone(false);
+                bump();
+              },
+            });
+            return;
           }
+          splitWalkAroundStay(db, ctx, walkId, cut.arrivedAt, cut.leftAt);
           setCutDone(true);
           bump();
-          toast.show({ message: i18n.t(cut.kind === 'trim' ? 'cut.trimmed' : 'cut.splitted') });
+          toast.show({ message: i18n.t('cut.splitted') });
         }}
         onCutKeep={() => {
           hidePrompt(db, ctx, `walk-cut:${walkId}`, Date.now() + FOREVER);
@@ -507,7 +534,13 @@ export function WalkSummaryContainer({ walkId, onDone }: { walkId: string; onDon
         placeCard={
           shown
             ? {
-                text: i18n.t(card.kind === 'type' ? 'place.suggest.type' : 'place.suggest.cluster'),
+                text: i18n.t(
+                  card.kind === 'type'
+                    ? 'place.suggest.type'
+                    : card.kind === 'base'
+                      ? 'place.suggest.base'
+                      : 'place.suggest.cluster',
+                ),
                 canDecline: card.key !== null,
               }
             : null

@@ -2,7 +2,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createDog, type Dog } from './dogs';
 import { createPlace, getPlace } from './places';
-import { linkWalksToPlace, proposalKey, proposePlaces, walkAnchor } from './placeSuggest';
+import {
+  linkWalksToPlace,
+  proposalKey,
+  proposeBases,
+  proposePlaces,
+  walkAnchor,
+} from './placeSuggest';
 import { appendTrackPoints, finishWalk, startWalk, type TrackPointInput } from './recorder';
 import { START, testEnv, type TestEnv } from './test-utils';
 
@@ -339,5 +345,77 @@ describe('linkWalksToPlace', () => {
     expect(row(a)).toEqual({ place_id: place.id });
     expect(row(b)).toEqual({ place_id: other.id });
     expect(getPlace(env.db, place.id)).not.toBeNull();
+  });
+});
+
+describe('proposeBases (D-62, 5.2)', () => {
+  const HOME = { lat: 55.7, lon: 37.6 };
+
+  /** A walk that leaves `from`, goes north `out` seconds and comes back `back` seconds later. */
+  function loop(
+    from: { lat: number; lon: number },
+    dayOffset: number,
+    out = 200,
+    back = 200,
+  ): string {
+    const points: TrackPointInput[] = [];
+    let t = START + dayOffset * 86_400_000;
+    for (let i = 0; i <= out; i++, t += 1000) {
+      points.push({ ts: t, lat: from.lat + i * STEP, lon: from.lon, accuracyM: 5, speedMps: 1.1 });
+    }
+    for (let i = 1; i <= back; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: from.lat + (out - (i * out) / back) * STEP,
+        lon: from.lon,
+        accuracyM: 5,
+        speedMps: 1.1,
+      });
+    }
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    appendTrackPoints(env.db, walk.id, points);
+    finishWalk(env.db, env.ctx, walk.id, t);
+    return walk.id;
+  }
+  const NOW = START + 10 * 86_400_000;
+
+  it('three walks that start and end at one spot suggest a base there', () => {
+    const ids = [0, 1, 2].map((d) => loop(HOME, d));
+    const found = proposeBases(env.db, NOW);
+    expect(found).toHaveLength(1);
+    expect(found[0]?.walkIds.slice().sort()).toEqual(ids.slice().sort());
+    expect(Math.abs((found[0]?.lat ?? 0) - HOME.lat)).toBeLessThan(0.0001);
+  });
+
+  it('two walks are not yet a habit', () => {
+    loop(HOME, 0);
+    loop(HOME, 1);
+    expect(proposeBases(env.db, NOW)).toEqual([]);
+  });
+
+  it('walks that begin at one spot and end elsewhere still count by their starts', () => {
+    for (let d = 0; d < 3; d++) {
+      loop(HOME, d, 200, 100);
+    }
+    expect(proposeBases(env.db, NOW)).toHaveLength(1);
+  });
+
+  it('a spot that is already a saved place is left alone', () => {
+    [0, 1, 2].forEach((d) => loop(HOME, d));
+    createPlace(env.db, env.ctx, { category: 'yard', label: 'Двор', ...HOME });
+    expect(proposeBases(env.db, NOW)).toEqual([]);
+  });
+
+  it('walks from places far apart make no base', () => {
+    loop({ lat: 55.7, lon: 37.6 }, 0);
+    loop({ lat: 55.71, lon: 37.6 }, 1);
+    loop({ lat: 55.72, lon: 37.6 }, 2);
+    expect(proposeBases(env.db, NOW)).toEqual([]);
+  });
+
+  it('old walks, walks without a track and nothing at all give nothing', () => {
+    expect(proposeBases(env.db, NOW)).toEqual([]);
+    [0, 1, 2].forEach((d) => loop(HOME, d));
+    expect(proposeBases(env.db, NOW + 400 * 86_400_000)).toEqual([]);
   });
 });

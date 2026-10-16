@@ -197,8 +197,10 @@ export {
 export {
   linkWalksToPlace,
   proposalKey,
+  proposeBases,
   proposePlaces,
   walkAnchor,
+  type BaseProposal,
   type PlaceProposal,
   type ProposeOptions,
 } from './placeSuggest';
@@ -248,4 +250,10 @@ export {
   type WalkChronology,
 } from './chronology';
 export { walkRideSeconds } from './recorder';
-export { TRIMMED_FIX, splitWalk, splitWalkAroundStay, trimWalkEnd } from './walkStructure';
+export {
+  TRIMMED_FIX,
+  splitWalk,
+  splitWalkAroundStay,
+  trimWalkEnd,
+  trimWalkEndUndoable,
+} from './walkStructure';

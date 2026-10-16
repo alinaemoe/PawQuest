@@ -608,6 +608,8 @@ export const en = {
   'pre.suggest': 'You are at: {name}?',
 
   'place.suggest.cluster': 'You often stop here. Name this place?',
+  'place.suggest.base':
+    'You often start and end your walks here. Is this home? Name the place and walks will go from home to home.',
   'place.suggest.type': 'Name this place?',
   'place.suggest.name': 'Name it',
   'place.suggest.later': 'Not now',
