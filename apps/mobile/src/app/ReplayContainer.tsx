@@ -129,7 +129,6 @@ function ReplayBody({
   const { height } = useWindowDimensions();
   const { style: light, failed } = useMapStyle();
   const camera = useRef<CameraRef>(null);
-  const lastFollow = useRef(0);
 
   const [mode, setMode] = useState<ReplayAxisMode>('moving');
   const [axisMs, setAxisMs] = useState(0);
@@ -214,12 +213,23 @@ function ReplayBody({
     };
   }, [playing, speed, engine.lengthMs]);
 
-  // the camera follows the marker, not on every tick
+  // the camera follows the marker: every so often while playing, at once after a jump
+  const position = useRef<[number, number]>([frame.lon, frame.lat]);
+  position.current = [frame.lon, frame.lat];
   useEffect(() => {
-    const now = Date.now();
-    if (follow && playing && now - lastFollow.current > FOLLOW_EVERY_MS) {
-      lastFollow.current = now;
-      camera.current?.easeTo({ center: [frame.lon, frame.lat], duration: FOLLOW_EVERY_MS });
+    if (!follow) {
+      return;
+    }
+    const timer = setInterval(() => {
+      camera.current?.easeTo({ center: position.current, duration: FOLLOW_EVERY_MS });
+    }, FOLLOW_EVERY_MS);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [follow]);
+  useEffect(() => {
+    if (follow && !playing) {
+      camera.current?.easeTo({ center: [frame.lon, frame.lat], duration: 300 });
     }
   }, [follow, playing, frame.lon, frame.lat]);
 
@@ -278,7 +288,7 @@ function ReplayBody({
           justifyContent: 'space-between',
         }}
       >
-        <AppText variant="numBig" style={{ fontSize: 22, flexShrink: 1 }} numberOfLines={1}>
+        <AppText variant="numBig" style={{ fontSize: 18, flexShrink: 1 }} numberOfLines={1}>
           {i18n.t('replay.title')}
         </AppText>
         <Button label={i18n.t('replay.close')} tone="ghost" onPress={onClose} />

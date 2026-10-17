@@ -1,6 +1,6 @@
 import {
-  filterTrack,
-  haversineDistanceM,
+  applyFix,
+  initialTrackFilterState,
   simplifyTrack,
   speedProfile,
   type SpeedProfile,
@@ -72,25 +72,30 @@ export function walkReplay(db: SqlDb, walkId: string, now: number): WalkReplay |
   if (walk === null) {
     return null;
   }
-  const points: ReplayPointData[] = filterTrack(listTrackPoints(db, walkId)).points.map((p) => ({
-    ts: p.ts,
-    lat: p.lat,
-    lon: p.lon,
-    ...(p.speedMps === undefined ? {} : { speedMps: p.speedMps }),
-  }));
+  // the same filter as the walk's distance, so the distance in the replay ends where the walk's does
+  const points: ReplayPointData[] = [];
+  const cumulativeM: number[] = [];
+  let state = initialTrackFilterState();
+  let total = 0;
+  for (const fix of listTrackPoints(db, walkId)) {
+    const result = applyFix(state, fix);
+    state = result.state;
+    if (result.decision.kind === 'accepted') {
+      total += result.decision.distanceDeltaM;
+      cumulativeM.push(total);
+      points.push({
+        ts: fix.ts,
+        lat: fix.lat,
+        lon: fix.lon,
+        ...(fix.speedMps === undefined ? {} : { speedMps: fix.speedMps }),
+      });
+    }
+  }
   const first = points[0];
   const last = points[points.length - 1];
   if (first === undefined || last === undefined || points.length < 2) {
     return null;
   }
-  let total = 0;
-  const cumulativeM = points.map((point, i) => {
-    const previous = points[i - 1];
-    if (previous !== undefined) {
-      total += haversineDistanceM(previous, point);
-    }
-    return total;
-  });
   const kept = new Set(simplifyTrack(points, { epsilonM: 2 }));
   const line = points.filter((_, i) => kept.has(i)).map((p): [number, number] => [p.lon, p.lat]);
 
