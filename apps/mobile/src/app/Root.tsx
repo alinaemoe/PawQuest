@@ -401,6 +401,7 @@ export function Root() {
             palette={settings.palette}
             scheme={settings.scheme}
             haptics={settings.haptics}
+            autoFinish={settings.autoFinishAtHome}
             onLanguage={(language) => {
               app.updateSetting('language', language);
             }}
@@ -415,6 +416,9 @@ export function Root() {
             }}
             onHaptics={(on) => {
               app.updateSetting('haptics', on);
+            }}
+            onAutoFinish={(on) => {
+              app.updateSetting('autoFinishAtHome', on);
             }}
             trashCount={listTrash(app.db).length}
             incompleteCount={countIncompleteEvents(app.db, dog.id)}

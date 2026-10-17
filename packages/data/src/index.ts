@@ -244,6 +244,8 @@ export {
 } from './photos';
 export { MIN_CALM_MS, weekBounds, weekRecap, type CalmMoment, type WeekRecap } from './recap';
 export {
+  AUTO_FINISH_STAY_S,
+  autoFinishAtBase,
   walkBaseArrival,
   walkChronology,
   walkCutSuggestion,

@@ -7,7 +7,13 @@ import {
   type CameraRef,
 } from '@maplibre/maplibre-react-native';
 import { positionAt, simplifyTrack } from '@pawquest/core';
-import { listEventTypes, walkReplay, type WalkReplay } from '@pawquest/data';
+import {
+  getWalk,
+  listEventTypes,
+  trimWalkEndUndoable,
+  walkReplay,
+  type WalkReplay,
+} from '@pawquest/data';
 import { AppText, Button, Chip, useI18n, useTheme, type EventKind } from '@pawquest/rn-ui';
 import {
   eventTypeLabel,
@@ -74,14 +80,22 @@ export function ReplayButton({ walkId }: { readonly walkId: string }) {
 }
 
 function ReplayModal({ walkId, onClose }: { walkId: string; onClose: () => void }) {
-  const { db } = useApp();
-  const replay = useMemo(() => walkReplay(db, walkId, Date.now()), [db, walkId]);
+  const { db, bump } = useApp();
+  const [rev, setRev] = useState(0);
+  const replay = useMemo(() => walkReplay(db, walkId, Date.now()), [db, walkId, rev]);
   return (
     <Modal visible animationType="slide" onRequestClose={onClose}>
       {replay === null ? (
         <ReplayEmpty onClose={onClose} />
       ) : (
-        <ReplayBody replay={replay} onClose={onClose} />
+        <ReplayBody
+          replay={replay}
+          onClose={onClose}
+          onChanged={() => {
+            setRev((r) => r + 1);
+            bump();
+          }}
+        />
       )}
     </Modal>
   );
@@ -98,8 +112,17 @@ function ReplayEmpty({ onClose }: { onClose: () => void }) {
   );
 }
 
-function ReplayBody({ replay, onClose }: { replay: WalkReplay; onClose: () => void }) {
-  const { db } = useApp();
+function ReplayBody({
+  replay,
+  onClose,
+  onChanged,
+}: {
+  replay: WalkReplay;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const { db, ctx } = useApp();
+  const [undo, setUndo] = useState<{ time: number; run: () => void } | null>(null);
   const i18n = useI18n();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -255,7 +278,7 @@ function ReplayBody({ replay, onClose }: { replay: WalkReplay; onClose: () => vo
           justifyContent: 'space-between',
         }}
       >
-        <AppText variant="numBig" style={{ fontSize: 24 }}>
+        <AppText variant="numBig" style={{ fontSize: 22, flexShrink: 1 }} numberOfLines={1}>
           {i18n.t('replay.title')}
         </AppText>
         <Button label={i18n.t('replay.close')} tone="ghost" onPress={onClose} />
@@ -418,6 +441,37 @@ function ReplayBody({ replay, onClose }: { replay: WalkReplay; onClose: () => vo
           onSpeed={setSpeed}
           onMode={changeMode}
         />
+        {undo === null ? (
+          getWalk(db, replay.walkId)?.status === 'completed' &&
+          frame.wallTs < replay.endTs - 1000 ? (
+            <Button
+              label={i18n.t('replay.finishHere')}
+              tone="ghost"
+              onPress={() => {
+                try {
+                  const done = trimWalkEndUndoable(db, ctx, replay.walkId, frame.wallTs);
+                  setUndo({ time: frame.wallTs, run: done.undo });
+                  onChanged();
+                } catch {
+                  // the moment cannot be an end (outside the walk): nothing is cut
+                }
+              }}
+            />
+          ) : null
+        ) : (
+          <View style={{ gap: 6 }}>
+            <AppText>{i18n.t('replay.finishedHere', { time: i18n.formatTime(undo.time) })}</AppText>
+            <Button
+              label={i18n.t('replay.undo')}
+              tone="ghost"
+              onPress={() => {
+                undo.run();
+                setUndo(null);
+                onChanged();
+              }}
+            />
+          </View>
+        )}
         <PhotoStrip
           photos={replay.photos}
           onOpen={(index) => {

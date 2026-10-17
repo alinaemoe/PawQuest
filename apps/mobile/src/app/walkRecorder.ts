@@ -5,6 +5,7 @@ import { appendTrackPoints, getRunningWalkId } from '@pawquest/data';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
+import { maybeAutoFinish } from './autoFinish';
 import { getRuntime } from './runtime';
 
 export const WALK_TASK = 'pawquest-walk-gps';
@@ -13,7 +14,7 @@ TaskManager.defineTask<{ locations: Location.LocationObject[] }>(WALK_TASK, ({ d
   if (error !== null || data.locations.length === 0) {
     return Promise.resolve();
   }
-  const { db } = getRuntime();
+  const { db, ctx } = getRuntime();
   const walkId = getRunningWalkId(db);
   if (walkId === null) {
     return Promise.resolve();
@@ -30,7 +31,8 @@ TaskManager.defineTask<{ locations: Location.LocationObject[] }>(WALK_TASK, ({ d
       speedMps: l.coords.speed,
     })),
   );
-  return Promise.resolve();
+  // came home and forgot to press "finish": the walk ends by itself (see autoFinish.ts)
+  return maybeAutoFinish(db, ctx, stopGpsUpdates).then(() => undefined);
 });
 
 export type GpsPermission = 'ok' | 'foreground-only' | 'denied';

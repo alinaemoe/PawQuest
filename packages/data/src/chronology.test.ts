@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { walkBaseArrival, walkChronology, walkCutSuggestion } from './chronology';
+import {
+  AUTO_FINISH_STAY_S,
+  autoFinishAtBase,
+  walkBaseArrival,
+  walkChronology,
+  walkCutSuggestion,
+} from './chronology';
 import { createDog, type Dog } from './dogs';
 import { createPlace } from './places';
 import { appendTrackPoints, finishWalk, startWalk, type TrackPointInput } from './recorder';
@@ -242,5 +248,88 @@ describe('walkCutSuggestion (S-11)', () => {
     expect(walkCutSuggestion(env.db, 'nope', START)).toBeNull();
     const running = startWalk(env.db, env.ctx, { dogId: dog.id });
     expect(walkCutSuggestion(env.db, running.id, START)).toBeNull();
+  });
+});
+
+describe('autoFinishAtBase', () => {
+  const HOME = { lat: 55.7, lon: 37.6 };
+
+  /** A running walk: 150 s walking home from afar, then `stayS` seconds around the flat (GPS wanders a little). */
+  function homecoming(stayS: number): string {
+    const points: TrackPointInput[] = [];
+    let t = START;
+    for (let i = 0; i < 150; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: HOME.lat - (150 - i) * STEP,
+        lon: HOME.lon,
+        accuracyM: 5,
+        speedMps: 1.2,
+      });
+    }
+    for (let i = 0; i < stayS; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: HOME.lat + Math.sin(i / 7) * 0.000012,
+        lon: HOME.lon + Math.cos(i / 5) * 0.000012,
+        accuracyM: 8,
+        speedMps: i % 3 === 0 ? 0.4 : 0.1,
+      });
+    }
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    appendTrackPoints(env.db, walk.id, points);
+    return walk.id;
+  }
+  const home = () =>
+    createPlace(env.db, env.ctx, { name: 'Дом', category: 'home', label: 'Дом', ...HOME });
+
+  it('comes home, walks around the flat for five minutes: the walk ends at the moment of arrival', () => {
+    home();
+    const id = homecoming(AUTO_FINISH_STAY_S + 60);
+    const done = autoFinishAtBase(
+      env.db,
+      env.ctx,
+      id,
+      START + 150_000 + (AUTO_FINISH_STAY_S + 60) * 1000,
+    );
+    expect(done?.placeName).toBe('Дом');
+    expect(done?.walk.status).toBe('completed');
+    expect(done?.walk.endedAt).toBe(done?.arrivedAt);
+    expect(done?.arrivedAt).toBeGreaterThanOrEqual(START + 100_000);
+    expect(done?.arrivedAt).toBeLessThanOrEqual(START + 200_000);
+    expect(done?.walk.durationS).toBeLessThan(220);
+  });
+
+  it('a shorter stay, a place that is not a base, or no home at all: nothing happens', () => {
+    home();
+    const short = homecoming(120);
+    expect(autoFinishAtBase(env.db, env.ctx, short, START + 150_000 + 120_000)).toBeNull();
+  });
+
+  it('a shop is not home', () => {
+    createPlace(env.db, env.ctx, { name: 'Магазин', category: 'shop', label: 'Магазин', ...HOME });
+    const id = homecoming(AUTO_FINISH_STAY_S + 60);
+    expect(autoFinishAtBase(env.db, env.ctx, id, START + 600_000)).toBeNull();
+  });
+
+  it('standing at the door before setting off is not coming home; a finished or unknown walk is left alone', () => {
+    home();
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    const points: TrackPointInput[] = Array.from({ length: 400 }, (_, i) => ({
+      ts: START + i * 1000,
+      lat: HOME.lat,
+      lon: HOME.lon,
+      accuracyM: 5,
+      speedMps: 0,
+    }));
+    appendTrackPoints(env.db, walk.id, points);
+    expect(autoFinishAtBase(env.db, env.ctx, walk.id, START + 400_000)).toBeNull();
+    expect(autoFinishAtBase(env.db, env.ctx, 'nope', START)).toBeNull();
+    const manual = createManualWalk(env.db, env.ctx, {
+      dogId: dog.id,
+      startedAt: START,
+      durationS: 600,
+    });
+    expect(autoFinishAtBase(env.db, env.ctx, manual.id, START)).toBeNull();
   });
 });

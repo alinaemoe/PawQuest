@@ -23,6 +23,8 @@ export interface AppSettings {
   /** `system` follows the phone. */
   scheme: 'system' | 'light' | 'dark';
   haptics: boolean;
+  /** A walk ends by itself when the owner came home and stayed there. */
+  autoFinishAtHome: boolean;
   onboardingDone: boolean;
   activeDogId: string | null;
   goals: GoalKey[];
@@ -38,6 +40,7 @@ export const DEFAULT_SETTINGS: Readonly<AppSettings> = {
   palette: 'forest',
   scheme: 'system',
   haptics: true,
+  autoFinishAtHome: true,
   onboardingDone: false,
   activeDogId: null,
   goals: [],
@@ -61,6 +64,7 @@ const VALIDATORS: Validators = {
   palette: isOneOf(PALETTE_KEYS),
   scheme: isOneOf(['system', 'light', 'dark'] as const),
   haptics: (v): v is boolean => typeof v === 'boolean',
+  autoFinishAtHome: (v): v is boolean => typeof v === 'boolean',
   onboardingDone: (v): v is boolean => typeof v === 'boolean',
   activeDogId: (v): v is string | null => v === null || typeof v === 'string',
   goals: (v): v is GoalKey[] => isStringArray(v) && v.every((g) => isOneOf(GOAL_KEYS)(g)),

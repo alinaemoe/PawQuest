@@ -64,6 +64,7 @@ import { draftOfEvent, saveObservation } from './observation';
 import { NewPlaceFlow } from './NewPlaceFlow';
 import { markLook } from './QuickMarksContainer';
 import { takePhoto } from './photoCapture';
+import { maybeAutoFinish } from './autoFinish';
 import { ReplayButton } from './ReplayContainer';
 import { WalkRouteMap } from './RouteMap';
 import { WalkPhotos } from './WalkPhotos';
@@ -138,6 +139,16 @@ export function WalkContainer({
   const [arrivalTick, setArrivalTick] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => {
+      // the walk may have ended by itself in the background (came home and forgot): show its summary
+      if (getWalk(db, walk.id)?.status === 'completed') {
+        onFinished(walk.id);
+        return;
+      }
+      void maybeAutoFinish(db, ctx, stopGpsUpdates).then((id) => {
+        if (id !== null) {
+          onFinished(id);
+        }
+      });
       setArrivalTick((t) => t + 1);
     }, 60_000);
     return () => {

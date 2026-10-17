@@ -7,15 +7,17 @@ import {
   filterTrack,
   findRides,
   type BaseArrival,
+  type BaseArrivalOptions,
   type ChronoPlace,
   type ChronoStep,
 } from '@pawquest/core';
 
+import type { Ctx } from './ids';
 import { isBasePlace, listPlaces } from './places';
 import { staysOfWalk } from './placeSuggest';
-import { lastTrackPoint, listTrackPoints } from './recorder';
+import { finishWalk, lastTrackPoint, listTrackPoints } from './recorder';
 import type { SqlDb } from './sql';
-import { getWalk } from './walks';
+import { getWalk, type Walk } from './walks';
 import { listIndoor } from './walkStructure';
 
 export interface WalkChronology {
@@ -74,7 +76,12 @@ export interface WalkBaseArrival extends BaseArrival {
  * Whether a running walk now stands in a base (home, guests) long enough to ask "Finish the
  * walk?" (D-62, 5.1): the base, when the owner arrived there and how long they have been there.
  */
-export function walkBaseArrival(db: SqlDb, walkId: string, now: number): WalkBaseArrival | null {
+export function walkBaseArrival(
+  db: SqlDb,
+  walkId: string,
+  now: number,
+  options: BaseArrivalOptions = {},
+): WalkBaseArrival | null {
   const chronology = walkChronology(db, walkId, now);
   const last = lastTrackPoint(db, walkId);
   if (chronology === null || last === null) {
@@ -82,7 +89,7 @@ export function walkBaseArrival(db: SqlDb, walkId: string, now: number): WalkBas
   }
   const places = listPlaces(db);
   const bases = new Set(places.filter((p) => isBasePlace(p.category)).map((p) => p.id));
-  const found = baseArrival(chronology.steps, bases, last.ts);
+  const found = baseArrival(chronology.steps, bases, last.ts, options);
   return found === null
     ? null
     : { ...found, placeName: chronology.placeNames.get(found.placeId) ?? '' };
@@ -139,4 +146,31 @@ export function walkCutSuggestion(
     placeName,
     stayS: visit.durationS,
   };
+}
+
+/** Standing in a base this long, after coming from somewhere, ends the walk by itself (5 min). */
+export const AUTO_FINISH_STAY_S = 300;
+
+/**
+ * The walk ends by itself when the owner came home and stayed there (the owner forgets to press
+ * "finish" and walks around the flat): a running GPS walk that now stands in a base for
+ * `AUTO_FINISH_STAY_S` is finished at the moment of arrival, so the time spent at home is not
+ * part of it. Returns what was done, or null when nothing was.
+ */
+export function autoFinishAtBase(
+  db: SqlDb,
+  ctx: Ctx,
+  walkId: string,
+  now: number,
+): { readonly walk: Walk; readonly placeName: string; readonly arrivedAt: number } | null {
+  const walk = getWalk(db, walkId);
+  if (walk?.mode !== 'gps' || walk.status !== 'active') {
+    return null;
+  }
+  const arrival = walkBaseArrival(db, walkId, now, { minStayS: AUTO_FINISH_STAY_S });
+  if (arrival === null) {
+    return null;
+  }
+  const done = finishWalk(db, ctx, walkId, arrival.arrivedAt);
+  return { walk: done, placeName: arrival.placeName, arrivedAt: arrival.arrivedAt };
 }

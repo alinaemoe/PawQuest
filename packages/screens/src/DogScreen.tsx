@@ -26,11 +26,13 @@ export interface DogScreenProps {
   readonly palette: PaletteKey;
   readonly scheme: SchemeMode;
   readonly haptics: boolean;
+  readonly autoFinish: boolean;
   readonly onLanguage: (language: Locale) => void;
   readonly onUnits: (units: UnitSystem) => void;
   readonly onPalette: (palette: PaletteKey) => void;
   readonly onScheme: (scheme: SchemeMode) => void;
   readonly onHaptics: (on: boolean) => void;
+  readonly onAutoFinish: (on: boolean) => void;
   readonly trashCount: number;
   readonly incompleteCount: number;
   readonly onTrash: () => void;
@@ -187,6 +189,12 @@ export function DogScreen(props: DogScreenProps) {
         value={props.haptics}
         onValueChange={props.onHaptics}
       />
+      <SwitchRow
+        label={i18n.t('dog.autoFinish')}
+        value={props.autoFinish}
+        onValueChange={props.onAutoFinish}
+      />
+      <AppText variant="muted">{i18n.t('dog.autoFinishHint')}</AppText>
 
       <Section title={i18n.t('dog.data')}>
         <ListRow
