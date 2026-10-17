@@ -62,6 +62,7 @@ export function ReplayButton({ walkId }: { readonly walkId: string }) {
     <>
       <Button
         label={i18n.t('replay.open')}
+        icon="play"
         tone="ghost"
         onPress={() => {
           setOpen(true);

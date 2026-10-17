@@ -11,6 +11,8 @@ const ICONS = {
   pause:
     '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
   play: '<path d="M7 4l13 8-13 8z"/>',
+  skipBack: '<path d="M6 5v14M19 5L9 12l10 7z"/>',
+  skipForward: '<path d="M18 5v14M5 5l10 7-10 7z"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   check: '<path d="M5 12l5 5 9-10"/>',

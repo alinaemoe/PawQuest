@@ -8,7 +8,7 @@ import {
 } from '@maplibre/maplibre-react-native';
 import { filterTrack, simplifyTrack } from '@pawquest/core';
 import { listEventTypes, listTrackPoints } from '@pawquest/data';
-import { AppText, useI18n, useTheme, type EventKind } from '@pawquest/rn-ui';
+import { AppText, Icon, useI18n, useTheme, type EventKind } from '@pawquest/rn-ui';
 import { darkenMapStyle } from '@pawquest/ui';
 import { useEffect, useMemo, useRef } from 'react';
 import { View } from 'react-native';
@@ -47,11 +47,7 @@ function EventMarkerShape({ kind, color }: { kind: EventKind; color: string }) {
     );
   }
   if (shape === 'star') {
-    return (
-      <AppText style={{ color, fontSize: 22, lineHeight: 24 }} accessibilityElementsHidden>
-        ★
-      </AppText>
-    );
+    return <Icon name="star" color={color} size={24} strokeWidth={2.6} />;
   }
   return (
     <View

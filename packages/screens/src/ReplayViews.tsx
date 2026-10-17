@@ -24,109 +24,134 @@ const SLIDER_HEIGHT = 44;
 export function ReplaySlider({ engine, value, onChange, onTick }: ReplaySliderProps) {
   const { colors } = useTheme().theme;
   const [width, setWidth] = useState(1);
-  const widthRef = useRef(1);
-  const emit = useRef(onChange);
-  emit.current = onChange;
+  const box = useRef<View>(null);
+  // the position of the slider on the screen; a touch is measured from it, not from the part of
+  // the slider that happens to be under the finger (that made the handle jump back)
+  const frame = useRef({ left: 0, width: 1 });
+  const live = useRef({ onChange, onTick, ticks: engine.ticks });
+  live.current = { onChange, onTick, ticks: engine.ticks };
+  const fractionOf = (pageX: number): number =>
+    Math.min(1, Math.max(0, (pageX - frame.current.left) / frame.current.width));
+  const measure = (): void => {
+    box.current?.measureInWindow((left, _top, measuredWidth) => {
+      frame.current = { left, width: Math.max(1, measuredWidth) };
+    });
+  };
   const pan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: (e) => {
-        emit.current(Math.min(1, Math.max(0, e.nativeEvent.locationX / widthRef.current)));
+        measure();
+        live.current.onChange(fractionOf(e.nativeEvent.pageX));
       },
       onPanResponderMove: (e) => {
-        emit.current(Math.min(1, Math.max(0, e.nativeEvent.locationX / widthRef.current)));
+        live.current.onChange(fractionOf(e.nativeEvent.pageX));
+      },
+      onPanResponderRelease: (e, gesture) => {
+        // a tap near a mark of an event or a photo jumps to it
+        if (Math.abs(gesture.dx) > 8 || Math.abs(gesture.dy) > 8) {
+          return;
+        }
+        const at = fractionOf(e.nativeEvent.pageX);
+        const reach = 16 / frame.current.width;
+        let best: ReplayTick | undefined;
+        for (const tick of live.current.ticks) {
+          if (
+            Math.abs(tick.at - at) <= reach &&
+            (best === undefined || Math.abs(tick.at - at) < Math.abs(best.at - at))
+          ) {
+            best = tick;
+          }
+        }
+        if (best !== undefined) {
+          live.current.onTick(best);
+        }
       },
     }),
   ).current;
   const x = (fraction: number): number => fraction * width;
   return (
     <View
+      ref={box}
       accessible
       accessibilityRole="adjustable"
       accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}
       onLayout={(e) => {
-        widthRef.current = Math.max(1, e.nativeEvent.layout.width);
-        setWidth(widthRef.current);
+        setWidth(Math.max(1, e.nativeEvent.layout.width));
+        measure();
       }}
       style={{ height: SLIDER_HEIGHT, justifyContent: 'center' }}
       {...pan.panHandlers}
     >
-      <View style={{ height: 8, borderRadius: 4, backgroundColor: colors.surface2 }} />
-      {engine.passes.map((p) => (
+      <View pointerEvents="none" style={{ height: SLIDER_HEIGHT, justifyContent: 'center' }}>
+        <View style={{ height: 8, borderRadius: 4, backgroundColor: colors.surface2 }} />
+        {engine.passes.map((p) => (
+          <View
+            key={`${String(p.from)}-${p.pass.routeId}`}
+            style={{
+              position: 'absolute',
+              left: x(p.from),
+              width: Math.max(3, x(p.to - p.from)),
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: colors.accentSoft,
+            }}
+          />
+        ))}
+        {engine.hidden.map((h) => (
+          <View
+            key={`h${String(h.from)}`}
+            style={{
+              position: 'absolute',
+              left: x(h.from),
+              width: Math.max(2, x(h.to - h.from)),
+              height: 8,
+              backgroundColor: colors.line,
+              opacity: 0.8,
+            }}
+          />
+        ))}
         <View
-          key={`${String(p.from)}-${p.pass.routeId}`}
-          pointerEvents="none"
           style={{
             position: 'absolute',
-            left: x(p.from),
-            width: Math.max(3, x(p.to - p.from)),
+            left: 0,
+            width: x(value),
             height: 8,
             borderRadius: 4,
-            backgroundColor: colors.accentSoft,
+            backgroundColor: colors.accent,
           }}
         />
-      ))}
-      {engine.hidden.map((h) => (
+        {engine.ticks.map((tick) => (
+          <View
+            key={tick.key}
+            style={{
+              position: 'absolute',
+              left: x(tick.at) - 5,
+              top: tick.kind === 'event' ? 2 : SLIDER_HEIGHT - 16,
+              width: 10,
+              height: 14,
+              borderRadius: tick.kind === 'event' ? 2 : 7,
+              backgroundColor: tick.kind === 'event' ? colors.ink : colors.accent,
+              borderWidth: 1,
+              borderColor: colors.surface,
+            }}
+          />
+        ))}
         <View
-          key={`h${String(h.from)}`}
-          pointerEvents="none"
           style={{
             position: 'absolute',
-            left: x(h.from),
-            width: Math.max(2, x(h.to - h.from)),
-            height: 8,
-            backgroundColor: colors.line,
-            opacity: 0.8,
-          }}
-        />
-      ))}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          left: 0,
-          width: x(value),
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: colors.accent,
-        }}
-      />
-      {engine.ticks.map((tick) => (
-        <Pressable
-          key={tick.key}
-          accessibilityRole="button"
-          accessibilityLabel={tick.kind}
-          hitSlop={8}
-          onPress={() => {
-            onTick(tick);
-          }}
-          style={{
-            position: 'absolute',
-            left: x(tick.at) - 5,
-            top: tick.kind === 'event' ? 2 : SLIDER_HEIGHT - 16,
-            width: 10,
-            height: 14,
-            borderRadius: tick.kind === 'event' ? 2 : 7,
-            backgroundColor: tick.kind === 'event' ? colors.ink : colors.accent,
-            borderWidth: 1,
+            left: x(value) - 8,
+            width: 16,
+            height: 16,
+            borderRadius: 8,
+            backgroundColor: colors.accent,
+            borderWidth: 2,
             borderColor: colors.surface,
           }}
         />
-      ))}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          left: x(value) - 8,
-          width: 16,
-          height: 16,
-          borderRadius: 8,
-          backgroundColor: colors.accent,
-          borderWidth: 2,
-          borderColor: colors.surface,
-        }}
-      />
+      </View>
     </View>
   );
 }
@@ -150,7 +175,8 @@ export function ReplayControls(props: ReplayControlsProps) {
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
         <Chip
-          label="⏮"
+          icon="skipBack"
+          label={i18n.t('replay.prevEvent')}
           onPress={() => {
             props.onEvent('previous');
           }}
@@ -163,6 +189,7 @@ export function ReplayControls(props: ReplayControlsProps) {
         />
         <View style={{ flex: 1 }}>
           <Button
+            icon={props.playing ? 'pause' : 'play'}
             label={props.playing ? i18n.t('replay.pause') : i18n.t('replay.play')}
             onPress={props.onPlay}
           />
@@ -174,7 +201,8 @@ export function ReplayControls(props: ReplayControlsProps) {
           }}
         />
         <Chip
-          label="⏭"
+          icon="skipForward"
+          label={i18n.t('replay.nextEvent')}
           onPress={() => {
             props.onEvent('next');
           }}
