@@ -36,6 +36,7 @@ import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 import { useApp } from './AppContext';
+import { GpxButton } from './ExportContainer';
 import { ReplayButton } from './ReplayContainer';
 import { WalkRouteMap } from './RouteMap';
 import { WalkPhotos } from './WalkPhotos';
@@ -130,6 +131,7 @@ export function WalksTab() {
             <View style={{ gap: 8 }}>
               <WalkRouteMap walkId={open.id} mode="fit" height={200} />
               <ReplayButton walkId={open.id} />
+              <GpxButton walkId={open.id} />
             </View>
           )
         }

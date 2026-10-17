@@ -35,6 +35,7 @@ import { useDerivedRefresh } from './useDerivedRefresh';
 import { QuickMarksContainer } from './QuickMarksContainer';
 import { TodayContainer } from './TodayContainer';
 import { TrashContainer } from './TrashContainer';
+import { ExportContainer } from './ExportContainer';
 import { WalkContainer, WalkSummaryContainer } from './WalkContainer';
 import { startGpsUpdates } from './walkRecorder';
 import { WalksTab } from './WalksTab';
@@ -87,6 +88,7 @@ export function Root() {
   const [prewalk, setPrewalk] = useState(false);
   const [keepAwake, setKeepAwake] = useState(false);
   const [summaryWalkId, setSummaryWalkId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const careFlow = (
     <CareFlow
       target={care}
@@ -446,6 +448,9 @@ export function Root() {
             onMarks={() => {
               setOverlay({ kind: 'marks' });
             }}
+            onExport={() => {
+              setExporting(true);
+            }}
             onEditProfile={() => {
               setEditingDog(true);
             }}
@@ -478,6 +483,12 @@ export function Root() {
           updateDog(app.db, app.ctx, dog.id, edit);
           setEditingDog(false);
           app.bump();
+        }}
+      />
+      <ExportContainer
+        visible={exporting}
+        onClose={() => {
+          setExporting(false);
         }}
       />
       {careFlow}

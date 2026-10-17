@@ -264,3 +264,4 @@ export {
   ReplaySlider,
   SpeedSummaryView,
 } from './ReplayViews';
+export { ExportSheet, type ExportKind, type ExportSheetProps } from './ExportSheet';

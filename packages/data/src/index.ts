@@ -335,3 +335,14 @@ export {
   type ReplayPointData,
   type WalkReplay,
 } from './replay';
+export {
+  BACKUP_FORMAT,
+  BACKUP_VERSION,
+  backupChunks,
+  backupTables,
+  exportBackup,
+  restoreBackup,
+  summarizeBackup,
+  type BackupSummary,
+} from './backup';
+export { CSV_BOM, csvField, eventsCsv, walkGpx, walksCsv } from './export';

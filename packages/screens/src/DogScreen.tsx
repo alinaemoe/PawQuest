@@ -40,6 +40,7 @@ export interface DogScreenProps {
   readonly onHealth: () => void;
   readonly onPlaces: () => void;
   readonly onMarks: () => void;
+  readonly onExport: () => void;
   readonly onAlbum: () => void;
   readonly onRoutes: () => void;
   readonly onRecap: () => void;
@@ -243,6 +244,12 @@ export function DogScreen(props: DogScreenProps) {
             ) : undefined
           }
           onPress={props.onDiary}
+        />
+        <ListRow
+          icon="note"
+          title={i18n.t('dog.export')}
+          subtitle={i18n.t('dog.exportHint')}
+          onPress={props.onExport}
         />
         <ListRow
           icon="trash"
