@@ -70,11 +70,13 @@ export {
   chronologyTitle,
   forgottenBaseStay,
   placeContaining,
+  startSpotArrival,
   visitsByPlace,
 } from './track/chronology';
 export type {
   BaseArrival,
   BaseArrivalOptions,
+  StartSpotOptions,
   ChronoLeg,
   ChronoPlace,
   ChronoRide,

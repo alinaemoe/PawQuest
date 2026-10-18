@@ -247,6 +247,7 @@ export {
   AUTO_FINISH_STAY_S,
   autoFinishAtBase,
   walkBaseArrival,
+  walkStartSpotArrival,
   walkChronology,
   walkCutSuggestion,
   type WalkCutSuggestion,

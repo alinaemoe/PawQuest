@@ -3,11 +3,14 @@ import {
   buildChronology,
   chronologyTitle,
   placeContaining,
+  startSpotArrival,
   forgottenBaseStay,
   filterTrack,
   findRides,
+  haversineDistanceM,
   type BaseArrival,
   type BaseArrivalOptions,
+  type StartSpotOptions,
   type ChronoPlace,
   type ChronoStep,
 } from '@pawquest/core';
@@ -93,6 +96,31 @@ export function walkBaseArrival(
   return found === null
     ? null
     : { ...found, placeName: chronology.placeNames.get(found.placeId) ?? '' };
+}
+
+/**
+ * "You are back where you started": for an owner with no home marked, the running walk stands
+ * where it began after going away (see `startSpotArrival`). `placeName` is empty and `lat`/`lon`
+ * is the spot, so the app can offer to mark it as "Дом".
+ */
+export function walkStartSpotArrival(
+  db: SqlDb,
+  walkId: string,
+  now: number,
+  options: StartSpotOptions = {},
+): (WalkBaseArrival & { readonly lat: number; readonly lon: number }) | null {
+  const chronology = walkChronology(db, walkId, now);
+  const last = lastTrackPoint(db, walkId);
+  const track = listTrackPoints(db, walkId);
+  const start = track[0];
+  if (chronology === null || last === null || start === undefined) {
+    return null;
+  }
+  const farthestM = Math.max(...track.map((p) => haversineDistanceM(start, p)));
+  const found = startSpotArrival(chronology.steps, start, farthestM, last.ts, options);
+  return found === null
+    ? null
+    : { ...found, placeName: '', lat: found.visit.lat, lon: found.visit.lon };
 }
 
 export type WalkCutSuggestion =

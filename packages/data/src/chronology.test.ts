@@ -4,6 +4,7 @@ import {
   AUTO_FINISH_STAY_S,
   autoFinishAtBase,
   walkBaseArrival,
+  walkStartSpotArrival,
   walkChronology,
   walkCutSuggestion,
 } from './chronology';
@@ -331,5 +332,53 @@ describe('autoFinishAtBase', () => {
       durationS: 600,
     });
     expect(autoFinishAtBase(env.db, env.ctx, manual.id, START)).toBeNull();
+  });
+});
+
+describe('walkStartSpotArrival', () => {
+  /** A running walk: 100 s at the door, 600 s walking away (900 m), 600 s back, then `stayS` standing. */
+  function loop(stayS: number, farM = 900): string {
+    const points: TrackPointInput[] = [];
+    const HOME = { lat: 55.8, lon: 37.5 };
+    let t = START;
+    const fix = (northM: number, speed: number) => {
+      points.push({
+        ts: t,
+        lat: HOME.lat + northM / 111_195 + (speed === 0 ? (t % 3000) * 1e-9 : 0),
+        lon: HOME.lon,
+        accuracyM: 5,
+        speedMps: speed,
+      });
+      t += 1000;
+    };
+    for (let i = 0; i < 100; i++) fix(0, 0);
+    for (let i = 0; i < 600; i++) fix((farM * i) / 600, 1.5);
+    for (let i = 0; i < 600; i++) fix(farM - (farM * i) / 600, 1.5);
+    for (let i = 0; i < stayS; i++) fix(0, 0);
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    appendTrackPoints(env.db, walk.id, points);
+    return walk.id;
+  }
+
+  it('asks after ten minutes back at the start, with no home marked, giving the spot', () => {
+    const id = loop(700);
+    const found = walkStartSpotArrival(env.db, id, START + 2_000_000);
+    expect(found?.placeName).toBe('');
+    expect(found?.stayS).toBeGreaterThan(600);
+    expect(found?.lat).toBeCloseTo(55.8, 3);
+    expect(walkBaseArrival(env.db, id, START + 2_000_000)).toBeNull();
+  });
+
+  it('a short stay is not asked about', () => {
+    expect(walkStartSpotArrival(env.db, loop(300), START + 1_700_000)).toBeNull();
+  });
+
+  it('a short way out is not asked about', () => {
+    expect(walkStartSpotArrival(env.db, loop(700, 80), START + 2_000_000)).toBeNull();
+  });
+
+  it('a walk with nothing recorded has nothing to ask', () => {
+    const empty = startWalk(env.db, env.ctx, { dogId: dog.id });
+    expect(walkStartSpotArrival(env.db, empty.id, START)).toBeNull();
   });
 });

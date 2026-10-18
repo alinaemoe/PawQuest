@@ -41,6 +41,14 @@ export const en = {
   'unit.perKm': '/km',
   'unit.kmh': 'km/h',
   'unit.mph': 'mph',
+  'arrival.homeName': 'Home',
+  'arrival.startTitle': 'You are back where you started',
+  'arrival.startText':
+    'You have been here for {stay}. This looks like home. Finish the walk? It will end at the moment you came back.',
+  'arrival.markHome': 'This is home: mark it and finish',
+  'autofinish.askTitle': 'Are you home?',
+  'autofinish.askBody':
+    'You have been where the walk began for a while. Open the app to finish it.',
   'dog.export': 'Export and backup',
   'dog.exportHint': 'All data in one file, tables for a spreadsheet',
   'export.title': 'Export data',

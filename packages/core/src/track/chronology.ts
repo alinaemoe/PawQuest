@@ -299,6 +299,50 @@ export function baseArrival(
   return { visit: last, placeId: last.placeId, arrivedAt: last.fromTs, stayS: last.durationS };
 }
 
+export interface StartSpotOptions extends BaseArrivalOptions {
+  /** The stay is "where the walk began" within this distance of the first fix. Default 80 m. */
+  readonly radiusM?: number;
+  /** The walk must have gone at least this far from the start first. Default 150 m. */
+  readonly awayM?: number;
+}
+
+/**
+ * "You came back to where you started" for an owner who has not marked a home: the walk now
+ * stands, for at least `minStayS` (10 minutes by default), within 80 m of its first fix, after it
+ * had been at least 150 m away. Walks mostly begin and end at one's door, so this is a good
+ * guess of "home"; it only asks, it never decides (the base question works without it).
+ */
+export function startSpotArrival(
+  steps: readonly ChronoStep[],
+  start: LatLon,
+  farthestM: number,
+  lastFixTs: number,
+  options: StartSpotOptions = {},
+): BaseArrival | null {
+  const minStayS = options.minStayS ?? 600;
+  const freshS = options.freshS ?? 180;
+  const radiusM = options.radiusM ?? 80;
+  const awayM = options.awayM ?? 150;
+  const index = steps.length - 1;
+  const last = steps[index];
+  if (
+    index < 1 ||
+    last?.kind !== 'visit' ||
+    farthestM < awayM ||
+    haversineDistanceM(last, start) > radiusM ||
+    last.durationS < minStayS ||
+    (lastFixTs - last.toTs) / 1000 > freshS
+  ) {
+    return null;
+  }
+  return {
+    visit: last,
+    placeId: last.placeId ?? '',
+    arrivedAt: last.fromTs,
+    stayS: last.durationS,
+  };
+}
+
 /**
  * The first long stay in a base inside a walk that was not finished there (D-62, 5.1 item 5):
  * the walk went on (or was left running) after the owner came to a base for good. Null when the

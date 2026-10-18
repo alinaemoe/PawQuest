@@ -56,6 +56,14 @@ export const ru = {
   'unit.perKm': '/км',
   'unit.kmh': 'км/ч',
   'unit.mph': 'миль/ч',
+  'arrival.homeName': 'Дом',
+  'arrival.startTitle': 'Вы вернулись туда, где начали',
+  'arrival.startText':
+    'Вы здесь уже {stay}. Похоже, это дом. Завершить прогулку? Она закончится в момент возвращения.',
+  'arrival.markHome': 'Это дом: отметить и завершить',
+  'autofinish.askTitle': 'Вы вернулись домой?',
+  'autofinish.askBody':
+    'Вы давно на месте, где начали прогулку. Откройте приложение, чтобы завершить её.',
   'dog.export': 'Экспорт и резервная копия',
   'dog.exportHint': 'Все данные одним файлом, таблицы для Excel',
   'export.title': 'Экспорт данных',

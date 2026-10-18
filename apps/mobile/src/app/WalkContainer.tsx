@@ -3,6 +3,7 @@ import {
   DETAIL_FIELD_COUNT,
   computeWalkMetrics,
   createEvent,
+  createPlace,
   filledFields,
   finishWalk,
   getEvent,
@@ -33,6 +34,7 @@ import {
   updateWalk,
   walkAnchor,
   walkBaseArrival,
+  walkStartSpotArrival,
   walkCutSuggestion,
   walkRoutePasses,
   walkUsual,
@@ -44,6 +46,7 @@ import { useToast } from '@pawquest/rn-ui';
 import {
   ActiveWalkScreen,
   BaseArrivalSheet,
+  categoryLabel,
   usualModel,
   NewRouteSheet,
   suggestedRouteName,
@@ -160,10 +163,12 @@ export function WalkContainer({
       return null;
     }
     const now = Date.now();
-    const found = walkBaseArrival(db, walk.id, now);
+    // a marked base first; without one, "back where the walk began" stands in for home
+    const base = walkBaseArrival(db, walk.id, now);
+    const found = base ?? walkStartSpotArrival(db, walk.id, now);
     return found === null || isPromptHidden(db, `base-arrival:${walk.id}:${found.placeId}`, now)
       ? null
-      : found;
+      : { ...found, fromStart: base === null };
   }, [db, walk.id, walk.mode, walk.status, arrivalTick, version]);
 
   const buttons: WalkEventButton[] = types.map((type) => ({
@@ -310,6 +315,20 @@ export function WalkContainer({
         <BaseArrivalSheet
           visible
           placeName={arrival.placeName}
+          fromStart={arrival.fromStart}
+          onMarkHome={() => {
+            createPlace(db, ctx, {
+              category: 'home',
+              name: i18n.t('arrival.homeName'),
+              label: categoryLabel('home', i18n),
+              lat: arrival.visit.lat,
+              lon: arrival.visit.lon,
+            });
+            void stopGpsUpdates();
+            const done = finishWalk(db, ctx, walk.id, arrival.arrivedAt);
+            onFinished(done.id);
+            bump();
+          }}
           stay={i18n.formatDuration(Math.round(arrival.stayS))}
           onFinish={() => {
             void stopGpsUpdates();

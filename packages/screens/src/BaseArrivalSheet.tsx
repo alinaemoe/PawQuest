@@ -8,6 +8,10 @@ export interface BaseArrivalSheetProps {
   readonly stay: string;
   readonly onFinish: () => void;
   readonly onKeepWalking: () => void;
+  /** No base is marked: the walk is back where it began. */
+  readonly fromStart?: boolean;
+  /** Mark this spot as "Дом" and finish (only when `fromStart`). */
+  readonly onMarkHome?: () => void;
 }
 
 /** "Вы пришли к маме. Завершить прогулку?": a question, never a decision (G-18). */
@@ -17,10 +21,26 @@ export function BaseArrivalSheet(props: BaseArrivalSheetProps) {
     <Sheet
       visible={props.visible}
       onClose={props.onKeepWalking}
-      title={i18n.t('arrival.title', { place: props.placeName })}
+      title={
+        props.fromStart === true
+          ? i18n.t('arrival.startTitle')
+          : i18n.t('arrival.title', { place: props.placeName })
+      }
     >
-      <AppText>{i18n.t('arrival.text', { stay: props.stay })}</AppText>
+      <AppText>
+        {i18n.t(props.fromStart === true ? 'arrival.startText' : 'arrival.text', {
+          stay: props.stay,
+        })}
+      </AppText>
       <Button label={i18n.t('arrival.finish')} size="lg" icon="stop" onPress={props.onFinish} />
+      {props.fromStart === true && props.onMarkHome !== undefined ? (
+        <Button
+          label={i18n.t('arrival.markHome')}
+          tone="ghost"
+          icon="home"
+          onPress={props.onMarkHome}
+        />
+      ) : null}
       <Button label={i18n.t('arrival.keep')} tone="ghost" onPress={props.onKeepWalking} />
     </Sheet>
   );

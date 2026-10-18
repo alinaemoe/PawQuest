@@ -8,6 +8,7 @@ import {
   forgottenBaseStay,
   chronologyTitle,
   placeContaining,
+  startSpotArrival,
   visitsByPlace,
   type ChronoPlace,
   type ChronoVisit,
@@ -429,5 +430,46 @@ describe('forgottenBaseStay', () => {
       forgottenBaseStay(chronology(new Track().walkTo(1200, 0).stand(1800), [mom]), new Set()),
     ).toBeNull();
     expect(forgottenBaseStay([], bases)).toBeNull();
+  });
+});
+
+describe('startSpotArrival', () => {
+  const START = at(0, 0);
+  const farthest = (track: Track): number =>
+    Math.max(
+      ...track.points.map((p) =>
+        Math.hypot(
+          (p.lon - LON0) * M_PER_DEG * Math.cos((LAT0 * Math.PI) / 180),
+          (p.lat - LAT0) * M_PER_DEG,
+        ),
+      ),
+    );
+  const found = (track: Track, options = {}) =>
+    startSpotArrival(chronology(track, []), START, farthest(track), track.end, options);
+
+  it('back where it began for ten minutes, after going far: asks, at the moment of coming back', () => {
+    const track = new Track().stand(120).walkTo(900, 0).walkTo(0, 0).stand(700);
+    const arrival = found(track);
+    expect(arrival?.placeId).toBe('');
+    expect(arrival?.stayS).toBeGreaterThan(600);
+    expect(arrival?.arrivedAt).toBeGreaterThan(T0 + 700_000);
+  });
+
+  it('under ten minutes, a short way out, another spot, or the first stay: nothing', () => {
+    expect(found(new Track().stand(60).walkTo(900, 0).walkTo(0, 0).stand(500))).toBeNull();
+    expect(found(new Track().stand(60).walkTo(100, 0).walkTo(0, 0).stand(900))).toBeNull();
+    expect(found(new Track().stand(60).walkTo(900, 0).stand(900))).toBeNull();
+    expect(found(new Track().stand(1200))).toBeNull();
+  });
+
+  it('the distances and the stay can be changed; a stale last fix is not "now"', () => {
+    const track = new Track().stand(60).walkTo(900, 0).walkTo(0, 0).stand(400);
+    expect(found(track, { minStayS: 300 })).not.toBeNull();
+    expect(found(track, { minStayS: 300, awayM: 2000 })).toBeNull();
+    expect(
+      startSpotArrival(chronology(track, []), START, farthest(track), track.end + 1_000_000, {
+        minStayS: 300,
+      }),
+    ).toBeNull();
   });
 });

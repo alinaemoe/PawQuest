@@ -2,6 +2,10 @@ import {
   autoFinishAtBase,
   getRunningWalkId,
   getSettings,
+  hidePrompt,
+  isPromptHidden,
+  walkBaseArrival,
+  walkStartSpotArrival,
   type Ctx,
   type SqlDb,
 } from '@pawquest/data';
@@ -31,11 +35,12 @@ export async function maybeAutoFinish(
   lastCheck = now;
   const settings = getSettings(db);
   const walkId = getRunningWalkId(db);
-  if (!settings.autoFinishAtHome || walkId === null) {
+  if (walkId === null) {
     return null;
   }
-  const done = autoFinishAtBase(db, ctx, walkId, now);
+  const done = settings.autoFinishAtHome ? autoFinishAtBase(db, ctx, walkId, now) : null;
   if (done === null) {
+    await askToFinish(db, ctx, walkId, now, settings.language, settings.units);
     return null;
   }
   await stopGps();
@@ -53,4 +58,33 @@ export async function maybeAutoFinish(
     });
   }
   return done.walk.id;
+}
+
+const DAY = 86_400_000;
+
+/**
+ * When the walk was left running (the owner is back at the start, or in a base, for a while) but
+ * did not end by itself, a notice says so once per walk; the question itself is in the app.
+ */
+async function askToFinish(
+  db: SqlDb,
+  ctx: Ctx,
+  walkId: string,
+  now: number,
+  language: 'ru' | 'en',
+  units: 'metric' | 'imperial',
+): Promise<void> {
+  const key = `arrival-notified:${walkId}`;
+  if (AppState.currentState === 'active' || isPromptHidden(db, key, now)) {
+    return;
+  }
+  if (walkBaseArrival(db, walkId, now) === null && walkStartSpotArrival(db, walkId, now) === null) {
+    return;
+  }
+  hidePrompt(db, ctx, key, now + DAY);
+  const i18n = createI18n({ locale: language, units });
+  await Notifications.scheduleNotificationAsync({
+    content: { title: i18n.t('autofinish.askTitle'), body: i18n.t('autofinish.askBody') },
+    trigger: null,
+  });
 }
