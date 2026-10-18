@@ -350,3 +350,4 @@ export {
 } from './backup';
 export { CSV_BOM, csvField, eventsCsv, walkGpx, walksCsv } from './export';
 export { placeActivity, type PlaceActivity } from './placeStats';
+export { skillProgress, type SkillProgress } from './skillProgress';

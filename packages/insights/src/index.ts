@@ -111,3 +111,4 @@ export {
   type PlaceWalk,
   type PlaceWeek,
 } from './placeSeries';
+export { MIN_WEEK_ATTEMPTS, skillWeeks, type SkillAttempt, type SkillWeek } from './skillSeries';

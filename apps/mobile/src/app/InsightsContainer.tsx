@@ -8,6 +8,7 @@ import {
   listPlaces,
   listWalksPage,
   placeActivity,
+  skillProgress,
   periodComparison,
   thresholdSeries,
   walkCalendar,
@@ -25,6 +26,7 @@ import {
   HideInsightSheet,
   InsightsScreen,
   placeCards,
+  skillCards,
   thresholdCharts,
   type CalendarCellModel,
   type InsightCardModel,
@@ -88,6 +90,12 @@ export function InsightsContainer() {
     return placeCards(placeActivity(db, dogId, now, tz), localDay(now, tz), now, i18n);
   }, [db, dogId, i18n, version]);
 
+  const skills = useMemo(() => {
+    const now = Date.now();
+    const tz = -new Date(now).getTimezoneOffset();
+    return skillCards(skillProgress(db, dogId, now, tz), localDay(now, tz), now, i18n);
+  }, [db, dogId, i18n, version]);
+
   const dayList = useMemo(
     () => (openDay === null ? [] : dayRows(dayWalks(db, dogId, openDay.day), i18n)),
     [db, dogId, i18n, openDay, version],
@@ -146,6 +154,7 @@ export function InsightsContainer() {
           updateSetting('insightsSection', section);
         }}
         places={places}
+        skills={skills}
         onShowWalks={setShowing}
         onHide={setHiding}
       />

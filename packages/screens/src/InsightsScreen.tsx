@@ -7,11 +7,11 @@ import { InsightCharts, PeriodCompare } from './ChartViews';
 import type { ChartModel, CompareModel } from './chartsModel';
 import { WalkCalendar } from './CalendarViews';
 import type { InsightCardModel, InsightsModel } from './insightsModel';
-import type { PlaceCardModel } from './placeStatsModel';
-import { PlacesSection } from './PlaceStatsViews';
+import type { StatCardModel } from './placeStatsModel';
+import { PlacesSection, SkillsSection } from './PlaceStatsViews';
 
-export type InsightsSectionId = 'overview' | 'behavior' | 'places';
-const SECTIONS: readonly InsightsSectionId[] = ['overview', 'behavior', 'places'];
+export type InsightsSectionId = 'overview' | 'behavior' | 'places' | 'skills';
+const SECTIONS: readonly InsightsSectionId[] = ['overview', 'skills', 'behavior', 'places'];
 
 export interface InsightsScreenProps {
   readonly model: InsightsModel;
@@ -32,7 +32,8 @@ export interface InsightsScreenProps {
   /** The section that is open, and the places of the Places section. */
   readonly section: InsightsSectionId;
   readonly onSection: (section: InsightsSectionId) => void;
-  readonly places?: readonly PlaceCardModel[];
+  readonly places?: readonly StatCardModel[];
+  readonly skills?: readonly StatCardModel[];
 }
 
 function InsightCard(props: {
@@ -90,6 +91,7 @@ export function InsightsScreen({
   section,
   onSection,
   places,
+  skills,
 }: InsightsScreenProps) {
   const i18n = useI18n();
   return (
@@ -211,6 +213,8 @@ export function InsightsScreen({
           )}
         </>
       ) : null}
+
+      {section === 'skills' ? <SkillsSection cards={skills ?? []} /> : null}
 
       {section === 'places' ? <PlacesSection cards={places ?? []} /> : null}
 

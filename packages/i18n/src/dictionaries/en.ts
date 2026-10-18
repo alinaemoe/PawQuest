@@ -41,6 +41,23 @@ export const en = {
   'unit.perKm': '/km',
   'unit.kmh': 'km/h',
   'unit.mph': 'mph',
+  'insights.tab.skills': 'Skills',
+  'skills.stats.hint':
+    'How the skills are going. Training comes as it comes, with no plan or norm: only what happened is here. Tap a skill to see it week by week.',
+  'skills.stats.empty':
+    'No skills yet. Add a skill in the Training tab and how it goes will appear here.',
+  'skills.stats.weeks': 'Week by week: attempts and the share that worked',
+  'skills.stats.spoken': 'Week of {week}: {value}',
+  'skills.stats.level': 'Level: {level}',
+  'skills.stats.sessions': { one: '{n} session', other: '{n} sessions' },
+  'skills.stats.attempts': { one: '{n} attempt', other: '{n} attempts' },
+  'skills.stats.last': 'Last time {date}',
+  'skills.stats.today': 'Practised today',
+  'skills.stats.never': 'Not practised yet',
+  'skills.stats.rhythm': 'usually every {n} days',
+  'skills.stats.idle': 'Not practised for a while. You can come back any day, no hurry.',
+  'skills.stats.steady':
+    'This level is going evenly. When you feel like it, you can try something harder; it is up to you.',
   'insights.tab.overview': 'Overview',
   'insights.tab.behavior': 'Behavior',
   'insights.tab.places': 'Places',

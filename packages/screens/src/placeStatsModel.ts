@@ -10,7 +10,7 @@ import { categoryLabel } from './placesModel';
 const DAY_MS = 86_400_000;
 const noon = (day: number): number => day * DAY_MS + 12 * 3_600_000;
 
-export interface PlaceCardModel {
+export interface StatCardModel {
   readonly id: string;
   readonly title: string;
   /** "6 прогулок · обычно 43 мин". */
@@ -18,16 +18,20 @@ export interface PlaceCardModel {
   /** "Последний раз 12 окт" or what is missing for a picture. */
   readonly footnote: string;
   readonly enough: boolean;
+  /** A soft word under the card ("steady", "not for a while"), or null. */
+  readonly note: string | null;
   /** The last weeks, one bar each. */
   readonly bars: readonly BarModel[];
 }
+
+export type PlaceCardModel = StatCardModel;
 
 export function placeCards(
   stats: readonly PlaceActivity[],
   today: number,
   now: number,
   i18n: I18n,
-): PlaceCardModel[] {
+): StatCardModel[] {
   return stats.map((place) => {
     const { summary } = place;
     const longest = Math.max(0, ...place.weeks.map((w) => w.medianS ?? 0));
@@ -45,6 +49,7 @@ export function placeCards(
         ? i18n.t('places.stats.last', { date: i18n.formatDate(summary.lastAt ?? now, now) })
         : i18n.t('places.stats.few', { n: MIN_PLACE_WALKS - summary.walks }),
       enough: summary.enough,
+      note: null,
       bars: place.weeks.map((w): BarModel => {
         const label = i18n.formatDate(noon(w.mondayDay), noon(today));
         const value =

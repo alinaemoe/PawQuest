@@ -56,6 +56,33 @@ export const ru = {
   'unit.perKm': '/км',
   'unit.kmh': 'км/ч',
   'unit.mph': 'миль/ч',
+  'insights.tab.skills': 'Навыки',
+  'skills.stats.hint':
+    'Как идут навыки. Занятия как получается, без плана и норм: здесь только то, что было. Нажмите на навык, чтобы увидеть неделя за неделей.',
+  'skills.stats.empty':
+    'Пока нет навыков. Добавьте навык во вкладке «Тренировки», и здесь появится, как он идёт.',
+  'skills.stats.weeks': 'Неделя за неделей: попытки и доля удавшихся',
+  'skills.stats.spoken': 'Неделя с {week}: {value}',
+  'skills.stats.level': 'Ступень: {level}',
+  'skills.stats.sessions': {
+    one: '{n} занятие',
+    few: '{n} занятия',
+    many: '{n} занятий',
+    other: '{n} занятия',
+  },
+  'skills.stats.attempts': {
+    one: '{n} попытка',
+    few: '{n} попытки',
+    many: '{n} попыток',
+    other: '{n} попытки',
+  },
+  'skills.stats.last': 'Последний раз {date}',
+  'skills.stats.today': 'Занимались сегодня',
+  'skills.stats.never': 'Пока не занимались',
+  'skills.stats.rhythm': 'обычно раз в {n} дн.',
+  'skills.stats.idle': 'Давно не занимались. Вернуться можно в любой день, без спешки.',
+  'skills.stats.steady':
+    'Эта ступень идёт ровно. Когда захочется, можно пробовать сложнее; решать вам.',
   'insights.tab.overview': 'Обзор',
   'insights.tab.behavior': 'Поведение',
   'insights.tab.places': 'Места',
