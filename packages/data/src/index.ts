@@ -37,11 +37,13 @@ export { createCtx, fromIso, toIso, uuidv7, type Ctx } from './ids';
 export {
   DEFAULT_SETTINGS,
   GOAL_KEYS,
+  INSIGHTS_SECTIONS,
   PALETTE_KEYS,
   getSettings,
   setSetting,
   type AppSettings,
   type GoalKey,
+  type InsightsSection,
   type PaletteKey,
 } from './settings';
 export {
@@ -347,3 +349,4 @@ export {
   type BackupSummary,
 } from './backup';
 export { CSV_BOM, csvField, eventsCsv, walkGpx, walksCsv } from './export';
+export { placeActivity, type PlaceActivity } from './placeStats';

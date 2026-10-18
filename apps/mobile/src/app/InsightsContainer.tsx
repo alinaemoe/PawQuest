@@ -7,6 +7,7 @@ import {
   hideInsight,
   listPlaces,
   listWalksPage,
+  placeActivity,
   periodComparison,
   thresholdSeries,
   walkCalendar,
@@ -23,6 +24,7 @@ import {
   DayWalksSheet,
   HideInsightSheet,
   InsightsScreen,
+  placeCards,
   thresholdCharts,
   type CalendarCellModel,
   type InsightCardModel,
@@ -36,7 +38,7 @@ const POLL_MS = 1500;
 
 /** The Insights tab (docs/23, step 3.5): facts, patterns, observations, "show the walks", hiding. */
 export function InsightsContainer() {
-  const { db, ctx, dog, i18n, version, bump } = useApp();
+  const { db, ctx, dog, i18n, version, bump, settings, updateSetting } = useApp();
   const toast = useToast();
   const dogId = dog?.id ?? '';
   const [tick, setTick] = useState(0);
@@ -78,6 +80,12 @@ export function InsightsContainer() {
     const now = Date.now();
     const tz = -new Date(now).getTimezoneOffset();
     return thresholdCharts(thresholdSeries(db, dogId), localDay(now, tz), i18n);
+  }, [db, dogId, i18n, version]);
+
+  const places = useMemo(() => {
+    const now = Date.now();
+    const tz = -new Date(now).getTimezoneOffset();
+    return placeCards(placeActivity(db, dogId, now, tz), localDay(now, tz), now, i18n);
   }, [db, dogId, i18n, version]);
 
   const dayList = useMemo(
@@ -133,6 +141,11 @@ export function InsightsContainer() {
         compare={{ model: compare, days, onDays: setDays }}
         charts={charts}
         dynamics={dynamics}
+        section={settings.insightsSection}
+        onSection={(section) => {
+          updateSetting('insightsSection', section);
+        }}
+        places={places}
         onShowWalks={setShowing}
         onHide={setHiding}
       />

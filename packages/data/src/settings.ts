@@ -15,6 +15,9 @@ export const GOAL_KEYS = [
 ] as const;
 export type GoalKey = (typeof GOAL_KEYS)[number];
 
+export const INSIGHTS_SECTIONS = ['overview', 'behavior', 'places'] as const;
+export type InsightsSection = (typeof INSIGHTS_SECTIONS)[number];
+
 /** Everything the user can change in Settings (spec 07), stored one JSON value per key. */
 export interface AppSettings {
   language: 'ru' | 'en';
@@ -25,6 +28,8 @@ export interface AppSettings {
   haptics: boolean;
   /** A walk ends by itself when the owner came home and stayed there. */
   autoFinishAtHome: boolean;
+  /** The section of the Insights tab that was open last. */
+  insightsSection: InsightsSection;
   onboardingDone: boolean;
   activeDogId: string | null;
   goals: GoalKey[];
@@ -41,6 +46,7 @@ export const DEFAULT_SETTINGS: Readonly<AppSettings> = {
   scheme: 'system',
   haptics: true,
   autoFinishAtHome: true,
+  insightsSection: 'overview',
   onboardingDone: false,
   activeDogId: null,
   goals: [],
@@ -65,6 +71,7 @@ const VALIDATORS: Validators = {
   scheme: isOneOf(['system', 'light', 'dark'] as const),
   haptics: (v): v is boolean => typeof v === 'boolean',
   autoFinishAtHome: (v): v is boolean => typeof v === 'boolean',
+  insightsSection: isOneOf(INSIGHTS_SECTIONS),
   onboardingDone: (v): v is boolean => typeof v === 'boolean',
   activeDogId: (v): v is string | null => v === null || typeof v === 'string',
   goals: (v): v is GoalKey[] => isStringArray(v) && v.every((g) => isOneOf(GOAL_KEYS)(g)),

@@ -41,6 +41,18 @@ export const en = {
   'unit.perKm': '/km',
   'unit.kmh': 'km/h',
   'unit.mph': 'mph',
+  'insights.tab.overview': 'Overview',
+  'insights.tab.behavior': 'Behavior',
+  'insights.tab.places': 'Places',
+  'places.stats.hint':
+    'The places you walked in, the most frequent first. Tap a place to see it week by week.',
+  'places.stats.empty':
+    'No walk with a place yet. Pick a place in the walk summary and the picture by places will appear here.',
+  'places.stats.usual': 'usually {duration}',
+  'places.stats.last': 'Last time {date}',
+  'places.stats.few': 'Few walks: {n} more for a picture',
+  'places.stats.weeks': 'Week by week: number of walks and the usual length',
+  'places.stats.spoken': 'Week of {week}: {value}',
   'arrival.homeName': 'Home',
   'arrival.startTitle': 'You are back where you started',
   'arrival.startText':

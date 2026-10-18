@@ -74,6 +74,7 @@ describe('settings', () => {
     setSetting(env.db, env.ctx, 'scheme', 'dark');
     setSetting(env.db, env.ctx, 'haptics', false);
     setSetting(env.db, env.ctx, 'autoFinishAtHome', false);
+    setSetting(env.db, env.ctx, 'insightsSection', 'places');
     setSetting(env.db, env.ctx, 'onboardingDone', true);
     setSetting(env.db, env.ctx, 'activeDogId', 'abc');
     setSetting(env.db, env.ctx, 'goals', ['recall', 'diary']);
@@ -86,6 +87,7 @@ describe('settings', () => {
       scheme: 'dark',
       haptics: false,
       autoFinishAtHome: false,
+      insightsSection: 'places',
       onboardingDone: true,
       activeDogId: 'abc',
       goals: ['recall', 'diary'],

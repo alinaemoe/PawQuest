@@ -1,3 +1,4 @@
+import type { MessageKey } from '@pawquest/i18n';
 import { AppText, Button, Card, Chip, Screen, Sheet, Tag, useI18n } from '@pawquest/rn-ui';
 import { View } from 'react-native';
 
@@ -6,6 +7,11 @@ import { InsightCharts, PeriodCompare } from './ChartViews';
 import type { ChartModel, CompareModel } from './chartsModel';
 import { WalkCalendar } from './CalendarViews';
 import type { InsightCardModel, InsightsModel } from './insightsModel';
+import type { PlaceCardModel } from './placeStatsModel';
+import { PlacesSection } from './PlaceStatsViews';
+
+export type InsightsSectionId = 'overview' | 'behavior' | 'places';
+const SECTIONS: readonly InsightsSectionId[] = ['overview', 'behavior', 'places'];
 
 export interface InsightsScreenProps {
   readonly model: InsightsModel;
@@ -23,6 +29,10 @@ export interface InsightsScreenProps {
   readonly charts?: readonly ChartModel[];
   /** Reaction distance and recovery time by week; nothing is drawn when empty. */
   readonly dynamics?: readonly ChartModel[];
+  /** The section that is open, and the places of the Places section. */
+  readonly section: InsightsSectionId;
+  readonly onSection: (section: InsightsSectionId) => void;
+  readonly places?: readonly PlaceCardModel[];
 }
 
 function InsightCard(props: {
@@ -77,6 +87,9 @@ export function InsightsScreen({
   compare,
   charts,
   dynamics,
+  section,
+  onSection,
+  places,
 }: InsightsScreenProps) {
   const i18n = useI18n();
   return (
@@ -84,98 +97,122 @@ export function InsightsScreen({
       <AppText variant="numBig">{i18n.t('tab.insights')}</AppText>
       <AppText variant="muted">{model.status}</AppText>
 
-      {calendar === undefined || calendar.rows.length === 0 ? null : (
-        <View style={{ gap: 8 }}>
-          <AppText variant="eyebrow">{i18n.t('calendar.title')}</AppText>
-          <Card variant="flat">
-            <WalkCalendar model={calendar} onDay={onDay ?? (() => undefined)} />
-          </Card>
-          <AppText variant="muted">{calendar.legend}</AppText>
-        </View>
-      )}
+      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+        {SECTIONS.map((id) => (
+          <Chip
+            key={id}
+            label={i18n.t(`insights.tab.${id}` as MessageKey)}
+            selected={section === id}
+            onPress={() => {
+              onSection(id);
+            }}
+          />
+        ))}
+      </View>
 
-      {model.empty === null ? null : (
-        <Card variant="soft">
-          <AppText weight={600}>{model.empty.title}</AppText>
-          <AppText>{model.empty.text}</AppText>
-          <AppText variant="muted">{model.empty.hint}</AppText>
-        </Card>
-      )}
+      {section === 'overview' ? (
+        <>
+          {calendar === undefined || calendar.rows.length === 0 ? null : (
+            <View style={{ gap: 8 }}>
+              <AppText variant="eyebrow">{i18n.t('calendar.title')}</AppText>
+              <Card variant="flat">
+                <WalkCalendar model={calendar} onDay={onDay ?? (() => undefined)} />
+              </Card>
+              <AppText variant="muted">{calendar.legend}</AppText>
+            </View>
+          )}
 
-      {model.facts.length === 0 ? null : (
-        <View style={{ gap: 8 }}>
-          <AppText variant="eyebrow">{i18n.t('insights.section.facts')}</AppText>
-          <Card variant="flat">
-            <View style={{ gap: 12 }}>
-              {model.facts.map((fact) => (
-                <View key={fact.key}>
-                  <AppText variant="muted">{fact.label}</AppText>
-                  <AppText weight={600}>{fact.value}</AppText>
+          {model.empty === null ? null : (
+            <Card variant="soft">
+              <AppText weight={600}>{model.empty.title}</AppText>
+              <AppText>{model.empty.text}</AppText>
+              <AppText variant="muted">{model.empty.hint}</AppText>
+            </Card>
+          )}
+
+          {model.facts.length === 0 ? null : (
+            <View style={{ gap: 8 }}>
+              <AppText variant="eyebrow">{i18n.t('insights.section.facts')}</AppText>
+              <Card variant="flat">
+                <View style={{ gap: 12 }}>
+                  {model.facts.map((fact) => (
+                    <View key={fact.key}>
+                      <AppText variant="muted">{fact.label}</AppText>
+                      <AppText weight={600}>{fact.value}</AppText>
+                    </View>
+                  ))}
                 </View>
+              </Card>
+            </View>
+          )}
+
+          {compare === undefined ? null : (
+            <PeriodCompare model={compare.model} days={compare.days} onDays={compare.onDays} />
+          )}
+          {charts === undefined ? null : <InsightCharts charts={charts} />}
+        </>
+      ) : null}
+
+      {section === 'behavior' ? (
+        <>
+          {model.cards.length === 0 ? null : (
+            <View style={{ gap: 8 }}>
+              <AppText variant="eyebrow">{i18n.t('insights.section.patterns')}</AppText>
+              {model.cards.map((card) => (
+                <InsightCard
+                  key={card.key}
+                  card={card}
+                  variant="stripe"
+                  onShowWalks={onShowWalks}
+                  onHide={onHide}
+                />
               ))}
             </View>
-          </Card>
-        </View>
-      )}
-
-      {model.cards.length === 0 ? null : (
-        <View style={{ gap: 8 }}>
-          <AppText variant="eyebrow">{i18n.t('insights.section.patterns')}</AppText>
-          {model.cards.map((card) => (
-            <InsightCard
-              key={card.key}
-              card={card}
-              variant="stripe"
-              onShowWalks={onShowWalks}
-              onHide={onHide}
-            />
-          ))}
-        </View>
-      )}
-
-      {model.noCards === null ? null : <AppText variant="muted">{model.noCards}</AppText>}
-
-      {model.prelim.length === 0 ? null : (
-        <View style={{ gap: 8 }}>
-          <AppText variant="eyebrow">{i18n.t('insights.section.prelim')}</AppText>
-          {model.prelimWarning === null ? null : (
-            <AppText variant="muted">{model.prelimWarning}</AppText>
           )}
-          {model.prelim.map((card) => (
-            <InsightCard
-              key={card.key}
-              card={card}
-              variant="soft"
-              onShowWalks={onShowWalks}
-              onHide={onHide}
-            />
-          ))}
-        </View>
-      )}
 
-      {model.explained.length === 0 ? null : (
-        <View style={{ gap: 8 }}>
-          <AppText variant="eyebrow">{i18n.t('insights.section.explained')}</AppText>
-          <AppText variant="muted">{model.explainedHint}</AppText>
-          {model.explained.map((card) => (
-            <InsightCard
-              key={card.key}
-              card={card}
-              variant="soft"
-              onShowWalks={onShowWalks}
-              onHide={onHide}
-            />
-          ))}
-        </View>
-      )}
+          {model.noCards === null ? null : <AppText variant="muted">{model.noCards}</AppText>}
 
-      {compare === undefined ? null : (
-        <PeriodCompare model={compare.model} days={compare.days} onDays={compare.onDays} />
-      )}
-      {dynamics === undefined || dynamics.length === 0 ? null : (
-        <InsightCharts charts={dynamics} heading={i18n.t('thresholds.section')} />
-      )}
-      {charts === undefined ? null : <InsightCharts charts={charts} />}
+          {model.prelim.length === 0 ? null : (
+            <View style={{ gap: 8 }}>
+              <AppText variant="eyebrow">{i18n.t('insights.section.prelim')}</AppText>
+              {model.prelimWarning === null ? null : (
+                <AppText variant="muted">{model.prelimWarning}</AppText>
+              )}
+              {model.prelim.map((card) => (
+                <InsightCard
+                  key={card.key}
+                  card={card}
+                  variant="soft"
+                  onShowWalks={onShowWalks}
+                  onHide={onHide}
+                />
+              ))}
+            </View>
+          )}
+
+          {model.explained.length === 0 ? null : (
+            <View style={{ gap: 8 }}>
+              <AppText variant="eyebrow">{i18n.t('insights.section.explained')}</AppText>
+              <AppText variant="muted">{model.explainedHint}</AppText>
+              {model.explained.map((card) => (
+                <InsightCard
+                  key={card.key}
+                  card={card}
+                  variant="soft"
+                  onShowWalks={onShowWalks}
+                  onHide={onHide}
+                />
+              ))}
+            </View>
+          )}
+
+          {dynamics === undefined || dynamics.length === 0 ? null : (
+            <InsightCharts charts={dynamics} heading={i18n.t('thresholds.section')} />
+          )}
+        </>
+      ) : null}
+
+      {section === 'places' ? <PlacesSection cards={places ?? []} /> : null}
 
       <AppText variant="muted" style={{ marginTop: 8 }}>
         {model.honesty}

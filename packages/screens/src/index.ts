@@ -265,3 +265,6 @@ export {
   SpeedSummaryView,
 } from './ReplayViews';
 export { ExportSheet, type ExportKind, type ExportSheetProps } from './ExportSheet';
+export { placeCards, type PlaceCardModel } from './placeStatsModel';
+export { PlacesSection } from './PlaceStatsViews';
+export type { InsightsSectionId } from './InsightsScreen';

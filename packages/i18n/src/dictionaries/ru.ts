@@ -56,6 +56,18 @@ export const ru = {
   'unit.perKm': '/км',
   'unit.kmh': 'км/ч',
   'unit.mph': 'миль/ч',
+  'insights.tab.overview': 'Обзор',
+  'insights.tab.behavior': 'Поведение',
+  'insights.tab.places': 'Места',
+  'places.stats.hint':
+    'Места, где вы гуляли, самые частые первыми. Нажмите на место, чтобы увидеть неделю за неделей.',
+  'places.stats.empty':
+    'Пока ни одной прогулки с местом. Выберите место в итогах прогулки, и здесь появится картина по местам.',
+  'places.stats.usual': 'обычно {duration}',
+  'places.stats.last': 'Последний раз {date}',
+  'places.stats.few': 'Мало данных: нужно ещё {n} для картины',
+  'places.stats.weeks': 'Неделя за неделей: число прогулок и обычная длина',
+  'places.stats.spoken': 'Неделя с {week}: {value}',
   'arrival.homeName': 'Дом',
   'arrival.startTitle': 'Вы вернулись туда, где начали',
   'arrival.startText':

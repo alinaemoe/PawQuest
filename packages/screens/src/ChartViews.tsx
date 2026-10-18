@@ -76,7 +76,8 @@ export function PeriodCompare({ model, days, onDays }: PeriodCompareProps) {
 
 const BAR_HEIGHT = 12;
 
-function Bar({ bar }: { readonly bar: BarModel }) {
+/** One bar: a label and a value above, the bar with its whisker below. */
+export function ChartBar({ bar }: { readonly bar: BarModel }) {
   const { colors } = useTheme().theme;
   const pct = (v: number): `${number}%` => `${Math.round(v * 100)}%`;
   return (
@@ -155,7 +156,7 @@ export function InsightCharts({ charts, heading }: InsightChartsProps) {
             ) : (
               <View style={{ gap: 8 }}>
                 {chart.bars.map((bar) => (
-                  <Bar key={bar.key} bar={bar} />
+                  <ChartBar key={bar.key} bar={bar} />
                 ))}
               </View>
             )}

@@ -103,3 +103,11 @@ export {
   type WeekPoint,
   type WeeklySeries,
 } from './thresholds';
+export {
+  MIN_PLACE_WALKS,
+  placeSummary,
+  placeWeeks,
+  type PlaceSummary,
+  type PlaceWalk,
+  type PlaceWeek,
+} from './placeSeries';
