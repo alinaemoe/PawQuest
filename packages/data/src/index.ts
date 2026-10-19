@@ -374,3 +374,5 @@ export {
   type WalkFolder,
 } from './walkFilter';
 export { walkLines, type WalkLine } from './walkLines';
+export { liveZones, type LiveZone } from './liveZones';
+export { walkZones, type WalkZone } from './walkZones';

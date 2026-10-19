@@ -76,3 +76,29 @@ export function timelineRows(
     };
   });
 }
+
+export interface ZoneLineInput {
+  readonly name: string;
+  readonly fromTs: number;
+  readonly toTs: number;
+  readonly dwellS: number;
+}
+
+/** "Парк · 38 мин · 10:41–11:19 · событий: 2": the stays in saved places, with the events that fell in them. */
+export function zoneLines(
+  zones: readonly ZoneLineInput[],
+  eventTimes: readonly number[],
+  i18n: I18n,
+): string[] {
+  return zones.map((z) => {
+    const events = eventTimes.filter((t) => t >= z.fromTs && t <= z.toTs).length;
+    return [
+      z.name,
+      i18n.formatDuration(z.dwellS),
+      `${i18n.formatTime(z.fromTs)}–${i18n.formatTime(z.toTs)}`,
+      events === 0 ? null : i18n.t('walk.zones.events', { n: events }),
+    ]
+      .filter((part) => part !== null)
+      .join(' · ');
+  });
+}

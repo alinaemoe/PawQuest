@@ -20,6 +20,7 @@ import {
   updateWalk,
   walkChronology,
   walkEventIds,
+  walkZones,
   walkUsual,
   walkTotals,
 } from '@pawquest/data';
@@ -34,6 +35,7 @@ import {
   IndoorSheet,
   type TimelineRow,
   timelineRows,
+  zoneLines,
   usualModel,
   totalsLine,
   walkFacts,
@@ -128,6 +130,14 @@ export function WalksTab() {
       route: chrono?.title ?? null,
       usual: usualModel(walkUsual(db, dogId, open.id), i18n),
       timeline: chrono === null ? [] : timelineRows(chrono.steps, chrono.placeNames, i18n),
+      zones:
+        open.mode === 'gps'
+          ? zoneLines(
+              walkZones(db, open.id),
+              walkEventIds(db, open.id).map((e) => e.ts),
+              i18n,
+            )
+          : [],
     };
   }, [db, open, i18n]);
 

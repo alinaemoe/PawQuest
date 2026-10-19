@@ -23,6 +23,8 @@ export interface WalkDetailsModel {
   readonly usual?: UsualModel | null;
   /** What the walk consisted of: visits and legs, for GPS walks. */
   readonly timeline?: readonly TimelineRow[];
+  /** The stays in saved places ("Парк · 38 мин · 10:41–11:19"), for GPS walks. */
+  readonly zones?: readonly string[];
   readonly manual: boolean;
 }
 
@@ -81,6 +83,14 @@ export function WalkDetailsSheet({
       )}
       {walk.route === undefined || walk.route === null ? null : (
         <AppText weight={600}>{walk.route}</AppText>
+      )}
+      {walk.zones === undefined || walk.zones.length === 0 ? null : (
+        <View style={{ gap: 4 }}>
+          <AppText variant="eyebrow">{i18n.t('walk.zones')}</AppText>
+          {walk.zones.map((line, i) => (
+            <AppText key={`${line}-${String(i)}`}>{line}</AppText>
+          ))}
+        </View>
       )}
       {walk.timeline === undefined || walk.timeline.length === 0 ? null : (
         <View style={{ gap: 4 }}>

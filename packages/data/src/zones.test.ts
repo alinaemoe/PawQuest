@@ -8,6 +8,7 @@ import { placeActivity } from './placeStats';
 import { appendTrackPoints, finishWalk, startWalk, type TrackPointInput } from './recorder';
 import { START, testEnv, type TestEnv } from './test-utils';
 import { effectivePlaceIds, structureZones } from './walkPlace';
+import { walkZones } from './walkZones';
 import { filterOptions, filterWalks, EMPTY_FILTER } from './walkFilter';
 
 const M_PER_DEG = 111_195;
@@ -177,5 +178,20 @@ describe('time and events inside a place', () => {
     const id = gpsWalk(1, [0, 1500, 1800, 1500]);
     refreshDerived(env.db, env.ctx, dog.id, { limit: 100 });
     expect(effectivePlaceIds(env.db, dog.id).get(id)).toBe(p.id);
+  });
+});
+
+describe('walkZones', () => {
+  it('the stays of one walk in time order, with the names; a walk with no track has none', () => {
+    const p = park();
+    const h = home();
+    const id = gpsWalk(1, [0, 3000, 0]);
+    expect(walkZones(env.db, id).map((z) => z.name)).toEqual(['Дом', 'Парк', 'Парк', 'Дом']);
+    expect(walkZones(env.db, id)[1]?.placeId).toBe(p.id);
+    expect(walkZones(env.db, id)[0]?.placeId).toBe(h.id);
+    expect(walkZones(env.db, id)[1]?.dwellS).toBeGreaterThan(300);
+    const empty = startWalk(env.db, env.ctx, { dogId: dog.id });
+    finishWalk(env.db, env.ctx, empty.id, START + 1000);
+    expect(walkZones(env.db, empty.id)).toEqual([]);
   });
 });

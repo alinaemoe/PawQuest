@@ -9,6 +9,7 @@ import {
   getEvent,
   getEventDetail,
   getWalk,
+  liveZones,
   hidePrompt,
   addWalkPhoto,
   isPromptHidden,
@@ -59,7 +60,7 @@ import {
   type WalkEventButton,
 } from '@pawquest/screens';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { useApp } from './AppContext';
@@ -115,6 +116,47 @@ export function WalkContainer({
   }, []);
 
   const types = useMemo(() => panelEventTypes(db), [db, version]);
+
+  // the saved places the walk is in now, looked at every few seconds; a new one is told once
+  const [zoneTick, setZoneTick] = useState(0);
+  useEffect(() => {
+    if (walk.mode !== 'gps' || walk.status !== 'active') {
+      return;
+    }
+    const timer = setInterval(() => {
+      setZoneTick((t) => t + 1);
+    }, 5000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [walk.mode, walk.status]);
+  const zones = useMemo(
+    () =>
+      walk.mode === 'gps' && walk.status === 'active' ? liveZones(db, walk.id, Date.now()) : [],
+    [db, walk.id, walk.mode, walk.status, zoneTick],
+  );
+  const seenZones = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const zone of zones) {
+      if (!seenZones.current.has(zone.placeId)) {
+        seenZones.current.add(zone.placeId);
+        toast.show({
+          message:
+            zone.notes === null || zone.notes.trim() === ''
+              ? i18n.t('zone.entered', { place: zone.name })
+              : i18n.t('zone.enteredNote', { place: zone.name, note: zone.notes }),
+          durationMs: zone.notes === null ? 3000 : 6000,
+        });
+      }
+    }
+    // a place that was left may be entered again: it is told again
+    const now = new Set(zones.map((z) => z.placeId));
+    for (const id of seenZones.current) {
+      if (!now.has(id)) {
+        seenZones.current.delete(id);
+      }
+    }
+  }, [zones, toast, i18n]);
 
   const live = useMemo(() => {
     const now = Date.now();
@@ -253,6 +295,15 @@ export function WalkContainer({
         gps={live.gps}
         events={buttons}
         recovery={recovery}
+        zone={
+          zones.length === 0
+            ? null
+            : {
+                names: zones.map((z) => z.name).join(' › '),
+                sinceTs: zones[0]?.sinceTs ?? Date.now(),
+                hint: zones.find((z) => z.notes !== null && z.notes.trim() !== '')?.notes ?? null,
+              }
+        }
         onEvent={(typeId) => {
           recordEvent(typeId);
         }}

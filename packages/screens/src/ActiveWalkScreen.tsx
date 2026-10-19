@@ -33,6 +33,12 @@ export interface ActiveWalkScreenProps {
   readonly distanceM: number;
   readonly gps: GpsStatus;
   readonly events: readonly WalkEventButton[];
+  /** The saved places the walk is in now ("Парк › Поляна", since when, the note of the place), or null. */
+  readonly zone?: {
+    readonly names: string;
+    readonly sinceTs: number;
+    readonly hint: string | null;
+  } | null;
   /** Set while the recovery timer runs (a hard moment): "Реакция 0:24 [Успокоилась]". */
   readonly recovery: { readonly since: number } | null;
   readonly onEvent: (id: string) => void;
@@ -121,6 +127,31 @@ export function ActiveWalkScreen(props: ActiveWalkScreenProps) {
       </View>
 
       {props.map}
+
+      {props.zone === undefined || props.zone === null ? null : (
+        <View
+          accessible
+          accessibilityLabel={`${props.zone.names}. ${i18n.formatDuration(Math.max(0, (now - props.zone.sinceTs) / 1000))}`}
+          style={{
+            backgroundColor: colors.surface2,
+            borderRadius: 16,
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            gap: 2,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Icon name="pin" color={colors.accent} size={18} />
+            <AppText weight={600} style={{ flexShrink: 1 }}>
+              {props.zone.names}
+            </AppText>
+            <AppText variant="muted">
+              {i18n.formatDuration(Math.max(0, (now - props.zone.sinceTs) / 1000))}
+            </AppText>
+          </View>
+          {props.zone.hint === null ? null : <AppText variant="muted">{props.zone.hint}</AppText>}
+        </View>
+      )}
 
       {props.recovery === null ? null : (
         <View

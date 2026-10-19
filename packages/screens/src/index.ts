@@ -153,7 +153,7 @@ export {
 } from './PhotoAlbumScreen';
 export { WeekRecapScreen, type WeekRecapModel, type WeekRecapScreenProps } from './WeekRecapScreen';
 export { recapDelta, type RecapDelta } from './recapModel';
-export { timelineRows, type TimelineRow } from './chronologyRows';
+export { timelineRows, zoneLines, type TimelineRow } from './chronologyRows';
 export { BaseArrivalSheet, type BaseArrivalSheetProps } from './BaseArrivalSheet';
 export { IndoorSheet, type IndoorSheetProps } from './IndoorSheet';
 export {
