@@ -274,3 +274,4 @@ export { HealthSection } from './HealthViews';
 export { emptyReason, filterSummary, toggled, withDimension } from './walkFilterModel';
 export { WalkFilterSheet, type WalkFilterSheetProps } from './WalkFilterSheet';
 export { WalkFilterBar, type WalkFilterBarProps } from './WalkFilterBar';
+export { linesBounds, nearestWalk } from './walksMapModel';

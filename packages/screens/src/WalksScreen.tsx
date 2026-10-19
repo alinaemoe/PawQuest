@@ -1,4 +1,4 @@
-import { AppText, Avatar, Button, Card, ListRow, Screen, useI18n } from '@pawquest/rn-ui';
+import { AppText, Avatar, Button, Card, Chip, ListRow, Screen, useI18n } from '@pawquest/rn-ui';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
@@ -14,6 +14,10 @@ export interface WalksScreenProps {
   readonly onLogWalk: () => void;
   /** The filter bar over the list. */
   readonly filterBar?: ReactNode;
+  /** The list or the map of the walks that are shown, and the map itself. */
+  readonly view?: 'list' | 'map';
+  readonly onView?: (view: 'list' | 'map') => void;
+  readonly mapView?: ReactNode;
   /** Set while a filter shows nothing: the reason instead of the empty-history text. */
   readonly filteredEmpty?: { readonly title: string; readonly text: string } | null;
 }
@@ -27,6 +31,9 @@ export function WalksScreen({
   onOpen,
   onLogWalk,
   filterBar,
+  view = 'list',
+  onView,
+  mapView,
   filteredEmpty = null,
 }: WalksScreenProps) {
   const i18n = useI18n();
@@ -34,6 +41,26 @@ export function WalksScreen({
     <Screen>
       <AppText variant="numBig">{i18n.t('walks.title')}</AppText>
       {filterBar}
+      {onView === undefined || groups.length === 0 ? null : (
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Chip
+            lead="home"
+            label={i18n.t('walks.view.list')}
+            selected={view === 'list'}
+            onPress={() => {
+              onView('list');
+            }}
+          />
+          <Chip
+            lead="map"
+            label={i18n.t('walks.view.map')}
+            selected={view === 'map'}
+            onPress={() => {
+              onView('map');
+            }}
+          />
+        </View>
+      )}
 
       {groups.length === 0 && filteredEmpty !== null ? (
         <View style={{ gap: 8, paddingVertical: 24 }}>
@@ -51,6 +78,8 @@ export function WalksScreen({
             <Button label={i18n.t('today.logWalk')} icon="plus" size="lg" onPress={onLogWalk} />
           </View>
         </View>
+      ) : view === 'map' && mapView !== undefined ? (
+        mapView
       ) : (
         <>
           {weekLine === null ? null : (

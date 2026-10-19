@@ -56,6 +56,27 @@ export const ru = {
   'unit.perKm': '/км',
   'unit.kmh': 'км/ч',
   'unit.mph': 'миль/ч',
+  'export.restore': 'Восстановить из файла',
+  'export.restoreHint':
+    'Заменит все данные в приложении данными из файла резервной копии. Сначала сделайте копию того, что есть сейчас.',
+  'export.restoreTitle': 'Заменить данные?',
+  'export.restoreText':
+    'В файле от {date}: {summary}. Всё, что сейчас в приложении, будет заменено этим.',
+  'export.restoreSummary': 'прогулок {walks}, событий {events}, точек трека {points}',
+  'export.restoreConfirm': 'Заменить данные',
+  'export.restoreCancel': 'Не надо',
+  'export.restoreDone': 'Данные восстановлены',
+  'export.restoreFailed':
+    'Это не резервная копия PawQuest, или файл повреждён, или она сделана более новой версией',
+  'walks.view.list': 'Список',
+  'walks.view.map': 'Карта',
+  'walks.map.empty':
+    'Ни у одной из этих прогулок нет маршрута. Маршрут есть у прогулок, записанных с GPS.',
+  'walks.map.count': 'Маршрутов на карте: {n}',
+  'walks.map.noTrack': 'без маршрута: {n}',
+  'walks.map.hint':
+    'Нажмите на линию, чтобы выбрать прогулку. Где линий больше, там вы бываете чаще.',
+  'walks.map.open': 'Открыть прогулку',
   'filter.quick': 'Быстрый старт',
   'filter.quick.hard': 'Трудные моменты',
   'filter.quick.wet': 'Мокро',

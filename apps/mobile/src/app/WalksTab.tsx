@@ -52,6 +52,7 @@ import { useApp } from './AppContext';
 import { GpxButton } from './ExportContainer';
 import { ReplayButton } from './ReplayContainer';
 import { WalkRouteMap } from './RouteMap';
+import { WalksMapView } from './WalksMapView';
 import { WalkPhotos } from './WalkPhotos';
 
 const PAGE = 30;
@@ -69,6 +70,7 @@ export function WalksTab() {
   const [filter, setFilter] = useState<WalkFilter>(EMPTY_FILTER);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [filtering, setFiltering] = useState(false);
+  const [view, setView] = useState<'list' | 'map'>('list');
   // the visit row whose "inside" mark is being decided
   const [indoorRow, setIndoorRow] = useState<TimelineRow | null>(null);
 
@@ -86,6 +88,11 @@ export function WalksTab() {
     };
   }, [db, dogId, pages, i18n, version, filter]);
 
+  // the map shows up to 200 of the walks the filter gives, not only the page of the list
+  const mapWalks = useMemo(
+    () => (view === 'map' ? filterWalks(db, dogId, filter, Date.now(), 200).walks : []),
+    [db, dogId, filter, view, version],
+  );
   const folders = useMemo(() => listFolders(db), [db, version]);
   const options = useMemo(() => filterOptions(db, dogId), [db, dogId, version]);
   const facets = useMemo(
@@ -144,6 +151,9 @@ export function WalksTab() {
   return (
     <>
       <WalksScreen
+        view={view}
+        onView={setView}
+        mapView={<WalksMapView walks={mapWalks} onOpen={setOpenId} />}
         filterBar={
           <WalkFilterBar
             folders={folders}

@@ -372,3 +372,4 @@ export {
   type WalkFilter,
   type WalkFolder,
 } from './walkFilter';
+export { walkLines, type WalkLine } from './walkLines';

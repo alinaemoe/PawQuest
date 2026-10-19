@@ -1,4 +1,12 @@
-import { backupChunks, eventsCsv, listEventTypes, walkGpx, walksCsv } from '@pawquest/data';
+import {
+  backupChunks,
+  eventsCsv,
+  listEventTypes,
+  restoreBackup,
+  summarizeBackup,
+  walkGpx,
+  walksCsv,
+} from '@pawquest/data';
 import { eventTypeLabel, ExportSheet, type ExportKind } from '@pawquest/screens';
 import { Button, useToast } from '@pawquest/rn-ui';
 import { File, Paths } from 'expo-file-system';
@@ -35,7 +43,10 @@ export function ExportContainer({
   readonly visible: boolean;
   readonly onClose: () => void;
 }) {
-  const { db, dog, i18n } = useApp();
+  const { db, dog, i18n, reloadSettings } = useApp();
+  const [pending, setPending] = useState<{ text: string; date: string; summary: string } | null>(
+    null,
+  );
   const [working, setWorking] = useState<ExportKind | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,8 +89,52 @@ export function ExportContainer({
     }
   };
 
+  const pick = async (): Promise<void> => {
+    setError(null);
+    try {
+      const picked = await File.pickFileAsync({ mimeTypes: ['application/json', '*/*'] });
+      if (picked.canceled) {
+        return;
+      }
+      const text = await picked.result.text();
+      const summary = summarizeBackup(text);
+      setPending({
+        text,
+        date: i18n.formatDate(Date.parse(summary.exportedAt), Date.now()),
+        summary: i18n.t('export.restoreSummary', {
+          walks: summary.rows['walk'] ?? 0,
+          events: summary.rows['event'] ?? 0,
+          points: summary.rows['track_point'] ?? 0,
+        }),
+      });
+    } catch {
+      setError(i18n.t('export.restoreFailed'));
+    }
+  };
+
   return (
     <ExportSheet
+      onRestore={() => {
+        void pick();
+      }}
+      pending={pending}
+      onCancelRestore={() => {
+        setPending(null);
+      }}
+      onConfirmRestore={() => {
+        if (pending === null) {
+          return;
+        }
+        try {
+          restoreBackup(db, pending.text);
+          setPending(null);
+          reloadSettings();
+          onClose();
+        } catch {
+          setPending(null);
+          setError(i18n.t('export.restoreFailed'));
+        }
+      }}
       visible={visible}
       working={working}
       error={error}

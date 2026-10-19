@@ -40,6 +40,8 @@ export interface AppContextValue {
   /** Bumps after every write so screens re-read their data. */
   readonly version: number;
   readonly bump: () => void;
+  /** Reads the settings from the database again (after a restore) and redraws. */
+  readonly reloadSettings: () => void;
   readonly updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
   /** Creates the dog, marks onboarding done and remembers the goals. */
   readonly completeOnboarding: (input: DogInput, goals: AppSettings['goals']) => void;
@@ -116,6 +118,11 @@ function Providers({ children }: { children: ReactNode }) {
     [db, ctx, settings.language, bump],
   );
 
+  const reloadSettings = useCallback(() => {
+    setSettings(getSettings(db));
+    bump();
+  }, [db, bump]);
+
   const startDemo = useCallback(() => {
     const created = createDog(db, ctx, {
       name: settings.language === 'en' ? 'Demo' : 'Демо',
@@ -153,6 +160,7 @@ function Providers({ children }: { children: ReactNode }) {
       version,
       bump,
       updateSetting,
+      reloadSettings,
       completeOnboarding,
       startDemo,
       removeDemo,
@@ -166,6 +174,7 @@ function Providers({ children }: { children: ReactNode }) {
       version,
       bump,
       updateSetting,
+      reloadSettings,
       completeOnboarding,
       startDemo,
       removeDemo,
