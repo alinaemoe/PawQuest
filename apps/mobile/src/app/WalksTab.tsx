@@ -85,6 +85,10 @@ export function WalksTab() {
     };
   }, [db, dogId, pages, i18n, version, filter]);
 
+  const totalWalks = useMemo(
+    () => filterWalks(db, dogId, EMPTY_FILTER, Date.now()).walks.length,
+    [db, dogId, version],
+  );
   const folders = useMemo(() => listFolders(db), [db, version]);
   const options = useMemo(() => filterOptions(db, dogId), [db, dogId, version]);
   const typeLabelOf = useMemo(() => {
@@ -187,7 +191,7 @@ export function WalksTab() {
         visible={filtering}
         filter={filter}
         options={options}
-        count={data.found ?? 0}
+        count={data.found ?? totalWalks}
         typeLabel={typeLabelOf}
         onChange={(next) => {
           setFilter(next);
