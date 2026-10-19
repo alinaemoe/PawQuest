@@ -72,6 +72,26 @@ export interface ChronologyOptions {
 const CONTOUR_EDGE_M = 15;
 
 /**
+ * Whether a place holds a position, and how big and how far it is: inside its contour when it has
+ * one (a few meters past the edge counts), else inside its radius (but not less than the reach).
+ */
+export function placeHolds(
+  at: LatLon,
+  place: ChronoPlace,
+  minReachM = 40,
+): { readonly area: number; readonly distance: number } | null {
+  const distance = haversineDistanceM(at, place);
+  if (place.boundary !== undefined && place.boundary.length >= 3) {
+    if (!pointInRing(at, place.boundary) && distanceToRingM(at, place.boundary) > CONTOUR_EDGE_M) {
+      return null;
+    }
+    return { area: ringAreaM2(place.boundary), distance };
+  }
+  const reach = Math.max(place.radiusM, minReachM);
+  return distance > reach ? null : { area: Math.PI * reach * reach, distance };
+}
+
+/**
  * The saved place that contains a position: inside its contour when it has one (a few meters past
  * the edge counts), else inside its radius (but not less than the reach). When places lie inside
  * each other the smallest wins, "the glade" rather than "the park"; equal ones go to the nearest.
@@ -83,25 +103,14 @@ export function placeContaining(
 ): ChronoPlace | null {
   let best: { place: ChronoPlace; area: number; distance: number } | null = null;
   for (const place of places) {
-    const distance = haversineDistanceM(at, place);
-    let area: number;
-    if (place.boundary !== undefined && place.boundary.length >= 3) {
-      if (
-        !pointInRing(at, place.boundary) &&
-        distanceToRingM(at, place.boundary) > CONTOUR_EDGE_M
-      ) {
-        continue;
-      }
-      area = ringAreaM2(place.boundary);
-    } else {
-      const reach = Math.max(place.radiusM, minReachM);
-      if (distance > reach) {
-        continue;
-      }
-      area = Math.PI * reach * reach;
-    }
-    if (best === null || area < best.area || (area === best.area && distance < best.distance)) {
-      best = { place, area, distance };
+    const held = placeHolds(at, place, minReachM);
+    if (
+      held !== null &&
+      (best === null ||
+        held.area < best.area ||
+        (held.area === best.area && held.distance < best.distance))
+    ) {
+      best = { place, ...held };
     }
   }
   return best?.place ?? null;

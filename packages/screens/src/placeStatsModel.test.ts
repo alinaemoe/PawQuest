@@ -23,6 +23,9 @@ const activity = (name: string, list: PlaceWalk[]): PlaceActivity => ({
   category: 'park',
   summary: placeSummary(list),
   weeks: placeWeeks(list, today, 3),
+  dwellS: 0,
+  zoneEvents: 0,
+  eventsPerHour: null,
 });
 
 describe('placeCards', () => {
@@ -50,6 +53,20 @@ describe('placeCards', () => {
     expect(cards[0]?.enough).toBe(false);
     expect(cards[1]?.title.length).toBeGreaterThan(0);
     expect(cards[1]?.title).not.toBe('');
+  });
+
+  it('the time inside the place and the rate of events: the rate only from an hour of it', () => {
+    const [few] = placeCards([{ ...activity('Парк', walks(6, 40)), dwellS: 1500 }], today, NOW, ru);
+    expect(few?.note).toBe('В зоне: 25 мин · для частоты нужен час в зоне');
+    const [rate] = placeCards(
+      [{ ...activity('Парк', walks(6, 40)), dwellS: 7200, zoneEvents: 3, eventsPerHour: 1.5 }],
+      today,
+      NOW,
+      ru,
+    );
+    expect(rate?.note).toBe('В зоне: 2 ч 00 мин · событий в час: 1,5');
+    const [none] = placeCards([activity('Парк', walks(6, 40))], today, NOW, ru);
+    expect(none?.note).toBeNull();
   });
 
   it('a walk of unknown length is a walk with no usual length', () => {

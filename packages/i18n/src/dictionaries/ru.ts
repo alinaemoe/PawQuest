@@ -56,6 +56,9 @@ export const ru = {
   'unit.perKm': '/км',
   'unit.kmh': 'км/ч',
   'unit.mph': 'миль/ч',
+  'places.stats.zone': 'В зоне: {duration}',
+  'places.stats.rate': 'событий в час: {rate}',
+  'places.stats.rateFew': 'для частоты нужен час в зоне',
   'export.restore': 'Восстановить из файла',
   'export.restoreHint':
     'Заменит все данные в приложении данными из файла резервной копии. Сначала сделайте копию того, что есть сейчас.',

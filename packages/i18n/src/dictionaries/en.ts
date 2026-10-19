@@ -41,6 +41,9 @@ export const en = {
   'unit.perKm': '/km',
   'unit.kmh': 'km/h',
   'unit.mph': 'mph',
+  'places.stats.zone': 'Inside: {duration}',
+  'places.stats.rate': 'events per hour: {rate}',
+  'places.stats.rateFew': 'a rate needs an hour inside',
   'export.restore': 'Restore from a file',
   'export.restoreHint':
     'Replaces all the data in the app with the data of a backup file. Make a backup of what is there now first.',

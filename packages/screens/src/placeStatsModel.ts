@@ -49,7 +49,18 @@ export function placeCards(
         ? i18n.t('places.stats.last', { date: i18n.formatDate(summary.lastAt ?? now, now) })
         : i18n.t('places.stats.few', { n: MIN_PLACE_WALKS - summary.walks }),
       enough: summary.enough,
-      note: null,
+      // time inside the place (by the zones), and a rate of events only from an hour of it
+      note:
+        place.dwellS < 60
+          ? null
+          : [
+              i18n.t('places.stats.zone', { duration: i18n.formatDuration(place.dwellS) }),
+              place.eventsPerHour === null
+                ? i18n.t('places.stats.rateFew')
+                : i18n.t('places.stats.rate', {
+                    rate: i18n.formatNumber(place.eventsPerHour, 1),
+                  }),
+            ].join(' · '),
       bars: place.weeks.map((w): BarModel => {
         const label = i18n.formatDate(noon(w.mondayDay), noon(today));
         const value =

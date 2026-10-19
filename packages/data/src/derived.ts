@@ -1,10 +1,17 @@
-import { filterTrack, placeContaining, ringAreaM2, type ChronoPlace } from '@pawquest/core';
+import {
+  filterTrack,
+  mainPlace,
+  placeContaining,
+  ringAreaM2,
+  zoneVisits,
+  type ChronoPlace,
+} from '@pawquest/core';
 import { WALK_DIMENSIONS_VERSION, walkDimensions, walkOutcomes } from '@pawquest/insights';
 import { WEATHER_DIMENSIONS_VERSION, weatherDimensions } from '@pawquest/weather';
 
 import { walkChronology } from './chronology';
 import { toIso, type Ctx } from './ids';
-import { listPlaces } from './places';
+import { isBasePlace, listPlaces } from './places';
 import { listTrackPoints } from './recorder';
 import type { SqlDb, SqlRow } from './sql';
 import { getWeatherSnapshot } from './weather';
@@ -31,7 +38,8 @@ const LONG_ENOUGH = `(w.duration_s IS NULL OR w.duration_s >= ${String(MIN_ANALY
 
 /** The rule version of each kind: raise it when the rule (or a band it uses) changes. */
 export const DERIVED_VERSIONS: Readonly<Record<DerivedKind, number>> = {
-  structure: 1,
+  // 2: the zones (where the walk was, by the saved places) and the place the walk mostly was in
+  structure: 2,
   dims: WALK_DIMENSIONS_VERSION * 100 + WEATHER_DIMENSIONS_VERSION,
 };
 
@@ -45,6 +53,15 @@ export interface StructureJson {
   readonly visitCount: number;
   readonly shopVisit: boolean;
   readonly rideS: number;
+  /** Where the walk was by the saved places: each visit with its time inside (D-73). */
+  readonly zones?: readonly {
+    readonly placeId: string;
+    readonly fromTs: number;
+    readonly toTs: number;
+    readonly dwellS: number;
+  }[];
+  /** The place the walk was mostly in, when the owner has not picked one; null when none. */
+  readonly mainPlaceId?: string | null;
 }
 
 export interface DimsJson {
@@ -122,6 +139,8 @@ export function computeStructure(db: SqlDb, walkId: string, now: number): Struct
       visitCount: 0,
       shopVisit: false,
       rideS: 0,
+      zones: [],
+      mainPlaceId: null,
     };
   }
   const rows = placeRows(db);
@@ -134,6 +153,15 @@ export function computeStructure(db: SqlDb, walkId: string, now: number): Struct
     return found === null ? null : (categoryOf.get(found.id) ?? null);
   };
   const visits = chronology.steps.flatMap((s) => (s.kind === 'visit' ? [s] : []));
+  const zones = zoneVisits(
+    points.map((p) => ({ ts: p.ts, lat: p.lat, lon: p.lon, accuracyM: p.accuracyM })),
+    places,
+  );
+  const baseIds = new Set(
+    listPlaces(db)
+      .filter((p) => isBasePlace(p.category))
+      .map((p) => p.id),
+  );
   return {
     hasTrack: true,
     title: chronology.title,
@@ -144,16 +172,24 @@ export function computeStructure(db: SqlDb, walkId: string, now: number): Struct
     rideS: Math.round(
       chronology.steps.reduce((sum, s) => (s.kind === 'ride' ? sum + s.durationS : sum), 0),
     ),
+    zones: zones.map((z) => ({
+      placeId: z.placeId,
+      fromTs: z.fromTs,
+      toTs: z.toTs,
+      dwellS: Math.round(z.dwellS),
+    })),
+    mainPlaceId: mainPlace(zones, { baseIds }),
   };
 }
 
 /** The dimensions and outcomes of a walk; `structure` is what `computeStructure` gave (or null). */
 export function computeDims(db: SqlDb, walkId: string, structure: StructureJson | null): DimsJson {
+  // the place the owner picked; else the one the walk was mostly in (D-73)
   const row = db.all(
     `SELECT w.started_at, w.tz_offset_min, w.duration_s, w.summary_pending, w.place_id,
             p.category AS place_category, p.radius_m AS place_radius, p.boundary AS place_boundary
-       FROM walk w LEFT JOIN place p ON p.id = w.place_id WHERE w.id = ?`,
-    [walkId],
+       FROM walk w LEFT JOIN place p ON p.id = COALESCE(w.place_id, ?) WHERE w.id = ?`,
+    [structure?.mainPlaceId ?? null, walkId],
   )[0];
   if (row === undefined) {
     throw new Error('Walk not found');

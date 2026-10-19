@@ -1,5 +1,6 @@
 import { listWalkDims } from './derived';
 import type { Ctx } from './ids';
+import { effectivePlaceIds } from './walkPlace';
 import { toWalk } from './walks';
 import type { Walk } from './walks';
 import type { SqlDb } from './sql';
@@ -76,7 +77,9 @@ export function filterContext(db: SqlDb, dogId: string, now: number): FilterCont
         ORDER BY w.started_at DESC, w.id DESC`,
       [dogId, MIN_WALK_S],
     )
-    .map((row) => ({ walk: toWalk(row), placeId: String(row['place_id'] ?? '') }));
+    .map((row) => ({ walk: toWalk(row), id: String(row['id']) }));
+  // the place the owner picked, else the one the walk was mostly in
+  const placeOf = effectivePlaceIds(db, dogId);
   const eventsOf = new Map<string, Set<string>>();
   for (const r of db.all(
     'SELECT walk_id, type_id FROM event WHERE walk_id IS NOT NULL AND dog_id = ? AND deleted_at IS NULL',
@@ -86,7 +89,7 @@ export function filterContext(db: SqlDb, dogId: string, now: number): FilterCont
     eventsOf.set(walkId, (eventsOf.get(walkId) ?? new Set()).add(String(r['type_id'])));
   }
   return {
-    rows,
+    rows: rows.map(({ walk, id }) => ({ walk, placeId: placeOf.get(id) ?? '' })),
     dims: new Map(listWalkDims(db, dogId).map((d) => [d.walkId, d.dims])),
     eventsOf,
     trained: new Set(
@@ -292,15 +295,12 @@ export interface FilterOptions {
 }
 
 export function filterOptions(db: SqlDb, dogId: string): FilterOptions {
+  const used = new Set(effectivePlaceIds(db, dogId).values());
   return {
     places: db
-      .all(
-        `SELECT DISTINCT p.id, p.name FROM place p JOIN walk w ON w.place_id = p.id
-          JOIN walk_dog d ON d.walk_id = w.id
-         WHERE d.dog_id = ? AND w.deleted_at IS NULL AND p.deleted_at IS NULL ORDER BY p.name`,
-        [dogId],
-      )
-      .map((r) => ({ id: String(r['id']), name: String(r['name']) })),
+      .all('SELECT id, name FROM place WHERE deleted_at IS NULL ORDER BY name')
+      .map((r) => ({ id: String(r['id']), name: String(r['name']) }))
+      .filter((p) => used.has(p.id)),
     eventTypes: db
       .all(
         'SELECT DISTINCT type_id FROM event WHERE dog_id = ? AND walk_id IS NOT NULL AND deleted_at IS NULL ORDER BY type_id',
