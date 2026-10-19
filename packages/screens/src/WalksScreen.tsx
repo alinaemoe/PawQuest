@@ -1,4 +1,5 @@
 import { AppText, Avatar, Button, Card, ListRow, Screen, useI18n } from '@pawquest/rn-ui';
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import type { DayGroup } from './walksModel';
@@ -11,6 +12,10 @@ export interface WalksScreenProps {
   readonly onLoadMore: () => void;
   readonly onOpen: (walkId: string) => void;
   readonly onLogWalk: () => void;
+  /** The filter bar over the list. */
+  readonly filterBar?: ReactNode;
+  /** Set while a filter shows nothing: the reason instead of the empty-history text. */
+  readonly filteredEmpty?: { readonly title: string; readonly text: string } | null;
 }
 
 /** The Walks tab (spec S06): totals of the week and the history grouped by day. */
@@ -21,13 +26,21 @@ export function WalksScreen({
   onLoadMore,
   onOpen,
   onLogWalk,
+  filterBar,
+  filteredEmpty = null,
 }: WalksScreenProps) {
   const i18n = useI18n();
   return (
     <Screen>
       <AppText variant="numBig">{i18n.t('walks.title')}</AppText>
+      {filterBar}
 
-      {groups.length === 0 ? (
+      {groups.length === 0 && filteredEmpty !== null ? (
+        <View style={{ gap: 8, paddingVertical: 24 }}>
+          <AppText variant="title">{filteredEmpty.title}</AppText>
+          <AppText variant="muted">{filteredEmpty.text}</AppText>
+        </View>
+      ) : groups.length === 0 ? (
         <View style={{ alignItems: 'center', gap: 14, paddingVertical: 36 }}>
           <Avatar icon="pin" size={88} />
           <AppText variant="title">{i18n.t('walks.emptyTitle')}</AppText>

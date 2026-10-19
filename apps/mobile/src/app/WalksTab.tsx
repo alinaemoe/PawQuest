@@ -1,5 +1,13 @@
 import {
+  EMPTY_FILTER,
   clearIndoor,
+  countConditions,
+  deleteFolder,
+  filterOptions,
+  filterWalks,
+  listFolders,
+  saveFolder,
+  type WalkFilter,
   createManualWalk,
   getWalk,
   getWeatherSnapshot,
@@ -16,8 +24,12 @@ import {
 } from '@pawquest/data';
 import { useToast } from '@pawquest/rn-ui';
 import {
+  emptyReason,
   eventTypeLabel,
+  filterSummary,
   groupWalksByDay,
+  WalkFilterBar,
+  WalkFilterSheet,
   IndoorSheet,
   type TimelineRow,
   timelineRows,
@@ -53,19 +65,32 @@ export function WalksTab() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [logging, setLogging] = useState(false);
+  const [filter, setFilter] = useState<WalkFilter>(EMPTY_FILTER);
+  const [folderId, setFolderId] = useState<string | null>(null);
+  const [filtering, setFiltering] = useState(false);
   // the visit row whose "inside" mark is being decided
   const [indoorRow, setIndoorRow] = useState<TimelineRow | null>(null);
 
   const data = useMemo(() => {
     const now = Date.now();
-    const walks = listWalksPage(db, dogId, PAGE * pages);
+    const filtered = countConditions(filter) > 0 ? filterWalks(db, dogId, filter, now) : null;
+    const walks = filtered === null ? listWalksPage(db, dogId, PAGE * pages) : filtered.walks;
     const totals = walkTotals(db, dogId, now - 7 * DAY, now + DAY);
     return {
       groups: groupWalksByDay(walks, i18n, now),
-      hasMore: walks.length === PAGE * pages,
-      weekLine: totals.count === 0 ? null : totalsLine(totals, i18n),
+      hasMore: filtered === null && walks.length === PAGE * pages,
+      weekLine: filtered !== null || totals.count === 0 ? null : totalsLine(totals, i18n),
+      found: filtered === null ? null : walks.length,
+      pending: filtered?.pending ?? 0,
     };
-  }, [db, dogId, pages, i18n, version]);
+  }, [db, dogId, pages, i18n, version, filter]);
+
+  const folders = useMemo(() => listFolders(db), [db, version]);
+  const options = useMemo(() => filterOptions(db, dogId), [db, dogId, version]);
+  const typeLabelOf = useMemo(() => {
+    const types = new Map(listEventTypes(db, true).map((t) => [t.id, t]));
+    return (id: string): string => eventTypeLabel(types.get(id), id, i18n);
+  }, [db, i18n, version]);
 
   const open = useMemo(() => (openId === null ? null : getWalk(db, openId)), [db, openId, version]);
   const details = useMemo<WalkDetailsModel | null>(() => {
@@ -114,6 +139,39 @@ export function WalksTab() {
   return (
     <>
       <WalksScreen
+        filterBar={
+          <WalkFilterBar
+            folders={folders}
+            activeFolderId={folderId}
+            summary={filterSummary(filter, options, typeLabelOf, i18n)}
+            found={data.found}
+            onOpen={() => {
+              setFiltering(true);
+            }}
+            onFolder={(id) => {
+              const folder = folders.find((f) => f.id === id);
+              if (folder !== undefined) {
+                setFilter(folder.filter);
+                setFolderId(id);
+              }
+            }}
+            onReset={() => {
+              setFilter(EMPTY_FILTER);
+              setFolderId(null);
+            }}
+            onDeleteFolder={(id) => {
+              deleteFolder(db, id);
+              setFilter(EMPTY_FILTER);
+              setFolderId(null);
+              bump();
+            }}
+          />
+        }
+        filteredEmpty={
+          countConditions(filter) > 0
+            ? { title: i18n.t('filter.empty.title'), text: emptyReason(filter, data.pending, i18n) }
+            : null
+        }
         weekLine={data.weekLine}
         groups={data.groups}
         hasMore={data.hasMore}
@@ -123,6 +181,30 @@ export function WalksTab() {
         onOpen={setOpenId}
         onLogWalk={() => {
           setLogging(true);
+        }}
+      />
+      <WalkFilterSheet
+        visible={filtering}
+        filter={filter}
+        options={options}
+        count={data.found ?? 0}
+        typeLabel={typeLabelOf}
+        onChange={(next) => {
+          setFilter(next);
+          setFolderId(null);
+        }}
+        onClose={() => {
+          setFiltering(false);
+        }}
+        onReset={() => {
+          setFilter(EMPTY_FILTER);
+          setFolderId(null);
+        }}
+        onSaveFolder={(name) => {
+          const folder = saveFolder(db, ctx, name, filter);
+          setFolderId(folder.id);
+          bump();
+          toast.show({ message: i18n.t('filter.folderSaved', { name: folder.name }) });
         }}
       />
       <WalkDetailsSheet

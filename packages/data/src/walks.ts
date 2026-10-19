@@ -35,7 +35,7 @@ export interface ManualWalkInput {
 const str = (v: SqlValue | undefined): string | null => (typeof v === 'string' ? v : null);
 const num = (v: SqlValue | undefined): number | null => (typeof v === 'number' ? v : null);
 
-function toWalk(row: SqlRow): Walk {
+export function toWalk(row: SqlRow): Walk {
   const ended = str(row['ended_at']);
   return {
     id: String(row['id']),

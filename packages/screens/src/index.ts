@@ -271,3 +271,6 @@ export type { InsightsSectionId } from './InsightsScreen';
 export { skillCards } from './skillStatsModel';
 export { healthStatsModel, type HealthStatsModel } from './healthStatsModel';
 export { HealthSection } from './HealthViews';
+export { emptyReason, filterSummary, toggled, withDimension } from './walkFilterModel';
+export { WalkFilterSheet, type WalkFilterSheetProps } from './WalkFilterSheet';
+export { WalkFilterBar, type WalkFilterBarProps } from './WalkFilterBar';

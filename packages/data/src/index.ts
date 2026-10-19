@@ -353,3 +353,17 @@ export { placeActivity, type PlaceActivity } from './placeStats';
 export { skillProgress, type SkillProgress } from './skillProgress';
 export { METRICS_VERSION, refreshMovingTimes } from './maintenance';
 export { healthOverview, type HealthOverview } from './healthOverview';
+export {
+  EMPTY_FILTER,
+  countConditions,
+  deleteFolder,
+  filterOptions,
+  filterWalks,
+  listFolders,
+  parseFilter,
+  saveFolder,
+  type FilterOptions,
+  type FilteredWalks,
+  type WalkFilter,
+  type WalkFolder,
+} from './walkFilter';
