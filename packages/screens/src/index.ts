@@ -269,3 +269,5 @@ export { placeCards, type PlaceCardModel, type StatCardModel } from './placeStat
 export { PlacesSection, SkillsSection, StatCards } from './PlaceStatsViews';
 export type { InsightsSectionId } from './InsightsScreen';
 export { skillCards } from './skillStatsModel';
+export { healthStatsModel, type HealthStatsModel } from './healthStatsModel';
+export { HealthSection } from './HealthViews';

@@ -15,7 +15,7 @@ export const GOAL_KEYS = [
 ] as const;
 export type GoalKey = (typeof GOAL_KEYS)[number];
 
-export const INSIGHTS_SECTIONS = ['overview', 'behavior', 'places', 'skills'] as const;
+export const INSIGHTS_SECTIONS = ['overview', 'behavior', 'places', 'skills', 'health'] as const;
 export type InsightsSection = (typeof INSIGHTS_SECTIONS)[number];
 
 /** Everything the user can change in Settings (spec 07), stored one JSON value per key. */

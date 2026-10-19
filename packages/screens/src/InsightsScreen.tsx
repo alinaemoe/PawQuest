@@ -8,10 +8,18 @@ import type { ChartModel, CompareModel } from './chartsModel';
 import { WalkCalendar } from './CalendarViews';
 import type { InsightCardModel, InsightsModel } from './insightsModel';
 import type { StatCardModel } from './placeStatsModel';
+import type { HealthStatsModel } from './healthStatsModel';
+import { HealthSection } from './HealthViews';
 import { PlacesSection, SkillsSection } from './PlaceStatsViews';
 
-export type InsightsSectionId = 'overview' | 'behavior' | 'places' | 'skills';
-const SECTIONS: readonly InsightsSectionId[] = ['overview', 'skills', 'behavior', 'places'];
+export type InsightsSectionId = 'overview' | 'behavior' | 'places' | 'skills' | 'health';
+const SECTIONS: readonly InsightsSectionId[] = [
+  'overview',
+  'skills',
+  'behavior',
+  'places',
+  'health',
+];
 
 export interface InsightsScreenProps {
   readonly model: InsightsModel;
@@ -36,6 +44,7 @@ export interface InsightsScreenProps {
   readonly onSection: (section: InsightsSectionId) => void;
   readonly places?: readonly StatCardModel[];
   readonly skills?: readonly StatCardModel[];
+  readonly health?: HealthStatsModel;
 }
 
 function InsightCard(props: {
@@ -95,6 +104,7 @@ export function InsightsScreen({
   onSection,
   places,
   skills,
+  health,
 }: InsightsScreenProps) {
   const i18n = useI18n();
   return (
@@ -222,6 +232,8 @@ export function InsightsScreen({
       ) : null}
 
       {section === 'skills' ? <SkillsSection cards={skills ?? []} /> : null}
+
+      {section === 'health' && health !== undefined ? <HealthSection model={health} /> : null}
 
       {section === 'places' ? <PlacesSection cards={places ?? []} /> : null}
 

@@ -112,3 +112,19 @@ export {
   type PlaceWeek,
 } from './placeSeries';
 export { MIN_WEEK_ATTEMPTS, skillWeeks, type SkillAttempt, type SkillWeek } from './skillSeries';
+export {
+  MIN_UNUSUAL_WALKS,
+  PERSISTENT_DAYS,
+  PERSISTENT_WALKS,
+  UNUSUAL_WINDOW,
+  busyDays,
+  persistentChange,
+  unusualWalks,
+  weightChange,
+  type BusyDay,
+  type MeasuredWalk,
+  type UnusualKind,
+  type UnusualWalk,
+  type WeightChange,
+  type WeightPoint,
+} from './health';

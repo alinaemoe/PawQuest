@@ -26,7 +26,7 @@ interface WalkNumbers {
   readonly distanceM: number | null;
 }
 
-function walkNumbers(db: SqlDb, dogId: string, fromTs: number, toTs: number): WalkNumbers[] {
+export function walkNumbers(db: SqlDb, dogId: string, fromTs: number, toTs: number): WalkNumbers[] {
   return db
     .all(
       `SELECT w.id, w.started_at, w.tz_offset_min, w.duration_s, w.distance_m

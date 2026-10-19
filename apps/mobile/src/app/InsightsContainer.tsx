@@ -6,6 +6,7 @@ import {
   hiddenInsightKeys,
   hideInsight,
   listPlaces,
+  healthOverview,
   listWalksPage,
   placeActivity,
   skillProgress,
@@ -25,6 +26,7 @@ import {
   DayWalksSheet,
   HideInsightSheet,
   InsightsScreen,
+  healthStatsModel,
   placeCards,
   skillCards,
   thresholdCharts,
@@ -96,6 +98,12 @@ export function InsightsContainer() {
     return skillCards(skillProgress(db, dogId, now, tz), localDay(now, tz), now, i18n);
   }, [db, dogId, i18n, version]);
 
+  const health = useMemo(() => {
+    const now = Date.now();
+    const tz = -new Date(now).getTimezoneOffset();
+    return healthStatsModel(healthOverview(db, dogId, now, tz), localDay(now, tz), now, i18n);
+  }, [db, dogId, i18n, version]);
+
   const dayList = useMemo(
     () => (openDay === null ? [] : dayRows(dayWalks(db, dogId, openDay.day), i18n)),
     [db, dogId, i18n, openDay, version],
@@ -156,6 +164,7 @@ export function InsightsContainer() {
         }}
         places={places}
         skills={skills}
+        health={health}
         onShowWalks={setShowing}
         onHide={setHiding}
       />
