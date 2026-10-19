@@ -147,7 +147,8 @@ export function InsightsContainer() {
         calendar={calendar}
         onDay={setOpenDay}
         compare={{ model: compare, days, onDays: setDays }}
-        charts={charts}
+        charts={charts.filter((c) => c.key === 'weeks' || c.key === 'temp')}
+        behaviorCharts={charts.filter((c) => c.key === 'place' || c.key === 'light')}
         dynamics={dynamics}
         section={settings.insightsSection}
         onSection={(section) => {

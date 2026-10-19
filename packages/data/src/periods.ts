@@ -86,6 +86,7 @@ export function periodComparison(
 
 const TEMP_ORDER = ['below_-10', '-10_0', '0_10', '10_20', '20_25', 'over_25'] as const;
 const PLACE_ORDER = ['green', 'streets', 'water', 'errands', 'base'] as const;
+const LIGHT_ORDER = ['day', 'twilight', 'dark'] as const;
 
 export interface ChartData {
   /** Time walked per week, the last twelve weeks. */
@@ -94,9 +95,11 @@ export interface ChartData {
   readonly tempBands: readonly SpreadBar[];
   /** The share of walks with a hard moment in each kind of place. */
   readonly placeKinds: readonly ShareBar[];
+  /** The same by the light: day, twilight, dark. */
+  readonly lightBands: readonly ShareBar[];
 }
 
-/** The data of the three charts of the Insights tab. */
+/** The data of the charts of the Insights tab. */
 export function chartData(db: SqlDb, dogId: string, now: number, tzOffsetMin: number): ChartData {
   const dims = listWalkDims(db, dogId);
   const byId = new Map(dims.map((d) => [d.walkId, d.dims]));
@@ -121,6 +124,12 @@ export function chartData(db: SqlDb, dogId: string, now: number, tzOffsetMin: nu
       'place_kind',
       'hard_moment',
       PLACE_ORDER,
+    ),
+    lightBands: groupShares(
+      dims.map((d) => d.dims),
+      'light',
+      'hard_moment',
+      LIGHT_ORDER,
     ),
   };
 }

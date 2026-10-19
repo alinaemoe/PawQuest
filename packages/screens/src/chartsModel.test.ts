@@ -76,8 +76,12 @@ describe('chartModels', () => {
       { value: 'green', k: 3, n: 6, interval: wilsonInterval(3, 6), enough: true },
       { value: 'water', k: 1, n: 2, interval: null, enough: false },
     ],
+    lightBands: [
+      { value: 'day', k: 2, n: 8, interval: wilsonInterval(2, 8), enough: true },
+      { value: 'dark', k: 1, n: 2, interval: null, enough: false },
+    ],
   };
-  const [weeks, temp, place] = chartModels(data, today, ru);
+  const [weeks, temp, place, light] = chartModels(data, today, ru);
 
   it('week bars are scaled to the longest week, with the wet part inside', () => {
     expect(weeks?.bars.map((b) => b.end)).toEqual([0.5, 1]);
@@ -99,14 +103,27 @@ describe('chartModels', () => {
     expect(place?.bars[1]?.whisker).toBeUndefined();
   });
 
+  it('light bars are the same kind of share: day, twilight, dark', () => {
+    expect(light?.key).toBe('light');
+    expect(light?.bars[0]).toMatchObject({ label: 'день', end: 0.25 });
+    expect(light?.bars[0]?.value).toBe('25% (2/8)');
+    expect(light?.bars[1]).toMatchObject({ label: 'темно', faded: true });
+    expect(light?.title).toContain('свету');
+  });
+
   it('with nothing to draw every chart is empty', () => {
-    const empty = chartModels({ weeks: [], tempBands: [], placeKinds: [] }, today, ru);
-    expect(empty.map((c) => c.bars.length)).toEqual([0, 0, 0]);
+    const empty = chartModels(
+      { weeks: [], tempBands: [], placeKinds: [], lightBands: [] },
+      today,
+      ru,
+    );
+    expect(empty.map((c) => c.bars.length)).toEqual([0, 0, 0, 0]);
     const zero = chartModels(
       {
         weeks: [{ mondayDay: today, walks: 0, durationS: 0, wetDurationS: 0 }],
         tempBands: [],
         placeKinds: [],
+        lightBands: [],
       },
       today,
       ru,

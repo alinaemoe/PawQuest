@@ -27,6 +27,8 @@ export interface InsightsScreenProps {
     readonly onDays: (days: number) => void;
   };
   readonly charts?: readonly ChartModel[];
+  /** The charts of the Behavior section (hard moments by kind of place and by light). */
+  readonly behaviorCharts?: readonly ChartModel[];
   /** Reaction distance and recovery time by week; nothing is drawn when empty. */
   readonly dynamics?: readonly ChartModel[];
   /** The section that is open, and the places of the Places section. */
@@ -87,6 +89,7 @@ export function InsightsScreen({
   onDay,
   compare,
   charts,
+  behaviorCharts,
   dynamics,
   section,
   onSection,
@@ -210,6 +213,10 @@ export function InsightsScreen({
 
           {dynamics === undefined || dynamics.length === 0 ? null : (
             <InsightCharts charts={dynamics} heading={i18n.t('thresholds.section')} />
+          )}
+
+          {behaviorCharts === undefined || behaviorCharts.length === 0 ? null : (
+            <InsightCharts charts={behaviorCharts} />
           )}
         </>
       ) : null}

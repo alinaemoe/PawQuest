@@ -164,13 +164,17 @@ export function chartModels(data: ChartData, today: number, i18n: I18n): ChartMo
       };
     }),
   };
-  const place: ChartModel = {
-    key: 'place',
-    title: i18n.t('charts.place.title'),
-    hint: i18n.t('charts.place.hint'),
+  const shares = (
+    key: 'place' | 'light',
+    dimension: string,
+    bars: ChartData['placeKinds'],
+  ): ChartModel => ({
+    key,
+    title: i18n.t(`charts.${key}.title` as MessageKey),
+    hint: i18n.t(`charts.${key}.hint` as MessageKey),
     empty: i18n.t('charts.empty'),
-    bars: data.placeKinds.map((b) => {
-      const label = valueLabel(i18n, 'place_kind', b.value);
+    bars: bars.map((b) => {
+      const label = valueLabel(i18n, dimension, b.value);
       const share = b.n === 0 ? 0 : b.k / b.n;
       const value = `${percent(share)} (${String(b.k)}/${String(b.n)})`;
       return {
@@ -183,6 +187,8 @@ export function chartModels(data: ChartData, today: number, i18n: I18n): ChartMo
         spoken: i18n.t('charts.place.spoken', { kind: label, k: b.k, n: b.n }),
       };
     }),
-  };
-  return [weeks, temp, place];
+  });
+  const place = shares('place', 'place_kind', data.placeKinds);
+  const light = shares('light', 'light', data.lightBands);
+  return [weeks, temp, place, light];
 }

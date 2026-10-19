@@ -130,6 +130,7 @@ describe('chartData', () => {
     expect(data.weeks.reduce((sum, w) => sum + w.wetDurationS, 0)).toBeGreaterThan(0);
     expect(data.tempBands).toMatchObject([{ value: '0_10', n: 6, enough: true }]);
     expect(data.placeKinds).toMatchObject([{ value: 'green', k: 2, n: 6, enough: true }]);
+    expect(data.lightBands).toMatchObject([{ value: 'day', k: 2, n: 6, enough: true }]);
   });
 
   it('with no walks every chart is empty and nothing fails', () => {

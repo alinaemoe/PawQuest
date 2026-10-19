@@ -41,6 +41,9 @@ export const en = {
   'unit.perKm': '/km',
   'unit.kmh': 'km/h',
   'unit.mph': 'mph',
+  'charts.light.title': 'Hard moments by light',
+  'charts.light.hint':
+    'Day, twilight or dark: the share of walks with a hard moment; line: how far the share can be trusted.',
   'insights.tab.skills': 'Skills',
   'skills.stats.hint':
     'How the skills are going. Training comes as it comes, with no plan or norm: only what happened is here. Tap a skill to see it week by week.',
