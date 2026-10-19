@@ -49,6 +49,8 @@ describe('DEFAULT_MOTION_CONFIG', () => {
       longStopS: 180,
       gapAfterS: 30,
       maxPlausibleSpeedMps: 12,
+      sparseWalkMaxS: 600,
+      sparseWalkMaxSpeedMps: 3.5,
     });
   });
 });
@@ -182,12 +184,25 @@ describe('analyzeMotion', () => {
   });
 
   it('reports a gap between accepted points as gap time, not movement or stop', () => {
-    const track = [p(0, 0), p(1, 1.4), p(2, 2.8), p(62, 90), p(63, 91.4), p(64, 92.8)];
+    // no displacement across the gap: the phone lost the signal standing somewhere
+    const track = [p(0, 0), p(1, 1.4), p(2, 2.8), p(62, 2.8), p(63, 4.2), p(64, 5.6)];
     const r = analyzeMotion(track);
     expect(r.gapS).toBe(60);
     expect(r.movingS).toBeCloseTo(4, 6);
     expect(r.stoppedS).toBe(0);
     expect(r.totalS).toBe(64);
+  });
+
+  it('a gap crossed at a walking speed is movement (few fixes, but clearly walked); a ride or a long gap is not', () => {
+    const walked = analyzeMotion([p(0, 0), p(1, 1.4), p(2, 2.8), p(62, 90), p(63, 91.4)]);
+    expect(walked.gapS).toBe(0);
+    expect(walked.movingS).toBeCloseTo(63, 6);
+    const drove = analyzeMotion([p(0, 0), p(1, 1.4), p(62, 800), p(63, 801.4)]); // 13 m/s
+    expect(drove.gapS).toBe(61);
+    const long = analyzeMotion([p(0, 0), p(1, 1.4), p(1000, 1000), p(1001, 1001.4)]); // 1 m/s but 16 min
+    expect(long.gapS).toBe(999);
+    const standing = analyzeMotion([p(0, 0), p(1, 1.4), p(300, 2), p(301, 3.4)]); // 0 m/s
+    expect(standing.gapS).toBe(299);
   });
 
   it('moves manual pause time out of the other classes', () => {

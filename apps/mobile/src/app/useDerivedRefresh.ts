@@ -1,4 +1,4 @@
-import { refreshDerived } from '@pawquest/data';
+import { refreshDerived, refreshMovingTimes } from '@pawquest/data';
 import { useEffect } from 'react';
 
 import { useApp } from './AppContext';
@@ -28,8 +28,10 @@ export function useDerivedRefresh(): void {
         return;
       }
       try {
+        // totals that a better rule changed are measured again first, a few walks at a time
+        const movingLeft = refreshMovingTimes(db, ctx);
         const result = refreshDerived(db, ctx, dogId, { limit: CHUNK });
-        if (result.remaining > 0) {
+        if (result.remaining > 0 || movingLeft > 0) {
           timer = setTimeout(step, NEXT_DELAY_MS);
         }
       } catch {

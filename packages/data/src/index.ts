@@ -351,3 +351,4 @@ export {
 export { CSV_BOM, csvField, eventsCsv, walkGpx, walksCsv } from './export';
 export { placeActivity, type PlaceActivity } from './placeStats';
 export { skillProgress, type SkillProgress } from './skillProgress';
+export { METRICS_VERSION, refreshMovingTimes } from './maintenance';

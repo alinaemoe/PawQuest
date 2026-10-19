@@ -25,6 +25,13 @@ export interface MotionConfig {
   readonly gapAfterS: number;
   /** Device speeds above this are ignored as implausible for a dog walk. */
   readonly maxPlausibleSpeedMps: number;
+  /**
+   * A gap this short whose straight line is walked at a speed between `movingSpeedMps` and
+   * `sparseWalkMaxSpeedMps` is movement: the phone gave few fixes (a pocket, a saver mode), but the
+   * owner clearly walked (D-72).
+   */
+  readonly sparseWalkMaxS: number;
+  readonly sparseWalkMaxSpeedMps: number;
 }
 
 export const DEFAULT_MOTION_CONFIG: Readonly<MotionConfig> = {
@@ -33,6 +40,8 @@ export const DEFAULT_MOTION_CONFIG: Readonly<MotionConfig> = {
   longStopS: 180,
   gapAfterS: 30,
   maxPlausibleSpeedMps: 12,
+  sparseWalkMaxS: 600,
+  sparseWalkMaxSpeedMps: 3.5,
 };
 
 export interface Stop {
@@ -215,8 +224,15 @@ export function analyzeMotion(
       continue;
     }
     let kind: Kind;
-    if ((b.ts - a.ts) / 1000 > config.gapAfterS) {
-      kind = 'gap';
+    const dtS = (b.ts - a.ts) / 1000;
+    if (dtS > config.gapAfterS) {
+      const straight = haversineDistanceM(a, b) / dtS;
+      kind =
+        dtS <= config.sparseWalkMaxS &&
+        straight >= config.movingSpeedMps &&
+        straight <= config.sparseWalkMaxSpeedMps
+          ? 'moving'
+          : 'gap';
     } else {
       kind = (va + vb) / 2 >= config.movingSpeedMps ? 'moving' : 'slow';
     }

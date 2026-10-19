@@ -61,10 +61,13 @@ export async function maybeAutoFinish(
 }
 
 const DAY = 86_400_000;
+const NOTICE_AFTER_S = 600;
 
 /**
- * When the walk was left running (the owner is back at the start, or in a base, for a while) but
- * did not end by itself, a notice says so once per walk; the question itself is in the app.
+ * The phone may stop giving fixes indoors, and then nothing runs to ask "are you home?". So the
+ * notice is scheduled with the system as soon as the walk is back at a base (or where it began):
+ * it fires when the stay would reach ten minutes, and is taken back if the walk moves on. It
+ * only asks; the question itself is in the app. Once per arrival.
  */
 async function askToFinish(
   db: SqlDb,
@@ -74,17 +77,26 @@ async function askToFinish(
   language: 'ru' | 'en',
   units: 'metric' | 'imperial',
 ): Promise<void> {
-  const key = `arrival-notified:${walkId}`;
-  if (AppState.currentState === 'active' || isPromptHidden(db, key, now)) {
+  const identifier = `arrival-${walkId}`;
+  const arrival =
+    walkBaseArrival(db, walkId, now, { minStayS: 0 }) ??
+    walkStartSpotArrival(db, walkId, now, { minStayS: 0 });
+  if (arrival === null) {
+    await Notifications.cancelScheduledNotificationAsync(identifier);
     return;
   }
-  if (walkBaseArrival(db, walkId, now) === null && walkStartSpotArrival(db, walkId, now) === null) {
+  const key = `arrival-armed:${walkId}:${String(arrival.arrivedAt)}`;
+  if (AppState.currentState === 'active' || isPromptHidden(db, key, now)) {
     return;
   }
   hidePrompt(db, ctx, key, now + DAY);
   const i18n = createI18n({ locale: language, units });
   await Notifications.scheduleNotificationAsync({
+    identifier,
     content: { title: i18n.t('autofinish.askTitle'), body: i18n.t('autofinish.askBody') },
-    trigger: null,
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: Math.max(5, Math.round(NOTICE_AFTER_S - arrival.stayS)),
+    },
   });
 }
