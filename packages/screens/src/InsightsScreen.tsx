@@ -1,6 +1,6 @@
 import type { MessageKey } from '@pawquest/i18n';
 import { AppText, Button, Card, Chip, Screen, Sheet, Tag, useI18n } from '@pawquest/rn-ui';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import type { CalendarCellModel, CalendarModel } from './calendarModel';
 import { InsightCharts, PeriodCompare } from './ChartViews';
@@ -112,7 +112,11 @@ export function InsightsScreen({
       <AppText variant="numBig">{i18n.t('tab.insights')}</AppText>
       <AppText variant="muted">{model.status}</AppText>
 
-      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 8 }}
+      >
         {SECTIONS.map((id) => (
           <Chip
             key={id}
@@ -123,7 +127,7 @@ export function InsightsScreen({
             }}
           />
         ))}
-      </View>
+      </ScrollView>
 
       {section === 'overview' ? (
         <>
