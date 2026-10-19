@@ -20,15 +20,20 @@ import {
   makeReplayEngine,
   PhotoStrip,
   PhotoViewer,
+  placeColors,
   replayReadout,
+  ReplayPaintBar,
+  routePaint,
   ReplayControls,
   ReplayReadoutView,
   ReplaySlider,
   speedSummary,
   SpeedSummaryView,
+  type PaintMode,
   type ReplayAxisMode,
   type ReplayTick,
 } from '@pawquest/screens';
+import type { MessageKey } from '@pawquest/i18n';
 import { darkenMapStyle } from '@pawquest/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, ScrollView, View, useWindowDimensions } from 'react-native';
@@ -136,6 +141,8 @@ function ReplayBody({
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(5);
   const [follow, setFollow] = useState(true);
+  // the route painted by speed at first: the colours say more than a single line
+  const [paintMode, setPaintMode] = useState<PaintMode>('speed');
   const [viewer, setViewer] = useState<number | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
 
@@ -262,6 +269,38 @@ function ReplayBody({
     setAxisMs(makeReplayEngine(replay, next).axisOf(wall));
   };
 
+  const scheme = theme.scheme === 'dark' ? 'dark' : 'light';
+  const paint = useMemo(() => routePaint(replay, paintMode, scheme), [replay, paintMode, scheme]);
+  const bandColors = useMemo(() => placeColors(replay.zones, scheme), [replay.zones, scheme]);
+  const legend = useMemo(() => {
+    const names = new Map(replay.zones.map((z) => [z.placeId, z.name]));
+    const known = paint.legend.reduce((sum, l) => sum + l.seconds, 0);
+    return paint.legend.map((item) => ({
+      key: item.key,
+      color: item.color,
+      label:
+        paintMode === 'speed'
+          ? i18n.t(`replay.zone.${item.key}` as MessageKey)
+          : item.key === 'outside'
+            ? i18n.t('replay.legend.outside')
+            : (names.get(item.key) ?? item.key),
+      share: known === 0 ? '' : `${String(Math.round((item.seconds / known) * 100))}%`,
+    }));
+  }, [paint, paintMode, replay.zones, i18n]);
+  const features = useMemo(
+    () => ({
+      type: 'FeatureCollection' as const,
+      features: paint.segments.map((segment) => ({
+        type: 'Feature' as const,
+        properties: { color: segment.color, t0: segment.t0, t1: segment.t1 },
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: segment.coordinates.map((c) => [...c]),
+        },
+      })),
+    }),
+    [paint],
+  );
   const readout = replayReadout(frame, axisMs, engine.lengthMs, replay.events.length, i18n);
   const summary = useMemo(
     () =>
@@ -343,24 +382,53 @@ function ReplayBody({
                 />
               </GeoJSONSource>
             ))}
-            <GeoJSONSource
-              id="replay-walked"
-              data={{
-                type: 'Feature',
-                properties: {},
-                geometry: {
-                  type: 'LineString',
-                  coordinates: walked.length < 2 ? [...walked, ...walked] : walked,
-                },
-              }}
-            >
-              <Layer
-                id="replay-walked-line"
-                type="line"
-                layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-                paint={{ 'line-color': colors.accent, 'line-width': 5 }}
-              />
-            </GeoJSONSource>
+            {paintMode === 'plain' ? (
+              <GeoJSONSource
+                id="replay-walked"
+                data={{
+                  type: 'Feature',
+                  properties: {},
+                  geometry: {
+                    type: 'LineString',
+                    coordinates: walked.length < 2 ? [...walked, ...walked] : walked,
+                  },
+                }}
+              >
+                <Layer
+                  id="replay-walked-line"
+                  type="line"
+                  layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+                  paint={{ 'line-color': colors.accent, 'line-width': 5 }}
+                />
+              </GeoJSONSource>
+            ) : (
+              <GeoJSONSource id="replay-paint" data={features}>
+                <Layer
+                  id="replay-paint-casing"
+                  type="line"
+                  layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+                  paint={{
+                    'line-color': theme.scheme === 'dark' ? '#0b0f0d' : '#ffffff',
+                    'line-width': 9,
+                    'line-opacity': 0.7,
+                  }}
+                />
+                <Layer
+                  id="replay-paint-ahead"
+                  type="line"
+                  filter={['>', ['get', 't1'], frame.wallTs / 1000]}
+                  layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+                  paint={{ 'line-color': ['get', 'color'], 'line-width': 5, 'line-opacity': 0.3 }}
+                />
+                <Layer
+                  id="replay-paint-walked"
+                  type="line"
+                  filter={['<=', ['get', 't1'], frame.wallTs / 1000]}
+                  layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+                  paint={{ 'line-color': ['get', 'color'], 'line-width': 6 }}
+                />
+              </GeoJSONSource>
+            )}
             {eventMarks.map((m) => {
               const color = types.get(m.typeId)?.color ?? 'ex';
               const kind = (color in colors.events ? color : 'ex') as EventKind;
@@ -427,7 +495,18 @@ function ReplayBody({
       >
         <ReplayReadoutView readout={readout} />
         {focus === null ? null : <AppText weight={600}>{focus}</AppText>}
-        <ReplaySlider engine={engine} value={fraction} onChange={seekFraction} onTick={onTick} />
+        <ReplaySlider
+          engine={engine}
+          value={fraction}
+          onChange={seekFraction}
+          onTick={onTick}
+          bands={engine.bands.map((b) => ({
+            from: b.from,
+            to: b.to,
+            color: bandColors.get(b.placeId) ?? colors.line,
+          }))}
+        />
+        <ReplayPaintBar mode={paintMode} onMode={setPaintMode} legend={legend} />
         <ReplayControls
           playing={playing}
           speed={speed}

@@ -40,6 +40,9 @@ function replay(): WalkReplay {
         direction: 'forward',
       },
     ],
+    zones: [
+      { placeId: 'park', name: 'Парк', category: 'park', fromTs: T0 + 250_000, toTs: T0 + 450_000 },
+    ],
     profile: speedProfile(points, { pausedRanges: paused }),
   };
 }
@@ -96,6 +99,15 @@ describe('makeReplayEngine', () => {
     expect(engine.previousEventMs(1_000_000)).toBe(300_000);
     expect(engine.previousEventMs(100)).toBeNull();
     expect(engine.axisOf(T0 + 300_000)).toBe(300_000);
+  });
+
+  it('stays in places are bands of the axis, and the place at a moment is in the frame', () => {
+    const engine = makeReplayEngine(replay(), 'real');
+    expect(engine.bands).toEqual([{ placeId: 'park', from: 250 / 1200, to: 450 / 1200 }]);
+    expect(engine.frameAt(300_000).places).toEqual(['Парк']);
+    expect(engine.frameAt(100_000).places).toEqual([]);
+    const moving = makeReplayEngine(replay(), 'moving');
+    expect(moving.bands[0]?.to).toBeGreaterThan(moving.bands[0]?.from ?? 1);
   });
 
   it('a replay with no profile still plays (speed unknown)', () => {

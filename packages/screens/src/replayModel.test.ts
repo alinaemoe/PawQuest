@@ -37,6 +37,16 @@ function replay(): WalkReplay {
         direction: 'backward',
       },
     ],
+    zones: [
+      { placeId: 'park', name: 'Парк', category: 'park', fromTs: T0 + 30_000, toTs: T0 + 500_000 },
+      {
+        placeId: 'glade',
+        name: 'Поляна',
+        category: 'meadow',
+        fromTs: T0 + 100_000,
+        toTs: T0 + 200_000,
+      },
+    ],
     profile: speedProfile(points),
   };
 }
@@ -65,9 +75,13 @@ describe('replayReadout', () => {
     expect(early.speed).toContain('шаг');
     expect(early.events).toBe('Событий: 0 из 1');
     expect(early.pass).toBe('Маршрут «Прямая», обратно');
+    expect(early.place).toBe('Парк');
+    const inner = replayReadout(engine.frameAt(150_000), 150_000, engine.lengthMs, 1, ru);
+    expect(inner.place).toBe('Парк › Поляна');
     const late = replayReadout(engine.frameAt(300_000), 300_000, engine.lengthMs, 1, ru);
     expect(late.events).toBe('Событий: 1 из 1');
     expect(late.pass).toBeNull();
+    expect(late.place).toBe('Парк');
     expect(late.distance).toBe(ru.formatDistance((300 / 5) * 7.5));
   });
 });

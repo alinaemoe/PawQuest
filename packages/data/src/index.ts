@@ -335,6 +335,7 @@ export {
   type ReplayEvent,
   type ReplayPass,
   type ReplayPhoto,
+  type ReplayZone,
   type ReplayPointData,
   type WalkReplay,
 } from './replay';

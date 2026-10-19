@@ -4,6 +4,7 @@ import { createDog, type Dog } from './dogs';
 import { createEvent } from './events';
 import { toIso } from './ids';
 import { addWalkPhoto } from './photos';
+import { createPlace } from './places';
 import { appendTrackPoints, finishWalk, startWalk, type TrackPointInput } from './recorder';
 import { walkReplay } from './replay';
 import { createRoute } from './routes';
@@ -49,6 +50,13 @@ function straightWalk(minutes: number): { id: string; points: TrackPointInput[];
 
 describe('walkReplay', () => {
   it('a walk becomes points with distance, a thin line, events, photos, a route pass and a profile', () => {
+    createPlace(env.db, env.ctx, {
+      name: 'Поле',
+      category: 'park',
+      label: 'Поле',
+      ...spot(1000, 0),
+      radiusM: 300,
+    });
     const { id, points, endTs } = straightWalk(30);
     createRoute(env.db, env.ctx, {
       name: 'Прямая',
@@ -79,6 +87,7 @@ describe('walkReplay', () => {
     expect(replay?.events.map((e) => e.typeId)).toEqual(['dog', 'hard']);
     expect(replay?.photos.map((p) => p.uri)).toEqual(['file:///a.jpg']);
     expect(replay?.passes).toMatchObject([{ routeName: 'Прямая', direction: 'forward' }]);
+    expect(replay?.zones).toMatchObject([{ name: 'Поле', category: 'park' }]);
     expect(replay?.profile?.zoneS.walk).toBeGreaterThan(1700);
     expect(replay).toMatchObject({ startTs: START, endTs });
   });

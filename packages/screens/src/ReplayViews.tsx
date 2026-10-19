@@ -13,6 +13,12 @@ export interface ReplaySliderProps {
   readonly value: number;
   readonly onChange: (fraction: number) => void;
   readonly onTick: (tick: ReplayTick) => void;
+  /** Stays in saved places as coloured strips under the bar. */
+  readonly bands?: readonly {
+    readonly from: number;
+    readonly to: number;
+    readonly color: string;
+  }[];
 }
 
 const SLIDER_HEIGHT = 44;
@@ -21,7 +27,7 @@ const SLIDER_HEIGHT = 44;
  * The time slider (S07-Sc): drag anywhere, a tick for each event and photo that jumps to it, the
  * stretch of a saved route in the accent colour, pauses hatched on the real-time axis.
  */
-export function ReplaySlider({ engine, value, onChange, onTick }: ReplaySliderProps) {
+export function ReplaySlider({ engine, value, onChange, onTick, bands = [] }: ReplaySliderProps) {
   const { colors } = useTheme().theme;
   const [width, setWidth] = useState(1);
   const box = useRef<View>(null);
@@ -97,6 +103,20 @@ export function ReplaySlider({ engine, value, onChange, onTick }: ReplaySliderPr
               height: 8,
               borderRadius: 4,
               backgroundColor: colors.accentSoft,
+            }}
+          />
+        ))}
+        {bands.map((b, i) => (
+          <View
+            key={`band-${String(i)}`}
+            style={{
+              position: 'absolute',
+              left: x(b.from),
+              width: Math.max(3, x(b.to - b.from)),
+              top: SLIDER_HEIGHT / 2 + 8,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: b.color,
             }}
           />
         ))}
@@ -253,6 +273,7 @@ export function ReplayReadoutView({ readout }: { readonly readout: ReplayReadout
         <AppText variant="muted">{readout.speed}</AppText>
         <AppText variant="muted">{readout.events}</AppText>
       </View>
+      {readout.place === null ? null : <AppText weight={600}>{readout.place}</AppText>}
       {readout.pass === null ? null : <AppText variant="muted">{readout.pass}</AppText>}
     </View>
   );
@@ -337,5 +358,70 @@ export function SpeedSummaryView({ model, cursor, onSeek }: SpeedSummaryViewProp
         </AppText>
       </View>
     </Card>
+  );
+}
+
+export interface ReplayPaintBarProps {
+  readonly mode: 'plain' | 'speed' | 'places';
+  readonly onMode: (mode: 'plain' | 'speed' | 'places') => void;
+  /** What the colours on the route mean: a dot, a word and the share of the walk. */
+  readonly legend: readonly {
+    readonly key: string;
+    readonly color: string;
+    readonly label: string;
+    readonly share: string;
+  }[];
+}
+
+/** How the route is painted (plain, by speed, by place) and what each colour is. */
+export function ReplayPaintBar({ mode, onMode, legend }: ReplayPaintBarProps) {
+  const i18n = useI18n();
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+        <Chip
+          size="sm"
+          lead="map"
+          label={i18n.t('replay.paint.plain')}
+          selected={mode === 'plain'}
+          onPress={() => {
+            onMode('plain');
+          }}
+        />
+        <Chip
+          size="sm"
+          lead="clock"
+          label={i18n.t('replay.paint.speed')}
+          selected={mode === 'speed'}
+          onPress={() => {
+            onMode('speed');
+          }}
+        />
+        <Chip
+          size="sm"
+          lead="pin"
+          label={i18n.t('replay.paint.places')}
+          selected={mode === 'places'}
+          onPress={() => {
+            onMode('places');
+          }}
+        />
+      </View>
+      {mode === 'plain' ? null : (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          {legend.map((item) => (
+            <View key={item.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View
+                style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: item.color }}
+              />
+              <AppText style={{ fontSize: 12 }}>{item.label}</AppText>
+              <AppText variant="muted" style={{ fontSize: 12 }}>
+                {item.share}
+              </AppText>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
   );
 }

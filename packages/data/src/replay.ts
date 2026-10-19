@@ -3,12 +3,14 @@ import {
   initialTrackFilterState,
   simplifyTrack,
   speedProfile,
+  zoneVisits,
   type SpeedProfile,
   type TimeRange,
 } from '@pawquest/core';
 
 import { fromIso } from './ids';
 import { listWalkPhotos } from './photos';
+import { listPlaces, type PlaceCategory } from './places';
 import { listTrackPoints } from './recorder';
 import { walkRoutePasses } from './routes';
 import type { SqlDb } from './sql';
@@ -44,6 +46,15 @@ export interface ReplayPass {
   readonly direction: 'forward' | 'backward';
 }
 
+/** A stay inside a saved place, for the bands of the slider and the colours of the route. */
+export interface ReplayZone {
+  readonly placeId: string;
+  readonly name: string;
+  readonly category: PlaceCategory;
+  readonly fromTs: number;
+  readonly toTs: number;
+}
+
 export interface WalkReplay {
   readonly walkId: string;
   readonly startTs: number;
@@ -59,6 +70,8 @@ export interface WalkReplay {
   readonly events: readonly ReplayEvent[];
   readonly photos: readonly ReplayPhoto[];
   readonly passes: readonly ReplayPass[];
+  /** Where the walk was by the saved places (D-73), oldest first; places inside each other overlap. */
+  readonly zones: readonly ReplayZone[];
   readonly profile: SpeedProfile | null;
 }
 
@@ -132,6 +145,32 @@ export function walkReplay(db: SqlDb, walkId: string, now: number): WalkReplay |
     toTs: pass.toTs,
     direction: pass.direction,
   }));
+  const places = listPlaces(db);
+  const known = new Map(places.map((p) => [p.id, p]));
+  const zones = zoneVisits(
+    points.map((p) => ({ ts: p.ts, lat: p.lat, lon: p.lon })),
+    places.map((p) => ({
+      id: p.id,
+      name: p.name,
+      lat: p.lat,
+      lon: p.lon,
+      radiusM: p.radiusM,
+      boundary: p.boundary ?? undefined,
+    })),
+  ).flatMap((z): ReplayZone[] => {
+    const place = known.get(z.placeId);
+    return place === undefined
+      ? []
+      : [
+          {
+            placeId: z.placeId,
+            name: place.name,
+            category: place.category,
+            fromTs: z.fromTs,
+            toTs: z.toTs,
+          },
+        ];
+  });
   return {
     walkId,
     startTs: Math.min(walk.startedAt, first.ts),
@@ -143,6 +182,7 @@ export function walkReplay(db: SqlDb, walkId: string, now: number): WalkReplay |
     events,
     photos,
     passes,
+    zones,
     profile: speedProfile(points, { pausedRanges: paused }),
   };
 }

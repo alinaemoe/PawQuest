@@ -19,6 +19,8 @@ export interface ReplayReadout {
   readonly speed: string;
   readonly events: string;
   readonly pass: string | null;
+  /** "Парк › Поляна": where the walk is now by the saved places, or null. */
+  readonly place: string | null;
 }
 
 const mpsToMinPerKm = (mps: number): number | null => (mps < 0.4 ? null : 1000 / (mps * 60));
@@ -45,6 +47,7 @@ export function replayReadout(
     distance: i18n.formatDistance(frame.distanceM),
     speed: speedText(frame.speedMps, frame.zone, i18n),
     events: i18n.t('replay.events', { n: frame.eventsSoFar, total: eventCount }),
+    place: frame.places.length === 0 ? null : frame.places.join(' › '),
     pass:
       frame.pass === null
         ? null

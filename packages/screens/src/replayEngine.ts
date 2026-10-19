@@ -25,6 +25,8 @@ export interface ReplayFrame {
   readonly eventsSoFar: number;
   /** The saved route the walk is on at this moment. */
   readonly pass: ReplayPass | null;
+  /** The saved places the walk is in at this moment, the widest first ("park", then "glade"). */
+  readonly places: readonly string[];
 }
 
 export interface ReplayTick {
@@ -46,6 +48,8 @@ export interface ReplayEngine {
   readonly ticks: readonly ReplayTick[];
   /** The saved routes as stretches of the axis, 0..1. */
   readonly passes: readonly (ReplayStretch & { readonly pass: ReplayPass })[];
+  /** The stays in saved places as stretches of the axis, 0..1 (places inside each other overlap). */
+  readonly bands: readonly (ReplayStretch & { readonly placeId: string })[];
   /** Pauses and gaps as stretches of the real-time axis (empty on the moving axis), 0..1. */
   readonly hidden: readonly ReplayStretch[];
   frameAt(axisMs: number): ReplayFrame;
@@ -131,6 +135,11 @@ export function makeReplayEngine(replay: WalkReplay, mode: ReplayAxisMode): Repl
       to: fraction(pass.toTs),
       pass,
     })),
+    bands: replay.zones.map((z) => ({
+      placeId: z.placeId,
+      from: fraction(z.fromTs),
+      to: fraction(z.toTs),
+    })),
     hidden:
       mode === 'real'
         ? merged.map((r) => ({ from: fraction(r.fromTs), to: fraction(r.toTs) }))
@@ -150,6 +159,10 @@ export function makeReplayEngine(replay: WalkReplay, mode: ReplayAxisMode): Repl
         zone: speedZoneOf(mps ?? 0),
         eventsSoFar: replay.events.filter((e) => e.ts <= wallTs).length,
         pass: replay.passes.find((p) => wallTs >= p.fromTs && wallTs <= p.toTs) ?? null,
+        places: replay.zones
+          .filter((z) => wallTs >= z.fromTs && wallTs <= z.toTs)
+          .sort((a, b) => b.toTs - b.fromTs - (a.toTs - a.fromTs))
+          .map((z) => z.name),
       };
     },
     axisOf: (wallTs) => axis.toAxis(wallTs),

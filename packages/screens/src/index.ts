@@ -260,6 +260,7 @@ export {
 export {
   REPLAY_SPEEDS,
   ReplayControls,
+  ReplayPaintBar,
   ReplayReadoutView,
   ReplaySlider,
   SpeedSummaryView,
@@ -275,3 +276,12 @@ export { emptyReason, filterSummary, toggled, withDimension } from './walkFilter
 export { WalkFilterSheet, type WalkFilterSheetProps } from './WalkFilterSheet';
 export { WalkFilterBar, type WalkFilterBarProps } from './WalkFilterBar';
 export { linesBounds, nearestWalk } from './walksMapModel';
+export {
+  placeColors,
+  routePaint,
+  speedColor,
+  type LegendItem,
+  type PaintMode,
+  type PaintSegment,
+  type RoutePaint,
+} from './replayPaint';
