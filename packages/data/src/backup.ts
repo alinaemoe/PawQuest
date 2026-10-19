@@ -147,6 +147,8 @@ export function restoreBackup(db: SqlDb, text: string): BackupSummary {
       for (const table of known) {
         db.run(`DELETE FROM ${quote(table)}`);
       }
+      // the caches that are worked out again point at walks that are gone: clear them too
+      db.run('DELETE FROM walk_derived');
       for (const [table, data] of Object.entries(backup.tables)) {
         if (!known.has(table)) {
           continue;

@@ -130,7 +130,9 @@ export function ExportContainer({
           setPending(null);
           reloadSettings();
           onClose();
-        } catch {
+        } catch (failure) {
+          // visible in logcat: why a backup could not be put back
+          console.warn(`[pq-restore] ${String(failure)}`);
           setPending(null);
           setError(i18n.t('export.restoreFailed'));
         }

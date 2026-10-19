@@ -107,6 +107,12 @@ describe('backup', () => {
     fill();
     const text = exportBackup(env.db, START);
     createDog(env.db, env.ctx, { name: 'Лишняя' });
+    // a cache row of a walk that the backup does not have must not block the restore
+    const stray = startWalk(env.db, env.ctx, { dogId: dog.id });
+    env.db.run(
+      "INSERT INTO walk_derived (walk_id, kind, algo_version, fingerprint, status, json, computed_at) VALUES (?, 'dims', 1, 'x', 'ok', '{}', 'x')",
+      [stray.id],
+    );
     restoreBackup(env.db, text);
     expect(env.db.all('SELECT name FROM dog').map((r) => r['name'])).toEqual(['Фрэнни']);
     const before = dump(env.db);
