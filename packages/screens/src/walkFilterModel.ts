@@ -76,3 +76,102 @@ export function emptyReason(filter: WalkFilter, pending: number, i18n: I18n): st
   }
   return pending > 0 ? i18n.t('filter.empty.pending', { n: pending }) : i18n.t('filter.empty.none');
 }
+
+export interface FilterTag {
+  readonly key: string;
+  readonly label: string;
+  /** The filter with this one condition taken off. */
+  readonly without: WalkFilter;
+}
+
+/** Each condition as a tag that can be taken off with one tap. */
+export function activeTags(
+  filter: WalkFilter,
+  options: FilterOptions,
+  typeLabel: (typeId: string) => string,
+  i18n: I18n,
+): FilterTag[] {
+  const tags: FilterTag[] = [];
+  if (filter.days !== null) {
+    tags.push({
+      key: 'days',
+      label: periodLabel(filter.days, i18n),
+      without: { ...filter, days: null },
+    });
+  }
+  const names = new Map(options.places.map((p) => [p.id, p.name]));
+  for (const id of filter.placeIds) {
+    tags.push({
+      key: `place-${id}`,
+      label: names.get(id) ?? '…',
+      without: { ...filter, placeIds: filter.placeIds.filter((x) => x !== id) },
+    });
+  }
+  for (const [dimension, values] of Object.entries(filter.dims)) {
+    for (const value of values) {
+      tags.push({
+        key: `${dimension}-${value}`,
+        label: valueLabel(i18n, dimension, value),
+        without: {
+          ...filter,
+          dims: { ...filter.dims, [dimension]: values.filter((x) => x !== value) },
+        },
+      });
+    }
+  }
+  for (const type of filter.eventTypes) {
+    tags.push({
+      key: `event-${type}`,
+      label: typeLabel(type),
+      without: { ...filter, eventTypes: filter.eventTypes.filter((x) => x !== type) },
+    });
+  }
+  for (const outcome of filter.outcomes) {
+    tags.push({
+      key: `outcome-${outcome}`,
+      label: outcomeLabel(outcome, i18n),
+      without: { ...filter, outcomes: filter.outcomes.filter((x) => x !== outcome) },
+    });
+  }
+  if (filter.training) {
+    tags.push({
+      key: 'training',
+      label: i18n.t('filter.training'),
+      without: { ...filter, training: false },
+    });
+  }
+  return tags;
+}
+
+export interface QuickStart {
+  readonly key: string;
+  readonly label: string;
+  readonly apply: (filter: WalkFilter) => WalkFilter;
+}
+
+/** Ready-made starting points: a tap puts the condition on, whatever else is set. */
+export function quickStarts(i18n: I18n): QuickStart[] {
+  return [
+    {
+      key: 'hard',
+      label: i18n.t('filter.quick.hard'),
+      apply: (f) => ({ ...f, outcomes: ['hard_moment'] }),
+    },
+    {
+      key: 'wet',
+      label: i18n.t('filter.quick.wet'),
+      apply: (f) => withDimension(f, 'ground', 'wet'),
+    },
+    {
+      key: 'dark',
+      label: i18n.t('filter.quick.dark'),
+      apply: (f) => withDimension(f, 'light', 'dark'),
+    },
+    { key: 'month', label: i18n.t('filter.quick.month'), apply: (f) => ({ ...f, days: 30 }) },
+    {
+      key: 'training',
+      label: i18n.t('filter.quick.training'),
+      apply: (f) => ({ ...f, training: true }),
+    },
+  ];
+}

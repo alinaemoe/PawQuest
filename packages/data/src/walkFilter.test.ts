@@ -10,6 +10,7 @@ import {
   EMPTY_FILTER,
   countConditions,
   deleteFolder,
+  filterFacets,
   filterOptions,
   filterWalks,
   listFolders,
@@ -260,5 +261,46 @@ describe('conditions and folders', () => {
     expect(options.places).toHaveLength(1);
     expect(options.places[0]?.id).toBe(park.id);
     expect(options.eventTypes).toEqual(['dog']);
+  });
+});
+
+describe('filterFacets', () => {
+  it('what each option would give, the totals, and the other conditions kept', () => {
+    const park = createPlace(env.db, env.ctx, {
+      category: 'park',
+      label: 'Парк',
+      lat: 55,
+      lon: 37,
+    });
+    walk(1, 30, { placeId: park.id, weather: { raining: true } });
+    walk(2, 30, { placeId: park.id, weather: {} });
+    walk(3, 45, { weather: {} });
+    refreshDerived(env.db, env.ctx, dog.id, { limit: 100 });
+    const options = filterOptions(env.db, dog.id);
+    const all = filterFacets(env.db, dog.id, EMPTY_FILTER, options, NOW);
+    expect(all.total).toBe(3);
+    expect(all.durationS).toBe((30 + 30 + 45) * 60);
+    expect(all.dims['ground']).toMatchObject({ dry: 2, wet: 1, damp: 0, snow: 0 });
+    expect(all.periods).toMatchObject({ all: 3, '7': 0 });
+    expect(all.places[park.id]).toBe(2);
+    expect(all.training).toBe(0);
+    const narrowed = filterFacets(
+      env.db,
+      dog.id,
+      { ...EMPTY_FILTER, placeIds: [park.id] },
+      options,
+      NOW,
+    );
+    expect(narrowed.total).toBe(2);
+    expect(narrowed.dims['ground']).toMatchObject({ dry: 1, wet: 1 });
+    // the group of the option itself is reduced to that option, not added to
+    const wet = filterFacets(
+      env.db,
+      dog.id,
+      { ...EMPTY_FILTER, dims: { ground: ['wet'] } },
+      options,
+      NOW,
+    );
+    expect(wet.dims['ground']).toMatchObject({ dry: 2, wet: 1 });
   });
 });

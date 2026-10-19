@@ -3,10 +3,12 @@ import { createI18n } from '@pawquest/i18n';
 import { describe, expect, it } from 'vitest';
 
 import {
+  activeTags,
   emptyReason,
   filterSummary,
   outcomeLabel,
   periodLabel,
+  quickStarts,
   toggled,
   withDimension,
 } from './walkFilterModel';
@@ -47,5 +49,49 @@ describe('walk filter words', () => {
     expect(emptyReason(on, 0, ru)).toContain('Ни одна прогулка');
     expect(emptyReason(on, 3, ru)).toContain('3 прогулок ещё считаются');
     expect(emptyReason(EMPTY_FILTER, 0, ru)).toBe(ru.t('walks.emptyText'));
+  });
+});
+
+describe('tags and quick starts', () => {
+  const filter: WalkFilter = {
+    ...EMPTY_FILTER,
+    days: 30,
+    placeIds: ['p1'],
+    dims: { ground: ['wet', 'damp'] },
+    eventTypes: ['dog'],
+    outcomes: ['success'],
+    training: true,
+  };
+
+  it('each condition is a tag; taking it off leaves the others as they were', () => {
+    const tags = activeTags(filter, options, label, ru);
+    expect(tags.map((t) => t.label)).toEqual([
+      '30 дн.',
+      'Парк',
+      'мокро',
+      'влажно',
+      'Собака',
+      'Успех',
+      'Была тренировка',
+    ]);
+    expect(tags[0]?.without).toEqual({ ...filter, days: null });
+    expect(tags[2]?.without.dims).toEqual({ ground: ['damp'] });
+    expect(tags[1]?.without.placeIds).toEqual([]);
+    expect(tags[4]?.without.eventTypes).toEqual([]);
+    expect(tags[5]?.without.outcomes).toEqual([]);
+    expect(tags[6]?.without.training).toBe(false);
+    expect(activeTags(EMPTY_FILTER, options, label, ru)).toEqual([]);
+  });
+
+  it('a quick start puts its condition on and keeps the rest', () => {
+    const starts = Object.fromEntries(quickStarts(ru).map((q) => [q.key, q]));
+    expect(starts['hard']?.apply(EMPTY_FILTER).outcomes).toEqual(['hard_moment']);
+    expect(starts['wet']?.apply(EMPTY_FILTER).dims).toEqual({ ground: ['wet'] });
+    expect(starts['dark']?.apply({ ...EMPTY_FILTER, days: 7 })).toMatchObject({
+      days: 7,
+      dims: { light: ['dark'] },
+    });
+    expect(starts['month']?.apply(EMPTY_FILTER).days).toBe(30);
+    expect(starts['training']?.apply(EMPTY_FILTER).training).toBe(true);
   });
 });
