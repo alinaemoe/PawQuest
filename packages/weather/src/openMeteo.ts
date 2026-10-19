@@ -1,5 +1,6 @@
 import { haversineDistanceM } from '@pawquest/core';
 
+import { surfaceWaterMm, type HourlyWater } from './surfaceWater';
 import type { Coords, WeatherFacts } from './types';
 
 const FORECAST_HOST = 'https://api.open-meteo.com/v1/forecast';
@@ -7,18 +8,18 @@ const AIR_HOST = 'https://air-quality-api.open-meteo.com/v1/air-quality';
 
 /**
  * Forecast request for an exact position. Open-Meteo answers with its nearest grid point (a few
- * kilometers), so the response is checked for how far that is. Past three days of hourly data give
- * the recent rain; the 15-minute series gives the nowcast of the next two hours.
+ * kilometers), so the response is checked for how far that is. Past seven days of hourly data give
+ * the recent rain and how fast it dried; the 15-minute series gives the nowcast of the next two hours.
  */
 export function forecastUrl(at: Coords): string {
   const params = [
     `latitude=${at.lat.toFixed(4)}`,
     `longitude=${at.lon.toFixed(4)}`,
     'current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,rain,snowfall,weather_code,wind_speed_10m,wind_gusts_10m,is_day',
-    'hourly=precipitation,snowfall,soil_temperature_0cm,soil_moisture_0_to_1cm,uv_index,weather_code',
+    'hourly=precipitation,snowfall,soil_temperature_0cm,soil_moisture_0_to_1cm,uv_index,weather_code,et0_fao_evapotranspiration',
     'minutely_15=precipitation',
     'daily=sunrise,sunset',
-    'past_days=3',
+    'past_days=7',
     'forecast_days=1',
     'past_minutely_15=8',
     'forecast_minutely_15=8',
@@ -125,7 +126,14 @@ export function parseWeather(
   const hTimes = series(hourly, 'time');
   const precip = series(hourly, 'precipitation');
   const snow = series(hourly, 'snowfall');
+  const et0 = series(hourly, 'et0_fao_evapotranspiration');
   const hour = currentHourIndex(hTimes, nowS);
+  // the completed hours of the last week, oldest first: what fell and how much could dry
+  const waterHours: HourlyWater[] = hTimes.flatMap((start, i) =>
+    start !== null && start + 3600 <= nowS && start + 3600 > nowS - 7 * 24 * 3600
+      ? [{ rainMm: precip[i] ?? 0, et0Mm: et0[i] ?? null }]
+      : [],
+  );
 
   const m15 = obj(root['minutely_15']);
   const mTimes = series(m15, 'time');
@@ -188,6 +196,7 @@ export function parseWeather(
     lastRainAt: raining ? now : lastRainEnd(hTimes, precip, nowS),
     surfaceTempC: hour < 0 ? null : (series(hourly, 'soil_temperature_0cm')[hour] ?? null),
     soilMoisture: hour < 0 ? null : (series(hourly, 'soil_moisture_0_to_1cm')[hour] ?? null),
+    surfaceWaterMm: waterHours.length < 24 ? null : surfaceWaterMm(waterHours),
     uv: hour < 0 ? null : (series(hourly, 'uv_index')[hour] ?? null),
     sunrise: sunrise === null ? null : sunrise * 1000,
     sunset: sunset === null ? null : sunset * 1000,

@@ -6,7 +6,7 @@ import type { WeatherFacts } from './types';
  * here and in the tests: changing one changes what old walks are compared by, so a change must
  * raise `WEATHER_DIMENSIONS_VERSION`.
  */
-export const WEATHER_DIMENSIONS_VERSION = 1;
+export const WEATHER_DIMENSIONS_VERSION = 2;
 
 export interface WeatherDimensions {
   readonly ground: string;

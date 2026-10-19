@@ -24,7 +24,8 @@ describe('request URLs', () => {
     const url = forecastUrl(HOME);
     expect(url).toContain('latitude=55.7558&longitude=37.6173');
     expect(url).toContain('timeformat=unixtime');
-    expect(url).toContain('past_days=3');
+    expect(url).toContain('past_days=7');
+    expect(url).toContain('et0_fao_evapotranspiration');
     expect(url).toContain('minutely_15=precipitation');
     expect(url).toContain('wind_speed_unit=ms');
   });
@@ -253,6 +254,56 @@ describe('groundState (documented thresholds)', () => {
     expect(groundState(facts({ tempC: 0.5, rain24hMm: 0.2 }))).toBe('icy');
     expect(groundState(facts({ tempC: -3, raining: true }))).toBe('icy');
     expect(groundState(facts({ tempC: -3 }))).toBe('dry');
+  });
+});
+
+describe('ground by the water still on it (the drying model)', () => {
+  it('the water on the ground decides, not the rain of the last day: cold damp weather keeps it wet', () => {
+    // no rain for two days, but a downpour before that and little drying: still puddles
+    expect(groundState(facts({ surfaceWaterMm: 3.2 }))).toBe('wet');
+    expect(groundState(facts({ surfaceWaterMm: 1.5 }))).toBe('wet');
+    expect(groundState(facts({ surfaceWaterMm: 1.4 }))).toBe('damp');
+    expect(groundState(facts({ surfaceWaterMm: 0.4 }))).toBe('damp');
+    expect(groundState(facts({ surfaceWaterMm: 0.3 }))).toBe('dry');
+    // and the sums of rain are not consulted any more when the water is known
+    expect(groundState(facts({ surfaceWaterMm: 0, rain24hMm: 5, rain72hMm: 9 }))).toBe('dry');
+  });
+
+  it('rain now, snow and ice still come first; a snapshot without the value uses the old sums', () => {
+    expect(groundState(facts({ surfaceWaterMm: 0, raining: true }))).toBe('wet');
+    expect(groundState(facts({ surfaceWaterMm: 0, snow24hCm: 2, tempC: -1 }))).toBe('snow');
+    expect(groundState(facts({ surfaceWaterMm: null, rain24hMm: 3 }))).toBe('wet');
+  });
+
+  it('puddles and mud follow the water on the ground', () => {
+    expect(puddles(facts({ surfaceWaterMm: 1.6 }))).toBe('none');
+    expect(puddles(facts({ surfaceWaterMm: 2.5 }))).toBe('puddles');
+    expect(puddles(facts({ surfaceWaterMm: 6 }))).toBe('mud');
+    expect(puddles(facts({ surfaceWaterMm: 2, rain3hMm: 1 }))).toBe('puddles');
+  });
+
+  it('the parser works the water out from a week of hours, and needs a day of them at least', () => {
+    const nowS = 2_000_000;
+    const hours = Array.from({ length: 7 * 24 }, (_, i) => nowS - (7 * 24 - i) * 3600 - 0);
+    const rain = hours.map((_, i) => (i === 10 ? 10 : 0));
+    const et0 = hours.map(() => 0.02);
+    const data = {
+      current: { temperature_2m: 8, is_day: 1 },
+      hourly: { time: hours, precipitation: rain, et0_fao_evapotranspiration: et0 },
+    };
+    const facts = parseWeather(data, null, HOME, nowS * 1000);
+    expect(facts?.surfaceWaterMm).toBeGreaterThan(0);
+    expect(facts?.surfaceWaterMm).toBeLessThan(10);
+    const short = parseWeather(
+      {
+        current: data.current,
+        hourly: { time: hours.slice(-6), precipitation: [0, 0, 0, 0, 0, 0] },
+      },
+      null,
+      HOME,
+      nowS * 1000,
+    );
+    expect(short?.surfaceWaterMm).toBeNull();
   });
 });
 

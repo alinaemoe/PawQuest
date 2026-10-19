@@ -9,15 +9,17 @@ import type {
   SurfaceHeat,
   WeatherFacts,
 } from './types';
+import { DAMP_FROM_MM, MUD_FROM_MM, PUDDLES_FROM_MM, WET_FROM_MM } from './surfaceWater';
 
 /**
- * Wet or dry ground, from recent rain and the model's soil moisture. The thresholds are plain and
- * written down so the wording can be checked against them:
+ * Wet or dry ground. The thresholds are plain and written down so the wording can be checked:
  * - snow: 0.5 cm or more fell in 24 h and it is at most 2 degrees;
  * - icy: at most 0.5 degrees with rain in the last 24 h or raining now (possible ice, not certain);
- * - wet: raining now, 0.3 mm in the last 3 h, or 3 mm in 24 h;
- * - damp: 0.5 mm in 24 h, or 4 mm in 72 h, or moist soil with 1 mm in 72 h;
- * - dry otherwise.
+ * - wet: raining now or 0.3 mm in the last 3 h; otherwise by the water still on the ground
+ *   (`surfaceWaterMm`: a week of rain minus what dried and soaked away, so cold damp weather keeps
+ *   the ground wet for days): 1.5 mm or more is wet, 0.4 mm or more is damp, less is dry;
+ * - a snapshot made before that existed: wet from 3 mm in 24 h; damp from 0.5 mm in 24 h, 4 mm in
+ *   72 h, or moist soil with 1 mm in 72 h; dry otherwise.
  */
 export function groundState(f: WeatherFacts): GroundState {
   if (f.snow24hCm >= 0.5 && f.tempC <= 2) {
@@ -26,7 +28,19 @@ export function groundState(f: WeatherFacts): GroundState {
   if (f.tempC <= 0.5 && (f.rain24hMm >= 0.2 || f.raining)) {
     return 'icy';
   }
-  if (f.raining || f.rain3hMm >= 0.3 || f.rain24hMm >= 3) {
+  if (f.raining || f.rain3hMm >= 0.3) {
+    return 'wet';
+  }
+  // the water still on the ground, with the drying worked out (a week of rain and evaporation)
+  if (f.surfaceWaterMm !== undefined && f.surfaceWaterMm !== null) {
+    return f.surfaceWaterMm >= WET_FROM_MM
+      ? 'wet'
+      : f.surfaceWaterMm >= DAMP_FROM_MM
+        ? 'damp'
+        : 'dry';
+  }
+  // older snapshots: by the sums of rain alone
+  if (f.rain24hMm >= 3) {
     return 'wet';
   }
   const moist = f.soilMoisture !== null && f.soilMoisture >= 0.4;
@@ -63,6 +77,13 @@ export function rainAmount(mm: number): RainAmount {
 export function puddles(f: WeatherFacts): Puddles {
   if (groundState(f) !== 'wet') {
     return 'none';
+  }
+  if (f.surfaceWaterMm !== undefined && f.surfaceWaterMm !== null) {
+    return f.surfaceWaterMm >= MUD_FROM_MM || f.rain24hMm >= 8
+      ? 'mud'
+      : f.surfaceWaterMm >= PUDDLES_FROM_MM || f.rain3hMm >= 1
+        ? 'puddles'
+        : 'none';
   }
   if (f.rain24hMm >= 8) {
     return 'mud';

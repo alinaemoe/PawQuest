@@ -47,6 +47,12 @@ export interface WeatherFacts {
   /** Model surface temperature (0 cm) and top-soil moisture (m3/m3). */
   readonly surfaceTempC: number | null;
   readonly soilMoisture: number | null;
+  /**
+   * Water still on the ground, mm, from the rain of the last week and how fast it dries (see
+   * `surfaceWaterMm`). Absent in snapshots made before it existed: the ground is then judged from
+   * the rain sums alone.
+   */
+  readonly surfaceWaterMm?: number | null;
   readonly uv: number | null;
   readonly sunrise: number | null;
   readonly sunset: number | null;
