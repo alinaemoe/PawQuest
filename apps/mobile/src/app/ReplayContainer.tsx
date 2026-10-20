@@ -301,6 +301,22 @@ function ReplayBody({
     }),
     [paint],
   );
+  // the stretch the dog is on is painted up to the marker, not only once it is over
+  const head = useMemo(() => {
+    const wall = frame.wallTs / 1000;
+    const segment = paint.segments.find((x) => x.t0 <= wall && wall < x.t1);
+    if (segment === undefined) {
+      return null;
+    }
+    const along = replay.points
+      .filter((x) => x.ts >= segment.t0 * 1000 && x.ts <= frame.wallTs)
+      .map((x) => [x.lon, x.lat] as [number, number]);
+    const coordinates = [...along, [frame.lon, frame.lat] as [number, number]];
+    return {
+      color: segment.color,
+      coordinates: coordinates.length < 2 ? [...coordinates, ...coordinates] : coordinates,
+    };
+  }, [paint, replay.points, frame.wallTs, frame.lon, frame.lat]);
   const readout = replayReadout(frame, axisMs, engine.lengthMs, replay.events.length, i18n);
   const summary = useMemo(
     () =>
@@ -426,6 +442,23 @@ function ReplayBody({
                   filter={['<=', ['get', 't1'], frame.wallTs / 1000]}
                   layout={{ 'line-cap': 'round', 'line-join': 'round' }}
                   paint={{ 'line-color': ['get', 'color'], 'line-width': 6 }}
+                />
+              </GeoJSONSource>
+            )}
+            {paintMode === 'plain' || head === null ? null : (
+              <GeoJSONSource
+                id="replay-paint-head"
+                data={{
+                  type: 'Feature',
+                  properties: {},
+                  geometry: { type: 'LineString', coordinates: head.coordinates },
+                }}
+              >
+                <Layer
+                  id="replay-paint-head-line"
+                  type="line"
+                  layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+                  paint={{ 'line-color': head.color, 'line-width': 6 }}
                 />
               </GeoJSONSource>
             )}
