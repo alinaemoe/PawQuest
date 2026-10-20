@@ -180,11 +180,12 @@ export interface ReportHtmlOptions {
 
 const STYLE = (fontCss: string): string => `
 ${fontCss}
-@page { size: A4; margin: 0; }
+@page { size: A4; margin: 30px 0 34px; }
+@page :first { margin: 0 0 34px; }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body { font-family: 'Onest', 'Roboto', 'Helvetica Neue', Arial, sans-serif; color: ${INK}; font-size: 10.5px; line-height: 1.45; background: #fff; }
-.page { padding: 0 34px 46px; }
+.page { padding: 0 34px 10px; }
 .hero { background: linear-gradient(135deg, ${ACCENT_DEEP} 0%, ${ACCENT} 70%, #4aa57b 100%); color: #fff; padding: 26px 34px 24px; margin: 0 -34px 18px; }
 .hero .top { display: flex; align-items: center; justify-content: space-between; }
 .brand { display: flex; align-items: center; gap: 9px; font-family: 'Unbounded', 'Onest', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: .02em; }
@@ -223,7 +224,7 @@ tr:last-child td { border-bottom: none; }
 .steps i.on { background: ${ACCENT}; }
 .quote { border-left: 3px solid ${ACCENT_SOFT}; padding: 2px 0 2px 10px; margin: 0 0 8px; }
 .quote .when { font-size: 9px; color: ${MUTED}; }
-.footer { position: fixed; left: 0; right: 0; bottom: 0; padding: 9px 34px 12px; font-size: 8.5px; color: ${MUTED}; background: #fff; border-top: 1px solid ${LINE}; display: flex; justify-content: space-between; gap: 18px; }
+.footer { margin-top: 6px; padding: 9px 0 0; font-size: 8.5px; color: ${MUTED}; border-top: 1px solid ${LINE}; display: flex; justify-content: space-between; gap: 18px; break-inside: avoid; }
 `;
 
 function kpiTile(value: string, label: string, note: string | null): string {
@@ -439,7 +440,7 @@ export function reportHtml(data: ReportData, i18n: I18n, options: ReportHtmlOpti
 <div class="meta">${e(facts.join(' · '))}</div>
 <div class="pills"><span class="pill">${e(period)}</span><span class="pill">${e(i18n.t('report.days', { n: days }))}</span><span class="pill">${e(basis)}</span></div></div>
 ${body}
-</div>
 <div class="footer"><span>${e(i18n.t('report.footer'))}</span><span>${e(generated)}</span></div>
+</div>
 </body></html>`;
 }

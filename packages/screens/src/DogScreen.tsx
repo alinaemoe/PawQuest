@@ -247,7 +247,7 @@ export function DogScreen(props: DogScreenProps) {
           onPress={props.onDiary}
         />
         <ListRow
-          icon="chart"
+          icon="clipboard"
           title={i18n.t('report.open')}
           subtitle={i18n.t('report.openHint')}
           onPress={props.onReport}
