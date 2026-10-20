@@ -30,3 +30,4 @@ Thumbs.db
 .idea/
 *.log
 .shots/
+apps/web-demo/public/sql-wasm.wasm

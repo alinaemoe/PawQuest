@@ -6,6 +6,22 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--dir", "apps/ui-lab", "exec", "expo", "start", "--web", "--port", "8090"],
       "port": 8090
+    },
+    {
+      "name": "web-demo",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "apps/web-demo",
+        "exec",
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8091",
+        "--clear"
+      ],
+      "port": 8091
     }
   ]
 }

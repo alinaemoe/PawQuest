@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "PawQuest Demo",
+    "slug": "pawquest-web-demo",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "PawQuest — демо",
+      "shortName": "PawQuest"
+    }
+  }
+}
