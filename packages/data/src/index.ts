@@ -375,5 +375,25 @@ export {
 } from './walkFilter';
 export { walkLines, type WalkLine } from './walkLines';
 export { liveZones, type LiveZone } from './liveZones';
+export {
+  buildReport,
+  MAX_EXAMPLES,
+  MAX_NOTES,
+  MAX_SITUATIONS,
+  REPORT_SECTIONS,
+  type ReportCare,
+  type ReportData,
+  type ReportDog,
+  type ReportExample,
+  type ReportNote,
+  type ReportOptions,
+  type ReportSection,
+  type ReportSituation,
+  type ReportSkill,
+  type ReportSummary,
+  type ReportSymptom,
+  type ReportWeek,
+  type ReportWeight,
+} from './report';
 export { walkZones, type WalkZone } from './walkZones';
 export { compareCandidates, MAX_CANDIDATES, type CompareCandidate } from './compareCandidates';

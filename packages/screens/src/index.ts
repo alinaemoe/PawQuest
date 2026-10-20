@@ -251,6 +251,14 @@ export {
   type ReplayTick,
 } from './replayEngine';
 export {
+  barsSvg,
+  escapeHtml,
+  lineSvg,
+  reportHtml,
+  type LinePoint,
+  type ReportHtmlOptions,
+} from './reportHtml';
+export {
   COMPARE_PAINT,
   compareAxis,
   compareRows,
@@ -279,6 +287,14 @@ export {
   ReplaySlider,
   SpeedSummaryView,
 } from './ReplayViews';
+export {
+  REPORT_DAYS,
+  REPORT_PICKABLE,
+  ReportSheet,
+  type ReportDays,
+  type ReportLanguage,
+  type ReportSheetProps,
+} from './ReportSheet';
 export { ExportSheet, type ExportKind, type ExportSheetProps } from './ExportSheet';
 export { placeCards, type PlaceCardModel, type StatCardModel } from './placeStatsModel';
 export { PlacesSection, SkillsSection, StatCards } from './PlaceStatsViews';

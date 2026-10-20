@@ -41,6 +41,7 @@ export interface DogScreenProps {
   readonly onPlaces: () => void;
   readonly onMarks: () => void;
   readonly onExport: () => void;
+  readonly onReport: () => void;
   readonly onAlbum: () => void;
   readonly onRoutes: () => void;
   readonly onRecap: () => void;
@@ -244,6 +245,12 @@ export function DogScreen(props: DogScreenProps) {
             ) : undefined
           }
           onPress={props.onDiary}
+        />
+        <ListRow
+          icon="chart"
+          title={i18n.t('report.open')}
+          subtitle={i18n.t('report.openHint')}
+          onPress={props.onReport}
         />
         <ListRow
           icon="note"
