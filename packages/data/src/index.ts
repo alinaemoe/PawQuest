@@ -376,3 +376,4 @@ export {
 export { walkLines, type WalkLine } from './walkLines';
 export { liveZones, type LiveZone } from './liveZones';
 export { walkZones, type WalkZone } from './walkZones';
+export { compareCandidates, MAX_CANDIDATES, type CompareCandidate } from './compareCandidates';

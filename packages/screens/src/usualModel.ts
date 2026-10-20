@@ -8,6 +8,8 @@ import { valueLabel } from './insightsModel';
 export interface UsualModel {
   /** "Длительность 42 мин: на 12 мин дольше обычного (обычно 25–35 мин)". */
   readonly lines: readonly string[];
+  /** Only the measures that depart from the usual (for the cards of Replay, A-26); empty: all as usual. */
+  readonly departed: readonly string[];
   /** "Сравнение: 7 прогулок, тот же тип места и прогулки." plus a note when the circle is wide. */
   readonly caption: string;
 }
@@ -53,8 +55,16 @@ export function usualModel(usual: WalkUsual | null, i18n: I18n): UsualModel | nu
     return null;
   }
   const lines: string[] = [];
+  const departed: string[] = [];
+  const note = (metric: UsualMetric, text: string): void => {
+    lines.push(text);
+    if (metric.comparison.kind !== 'usual') {
+      departed.push(text);
+    }
+  };
   if (usual.duration !== null) {
-    lines.push(
+    note(
+      usual.duration,
       line(
         'usual.duration',
         usual.duration,
@@ -68,7 +78,8 @@ export function usualModel(usual: WalkUsual | null, i18n: I18n): UsualModel | nu
     );
   }
   if (usual.distance !== null) {
-    lines.push(
+    note(
+      usual.distance,
       line(
         'usual.distance',
         usual.distance,
@@ -82,7 +93,8 @@ export function usualModel(usual: WalkUsual | null, i18n: I18n): UsualModel | nu
     );
   }
   if (usual.pace !== null) {
-    lines.push(
+    note(
+      usual.pace,
       line(
         'usual.pace',
         usual.pace,
@@ -96,6 +108,18 @@ export function usualModel(usual: WalkUsual | null, i18n: I18n): UsualModel | nu
       ),
     );
   }
+  if (usual.triggers !== null) {
+    note(
+      usual.triggers,
+      line(
+        'usual.triggers',
+        usual.triggers,
+        (v) => i18n.formatNumber(v, 1),
+        (m) => i18n.t(m.comparison.kind === 'longer' ? 'usual.moreOften' : 'usual.lessOften'),
+        i18n,
+      ),
+    );
+  }
   if (lines.length === 0) {
     return null;
   }
@@ -103,7 +127,11 @@ export function usualModel(usual: WalkUsual | null, i18n: I18n): UsualModel | nu
     count: i18n.t('walks.count', { n: usual.circleSize }),
     circle: circleWords(usual.keys, i18n),
   });
-  return { lines, caption: usual.widened ? `${caption} ${i18n.t('usual.widened')}` : caption };
+  return {
+    lines,
+    departed,
+    caption: usual.widened ? `${caption} ${i18n.t('usual.widened')}` : caption,
+  };
 }
 
 /** "В похожую погоду (мокро, от 0° до 10°) было 7 прогулок, обычно 28 мин (чаще 25–32 мин)". */

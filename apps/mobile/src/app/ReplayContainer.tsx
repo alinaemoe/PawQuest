@@ -10,6 +10,7 @@ import { positionAt, simplifyTrack } from '@pawquest/core';
 import {
   getWalk,
   listEventTypes,
+  walkUsual,
   trimWalkEndUndoable,
   walkReplay,
   type WalkReplay,
@@ -27,8 +28,10 @@ import {
   ReplayControls,
   ReplayReadoutView,
   ReplaySlider,
+  ReplayUsualCard,
   speedSummary,
   SpeedSummaryView,
+  usualModel,
   type PaintMode,
   type ReplayAxisMode,
   type ReplayTick,
@@ -40,6 +43,7 @@ import { Modal, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useApp } from './AppContext';
+import { CompareButton } from './CompareContainer';
 import { useMapStyle } from './useMapStyle';
 
 const TICK_MS = 100;
@@ -127,7 +131,7 @@ function ReplayBody({
   onClose: () => void;
   onChanged: () => void;
 }) {
-  const { db, ctx } = useApp();
+  const { db, ctx, dog } = useApp();
   const [undo, setUndo] = useState<{ time: number; run: () => void } | null>(null);
   const i18n = useI18n();
   const { theme } = useTheme();
@@ -317,6 +321,10 @@ function ReplayBody({
       coordinates: coordinates.length < 2 ? [...coordinates, ...coordinates] : coordinates,
     };
   }, [paint, replay.points, frame.wallTs, frame.lon, frame.lat]);
+  const usual = useMemo(
+    () => (dog === null ? null : usualModel(walkUsual(db, dog.id, replay.walkId), i18n)),
+    [db, dog, replay.walkId, i18n],
+  );
   const readout = replayReadout(frame, axisMs, engine.lengthMs, replay.events.length, i18n);
   const summary = useMemo(
     () =>
@@ -595,6 +603,7 @@ function ReplayBody({
             />
           </View>
         )}
+        <CompareButton replay={replay} />
         <PhotoStrip
           photos={replay.photos}
           onOpen={(index) => {
@@ -617,6 +626,7 @@ function ReplayBody({
             <AppText variant="muted">{i18n.t('replay.speed.note')}</AppText>
           </>
         )}
+        {usual === null ? null : <ReplayUsualCard lines={usual.departed} caption={usual.caption} />}
       </ScrollView>
       <PhotoViewer
         photos={replay.photos}

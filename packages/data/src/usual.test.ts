@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { refreshDerived } from './derived';
 import { createDog, type Dog } from './dogs';
+import { createEvent } from './events';
 import { createPlace, setWalkPlace } from './places';
 import { START, testEnv, type TestEnv } from './test-utils';
 import { walkUsual, weatherUsual } from './usual';
@@ -40,6 +41,35 @@ function walk(day: number, minutes: number, placeId: string | null, distanceM?: 
 }
 
 const settle = () => refreshDerived(env.db, env.ctx, dog.id, { limit: 500 });
+
+describe('walkUsual triggers', () => {
+  it('triggers per hour: more than usual on a walk with many, and nothing said for a short walk', () => {
+    const p = park().id;
+    const ids = [60, 60, 60, 60, 60, 60].map((m, i) => walk(i, m, p));
+    const mark = (id: string, n: number, i: number) => {
+      for (let k = 0; k < n; k += 1) {
+        createEvent(env.db, env.ctx, {
+          dogId: dog.id,
+          walkId: id,
+          typeId: 'dog',
+          ts: START + i * DAY + (k + 1) * 60_000,
+          tzOffsetMin: 0,
+          incomplete: false,
+        });
+      }
+    };
+    ids.slice(0, 5).forEach((id, i) => {
+      mark(id, 1, i);
+    });
+    mark(ids[5] ?? '', 7, 5);
+    const short = walk(8, 10, p);
+    settle();
+    const usual = walkUsual(env.db, dog.id, ids[5] ?? '');
+    expect(usual?.triggers?.value).toBe(7);
+    expect(usual?.triggers?.comparison.kind).toBe('longer');
+    expect(walkUsual(env.db, dog.id, short)?.triggers).toBeNull();
+  });
+});
 
 describe('walkUsual', () => {
   it('a long walk against the usual of walks in the same kind of place', () => {

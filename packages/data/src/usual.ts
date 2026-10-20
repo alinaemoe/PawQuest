@@ -15,7 +15,7 @@ import { MIN_ANALYSED_WALK_S, listWalkDims } from './derived';
 import type { SqlDb } from './sql';
 
 /** The measures a walk is compared with its like by. */
-export type UsualMeasure = 'duration' | 'distance' | 'pace';
+export type UsualMeasure = 'duration' | 'distance' | 'pace' | 'triggers';
 
 export interface UsualMetric {
   readonly value: number;
@@ -34,6 +34,8 @@ export interface WalkUsual {
   readonly duration: UsualMetric | null;
   readonly distance: UsualMetric | null;
   readonly pace: UsualMetric | null;
+  /** Triggers (a dog, a person, a hard moment) per hour of the walk. */
+  readonly triggers: UsualMetric | null;
 }
 
 /** What counts as "the same" for each measure: seconds, meters and minutes per kilometer. */
@@ -41,16 +43,21 @@ export const USUAL_RULES: Readonly<Record<UsualMeasure, UsualRule>> = {
   duration: { floor: 120 },
   distance: { floor: 100 },
   pace: { floor: 0.5 },
+  triggers: { floor: 2 },
 };
 
 /** A pace needs this much distance to mean something (A-04). */
 const MIN_PACE_DISTANCE_M = 200;
+
+/** A rate per hour of a walk shorter than this is noise: one event in ten minutes is not six an hour. */
+const MIN_RATE_WALK_S = 20 * 60;
 
 interface Numbers {
   readonly id: string;
   readonly durationS: number | null;
   readonly distanceM: number | null;
   readonly paceMinKm: number | null;
+  readonly triggersPerHour: number | null;
 }
 
 function numbersOfWalks(db: SqlDb, dogId: string): Map<string, Numbers> {
@@ -61,8 +68,19 @@ function numbersOfWalks(db: SqlDb, dogId: string): Map<string, Numbers> {
         AND (w.duration_s IS NULL OR w.duration_s >= ?)`,
     [dogId, MIN_ANALYSED_WALK_S],
   );
+  const triggers = new Map(
+    db
+      .all(
+        `SELECT e.walk_id AS id, COUNT(*) AS n
+           FROM event e JOIN event_type t ON t.id = e.type_id
+          WHERE t.kind = 'trigger' AND e.deleted_at IS NULL AND e.walk_id IS NOT NULL
+          GROUP BY e.walk_id`,
+      )
+      .map((r) => [String(r['id']), Number(r['n'])] as const),
+  );
   return new Map(
     rows.map((r) => {
+      const duration = r['duration_s'] === null ? null : Number(r['duration_s']);
       const distance = r['distance_m'] === null ? null : Number(r['distance_m']);
       const moving = r['moving_s'] === null ? null : Number(r['moving_s']);
       const pace =
@@ -76,6 +94,10 @@ function numbersOfWalks(db: SqlDb, dogId: string): Map<string, Numbers> {
           durationS: r['duration_s'] === null ? null : Number(r['duration_s']),
           distanceM: distance !== null && distance > 0 ? distance : null,
           paceMinKm: pace,
+          triggersPerHour:
+            duration !== null && duration >= MIN_RATE_WALK_S
+              ? ((triggers.get(String(r['id'])) ?? 0) * 3600) / duration
+              : null,
         },
       ];
     }),
@@ -140,6 +162,11 @@ export function walkUsual(db: SqlDb, dogId: string, walkId: string): WalkUsual |
       mine?.paceMinKm ?? null,
       pick((n) => n.paceMinKm),
       USUAL_RULES.pace,
+    ),
+    triggers: metric(
+      mine?.triggersPerHour ?? null,
+      pick((n) => n.triggersPerHour),
+      USUAL_RULES.triggers,
     ),
   };
 }

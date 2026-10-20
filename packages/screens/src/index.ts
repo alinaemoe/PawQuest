@@ -251,16 +251,30 @@ export {
   type ReplayTick,
 } from './replayEngine';
 export {
+  COMPARE_PAINT,
+  compareAxis,
+  compareRows,
+  compareSide,
+  leadText,
+  liveRows,
+  type CompareAxis,
+  type CompareRow,
+  type CompareSide,
+  type CompareSync,
+} from './replayCompare';
+export {
   replayReadout,
   speedSummary,
   speedText,
   type ReplayReadout,
   type SpeedSummaryModel,
 } from './replayModel';
+export { CandidateList, CompareControls, CompareTable, type CandidateRow } from './CompareViews';
 export {
   REPLAY_SPEEDS,
   ReplayControls,
   ReplayPaintBar,
+  ReplayUsualCard,
   ReplayReadoutView,
   ReplaySlider,
   SpeedSummaryView,

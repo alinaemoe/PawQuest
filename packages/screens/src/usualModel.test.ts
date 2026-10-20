@@ -28,7 +28,30 @@ const usual = (extra: Partial<WalkUsual> = {}): WalkUsual => ({
   duration: metric(2700, 1800, 1500, 2100, 'longer', 900),
   distance: null,
   pace: null,
+  triggers: null,
   ...extra,
+});
+
+describe('usualModel departed and triggers', () => {
+  it('the cards of Replay keep only what departs from the usual; triggers per hour read both ways', () => {
+    const model = usualModel(
+      usual({
+        duration: metric(1900, 1800, 1500, 2100, 'usual', 0),
+        triggers: metric(6, 2, 1, 3, 'longer', 4),
+      }),
+      ru,
+    );
+    expect(model?.lines).toHaveLength(2);
+    expect(model?.departed).toEqual(['Раздражителей в час: 6, чаще обычного (обычно 1–3)']);
+    const fewer = usualModel(
+      usual({ duration: null, triggers: metric(0, 3, 2, 4, 'shorter', 3) }),
+      en,
+    );
+    expect(fewer?.departed[0]).toContain('fewer than usual');
+    expect(
+      usualModel(usual({ duration: metric(1900, 1800, 1500, 2100, 'usual', 0) }), ru)?.departed,
+    ).toEqual([]);
+  });
 });
 
 describe('usualModel', () => {

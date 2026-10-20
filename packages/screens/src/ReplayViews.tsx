@@ -425,3 +425,27 @@ export function ReplayPaintBar({ mode, onMode, legend }: ReplayPaintBarProps) {
     </View>
   );
 }
+
+export interface ReplayUsualCardProps {
+  /** Only what departs from the usual, at most four; empty means "all as usual". */
+  readonly lines: readonly string[];
+  readonly caption: string;
+}
+
+/** "How it was against the usual" under the map of a replay: facts, no grade (A-26). */
+export function ReplayUsualCard({ lines, caption }: ReplayUsualCardProps) {
+  const i18n = useI18n();
+  return (
+    <Card variant="flat">
+      <View style={{ gap: 8 }}>
+        <AppText variant="eyebrow">{i18n.t('replay.usual.title')}</AppText>
+        {lines.length === 0 ? (
+          <AppText>{i18n.t('replay.usual.allSame')}</AppText>
+        ) : (
+          lines.slice(0, 4).map((text) => <AppText key={text}>{text}</AppText>)
+        )}
+        <AppText variant="muted">{caption}</AppText>
+      </View>
+    </Card>
+  );
+}
