@@ -1,7 +1,6 @@
 import type { WalkReplay } from '@pawquest/data';
 import type { I18n } from '@pawquest/i18n';
 
-import { speedText } from './replayModel';
 import { makeReplayEngine, type ReplayEngine, type ReplayFrame } from './replayEngine';
 
 /** Two walks played side by side (docs/23, step 3.20; docs/04, S07-Cmp). */
@@ -118,6 +117,13 @@ export function leadText(frameA: ReplayFrame, frameB: ReplayFrame, i18n: I18n): 
   });
 }
 
+/** "3,2 км/ч", or "стоим" where the speed is unknown: short enough for a column of a table. */
+function shortSpeed(mps: number | null, i18n: I18n): string {
+  return mps === null || mps < 0.4
+    ? i18n.t('replay.standing')
+    : i18n.formatSpeed(1000 / (mps * 60));
+}
+
 /** What each walk has right now, at the moment on the slider: the way covered and the pace. */
 export function liveRows(frameA: ReplayFrame, frameB: ReplayFrame, i18n: I18n): CompareRow[] {
   return [
@@ -130,8 +136,8 @@ export function liveRows(frameA: ReplayFrame, frameB: ReplayFrame, i18n: I18n): 
     {
       key: 'now',
       label: i18n.t('twowalks.row.now'),
-      a: speedText(frameA.speedMps, frameA.zone, i18n),
-      b: speedText(frameB.speedMps, frameB.zone, i18n),
+      a: shortSpeed(frameA.speedMps, i18n),
+      b: shortSpeed(frameB.speedMps, i18n),
     },
   ];
 }

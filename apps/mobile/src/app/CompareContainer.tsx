@@ -84,7 +84,8 @@ export function CompareButton({ replay }: { readonly replay: WalkReplay }) {
             title: i18n.t('twowalks.walkLine', {
               date: i18n.formatDate(c.startedAt, Date.now()),
               duration: c.durationS === null ? '—' : i18n.formatDuration(c.durationS),
-              distance: c.distanceM === null ? '—' : i18n.formatDistance(c.distanceM),
+              distance:
+                c.distanceM === null || c.distanceM <= 0 ? '—' : i18n.formatDistance(c.distanceM),
             }),
             place: c.placeName,
             samePlace: c.samePlace,
@@ -287,10 +288,12 @@ function CompareBody({
             ))}
             {(
               [
-                ['a', first, frameA.wallTs, atA, paint.a],
-                ['b', second, frameB.wallTs, atB, paint.b],
+                // the second walk is wider and underneath, the first one thinner on top: where the two
+                // routes run together both colours stay in sight
+                ['b', second, frameB.wallTs, atB, paint.b, 9],
+                ['a', first, frameA.wallTs, atA, paint.a, 4],
               ] as const
-            ).map(([id, replay, wallTs, at, color]) => (
+            ).map(([id, replay, wallTs, at, color, width]) => (
               <GeoJSONSource
                 key={`w${id}`}
                 id={`cmp-walked-${id}`}
@@ -304,7 +307,7 @@ function CompareBody({
                   id={`cmp-walked-${id}-line`}
                   type="line"
                   layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-                  paint={{ 'line-color': color, 'line-width': 6 }}
+                  paint={{ 'line-color': color, 'line-width': width }}
                 />
               </GeoJSONSource>
             ))}
