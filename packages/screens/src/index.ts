@@ -315,3 +315,68 @@ export {
   type PaintSegment,
   type RoutePaint,
 } from './replayPaint';
+export {
+  ACHIEVEMENT_TABS,
+  achievementFraction,
+  countEarned,
+  filterAchievements,
+  goalDone,
+  goalFraction,
+  goalRings,
+  nearestAchievements,
+  recentlyEarned,
+  tierMarks,
+  trailFill,
+} from './rewardsModel';
+export type {
+  AchievementModel,
+  AchievementSection,
+  AchievementTab,
+  DayState,
+  GoalRowModel,
+  Tier,
+  WeekDayModel,
+} from './rewardsModel';
+export {
+  AchievementRow,
+  GoalList,
+  GoalSuggestion,
+  LevelCard,
+  Medallion,
+  StreakCard,
+  TierMarks,
+  TodayRewardsCard,
+  UnlockCard,
+} from './RewardsViews';
+export type { LevelModel, StreakModel } from './RewardsViews';
+export {
+  AchievementSheet,
+  AchievementsScreen,
+  GoalEditSheet,
+  GoalsScreen,
+  PawsSheet,
+} from './RewardsScreens';
+export type {
+  AchievementSheetProps,
+  AchievementsScreenProps,
+  BasisRow,
+  GoalEditRow,
+  GoalEditSheetProps,
+  GoalsScreenProps,
+  LadderStep,
+  PawEntryGroup,
+  PawsSheetProps,
+} from './RewardsScreens';
+export {
+  SAMPLE_ACHIEVEMENTS,
+  SAMPLE_BASIS,
+  SAMPLE_GOALS,
+  SAMPLE_GOAL_EDIT,
+  SAMPLE_LADDER,
+  SAMPLE_LEVEL,
+  SAMPLE_PAW_HISTORY,
+  SAMPLE_PAW_HOW,
+  SAMPLE_PAW_WEEK,
+  SAMPLE_STREAK,
+  SAMPLE_SUGGESTION,
+} from './rewardsSample';

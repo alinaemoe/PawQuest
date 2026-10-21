@@ -345,6 +345,15 @@ importers:
       '@pawquest/data':
         specifier: workspace:*
         version: link:../../packages/data
+      '@pawquest/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
+      '@pawquest/rn-ui':
+        specifier: workspace:*
+        version: link:../../packages/rn-ui
+      '@pawquest/screens':
+        specifier: workspace:*
+        version: link:../../packages/screens
       expo:
         specifier: ~57.0.29
         version: 57.0.29(@babel/core@7.29.7(supports-color@8.1.1))(@expo/metro-runtime@57.0.17)(react-dom@19.2.3(react@19.2.3))(react-native-web@0.21.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)
