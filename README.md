@@ -1,47 +1,81 @@
 # PawQuest
 
-Offline-first mobile journal for dog owners: walks with GPS, training sessions and behavior
-observations in one history, with honest statistics (always with sample size, never "because").
+**Understand your dog. One walk at a time.**
 
-> Understand your dog. One walk at a time.
+PawQuest is an offline-first mobile journal for dog owners. It records GPS walks, training sessions
+and behavior observations in one history, and turns them into **honest statistics**: every insight
+shows its sample size and confidence, and the app never claims "because".
 
-Status: **Phase 0 (foundation)**. The product specification lives in [`docs/`](docs/00-README.md)
-(start with `docs/00-README.md`); the decision log is `docs/02-decisions.md`.
+No accounts, no backend, no AI. Your dog's data stays on your phone.
 
-## Requirements
+## What it does
 
-- Node.js >= 22.14 (see `.nvmrc`)
-- pnpm 12 (`npm install -g pnpm@12.11.2`; the exact version is pinned in `package.json`)
+- **Walks with a real map.** Background GPS recording (foreground service on Android), pause/resume,
+  crash recovery, route on an OpenFreeMap vector map in light and dark styles, and one-tap event
+  buttons during the walk (3x3 grid) with a reaction-distance timer.
+- **Walk Replay.** Scrub a finished walk by time, paint the route by speed or by place, compare with a
+  usual walk, and view two walks side by side.
+- **Places and zones.** Saved places are suggested by DBSCAN clustering of walk points; names are
+  normalized and de-duplicated; entering a place during a walk shows a chip and a toast.
+- **Training "clicker".** Skills built from templates with levels, a session screen for quick
+  success/fail marks, and a prompt when the dog is ready for the next step.
+- **Behavior diary (ABC).** Antecedent-behavior-consequence entries with scales, filters and edit
+  history.
+- **Insights with statistics that don't overclaim.** Wilson intervals, permutation tests, Theil-Sen /
+  Mann-Kendall trends, Benjamini-Hochberg correction for pattern cards, and a check that a pattern
+  isn't just a stand-in for weather or place. Sections for skills, places, behavior, health and
+  activity.
+- **Health care.** Deworming, ticks, vaccination and check-up plans, vet visits, weight and nutrition,
+  local reminders with *Done / Snooze* actions.
+- **Goals and "paws".** Streaks with pause paws, achievements and levels (design in progress).
+- **PDF report for a specialist** (trainer or vet), backup/restore, RU/EN interface, four palettes.
+- **Web demo.** The *same app* runs in the browser on `sql.js` (SQLite in WebAssembly) with a demo
+  dog - no second codebase.
 
-## Quick start
+## Engineering
+
+| | |
+|---|---|
+| **Stack** | TypeScript (strict, `noUncheckedIndexedAccess`), Expo / React Native, Expo Router, SQLite + Drizzle, MapLibre, Zod, i18next, pnpm workspaces |
+| **Architecture** | Pure domain logic in `packages/core` (no React/Expo/I-O), analytics in `packages/insights`, data layer in `packages/data`, UI kit and screens as separate packages, web demo reuses the same screens and repositories |
+| **Quality gates** | ~130 test files; Vitest + fast-check property tests; coverage gates on core; algorithms verified by mutation checks before a step is closed; ESLint `strictTypeChecked`, Prettier, `tsc` in `pnpm run check` |
+| **Process** | Spec-first: a full product specification (screens, data model, algorithms, risks, roadmap) in [`docs/`](docs/00-README.md) and a decision log with 70+ entries ([`docs/02-decisions.md`](docs/02-decisions.md)). When code reveals a spec defect, the spec is fixed first |
+| **Device-tested** | Spikes for background GPS, map rendering, 10k-point replay, 1M-point SQLite, notification actions and a proximity-sensor pocket mode were measured on a real Android phone |
+
+Start with the clickable HTML prototype in [`docs/prototype`](docs/prototype/index.html) or the spec
+index in [`docs/00-README.md`](docs/00-README.md).
+
+## Run it
+
+Requirements: Node.js >= 22.14 (see `.nvmrc`) and pnpm (the exact version is pinned in `package.json`).
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm run check      # prettier + eslint + tsc + tests with coverage gates
+pnpm run check            # prettier + eslint + tsc + tests with coverage gates
 ```
 
-Individual commands: `pnpm run format`, `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`.
+Mobile app (Android dev build; Expo Go is not supported because of background location and MapLibre):
+
+```bash
+cd apps/mobile
+pnpm run android          # expo run:android
+```
+
+Web demo: `pnpm run web` inside `apps/web-demo`.
 
 ## Layout
 
-| Path                                                | What                                                                              |
-| --------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `packages/core`                                     | Pure domain logic, no React/Expo/I/O: haversine distance, GPS point filter (A-01) |
-| `docs/`                                             | Specification v1.0 (screens, data model, algorithms, risks, roadmap)              |
-| `docs/prototype`                                    | Clickable HTML prototype of the UI                                                |
-| (planned) `apps/*`                                  | Expo app (Android first) and web demo                                             |
-| (planned) `packages/insights`, `data`, `ui`, `i18n` | Analytics, SQLite layer, design tokens, translations                              |
+| Path | What |
+|---|---|
+| `apps/mobile` | Expo app (screens, navigation, platform services, native proximity module) |
+| `apps/web-demo` | Browser build with demo data (SQLite via sql.js) |
+| `packages/core` | Haversine, GPS point filter, smoothing/simplification, moving time, pace, DBSCAN |
+| `packages/insights` | Confidence labels, Wilson interval, permutation tests, trends, streaks |
+| `packages/data` | SQLite schema, migrations, repositories |
+| `packages/screens`, `rn-ui`, `ui`, `i18n`, `weather` | Screens, components, tokens, translations, Open-Meteo client |
+| `docs/` | Specification, decision log, roadmap, prototype |
 
-## Engineering rules
-
-- TypeScript `strict` plus `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`; ESLint
-  `strictTypeChecked` (no `any`, no floating promises).
-- Domain code is developed test-first. Coverage is a hard gate in `packages/core`
-  (95% lines/functions/statements, 90% branches). Algorithms in the spec are covered by example
-  tests, property-based tests (fast-check) and verified by mutation checks before a step is closed.
-- The spec wins over code, and code wins over memory: when implementation reveals a defect in the
-  spec, the spec is fixed first and recorded in `docs/02-decisions.md` (example: D-46).
-- Real user data and secrets never enter the repository (see `.gitignore`).
+Real user data and secrets never enter the repository (see `.gitignore`).
 
 ## License
 
