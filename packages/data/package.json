@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "description": "PawQuest data layer: SQLite migrations, Drizzle schema, connection setup. No UI, no business logic.",
-  "license": "MIT",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

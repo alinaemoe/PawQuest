@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "description": "PawQuest weather: Open-Meteo requests for an exact position, parsing, and dog-relevant facts (wet ground, recent rain, surface heat, pollen, daylight). Pure TypeScript.",
-  "license": "MIT",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

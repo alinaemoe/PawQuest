@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "description": "PawQuest i18n: typed RU/EN messages, plural rules, locale-aware formatters (G-08, G-14). Pure TypeScript, no Intl.",
-  "license": "MIT",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

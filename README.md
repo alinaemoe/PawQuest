@@ -76,7 +76,3 @@ Web demo: `pnpm run web` inside `apps/web-demo`.
 | `docs/` | Specification, decision log, roadmap, prototype |
 
 Real user data and secrets never enter the repository (see `.gitignore`).
-
-## License
-
-MIT, see [`LICENSE`](LICENSE).

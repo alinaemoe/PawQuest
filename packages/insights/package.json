@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "description": "PawQuest analytics: honest statistics (reliability labels, Wilson intervals, permutation tests, trends). Pure functions, no I/O.",
-  "license": "MIT",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

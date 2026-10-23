@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "description": "PawQuest React Native components (web and mobile): theme provider, text, buttons, chips, cards, event buttons, icons.",
-  "license": "MIT",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
