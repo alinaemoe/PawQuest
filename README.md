@@ -8,6 +8,13 @@ shows its sample size and confidence, and the app never claims "because".
 
 No accounts, no backend, no AI. Your dog's data stays on your phone.
 
+<p align="center"><img src="docs/screenshots/hero.png" alt="PawQuest screens: Today, Active walk, Walk summary, Replay, Insights, Goals" width="100%"></p>
+
+<table align="center"><tr>
+<td width="46%"><img src="docs/screenshots/replay.gif" alt="Walk Replay: scrub a finished walk, route and events animate" width="100%"></td>
+<td><b>Walk Replay</b> (from the interactive design prototype in <a href="docs/prototype/index.html"><code>docs/prototype</code></a>): scrub a finished walk by time, watch speed and events, jump to a photo, compare with a usual walk.<br><br>Screens above are that prototype; the same screens are being built in the app.</td>
+</tr></table>
+
 ## What it does
 
 - **Walks with a real map.** Background GPS recording (foreground service on Android), pause/resume,
@@ -32,6 +39,11 @@ No accounts, no backend, no AI. Your dog's data stays on your phone.
 - **Web demo.** The *same app* runs in the browser on `sql.js` (SQLite in WebAssembly) with a demo
   dog - no second codebase.
 
+### The real app in the browser
+
+The web demo runs the actual app code (same screens, repositories and SQLite schema via `sql.js`) with a demo dog:
+
+<p><img src="docs/screenshots/web-demo.png" alt="Web demo: Today, Walks, Insights" width="100%"></p>
 ## Engineering
 
 | | |
