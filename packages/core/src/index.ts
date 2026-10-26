@@ -137,6 +137,7 @@ export type {
   SpeedProfileOptions,
   SpeedZone,
 } from './track/speedProfile';
-export { placeHolds } from './track/chronology';
+export { arrivalByTrack, placeHolds } from './track/chronology';
+export type { ArrivalFix, TrackArrival } from './track/chronology';
 export { mainPlace, zoneVisits, zonesAt } from './track/zones';
 export type { MainPlaceOptions, ZoneFix, ZoneOptions, ZoneVisit } from './track/zones';

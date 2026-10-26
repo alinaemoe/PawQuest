@@ -308,6 +308,50 @@ export function baseArrival(
   return { visit: last, placeId: last.placeId, arrivedAt: last.fromTs, stayS: last.durationS };
 }
 
+/** A fix of a track, as far as the arrival check needs it. */
+export interface ArrivalFix extends LatLon {
+  readonly ts: number;
+}
+
+export interface TrackArrival {
+  /** The first fix inside the spot after the last one outside of it. */
+  readonly arrivedAt: number;
+  /** How long the walk has been inside since, to `now`. */
+  readonly stayS: number;
+}
+
+/**
+ * "The walk came to a spot and stayed", read from the track itself: the moment of arrival is the
+ * first fix after the last fix outside the spot. Phones wander and go silent indoors, which breaks
+ * a walk into many tiny visits, but "the last fix outside" does not care: indoors, the fixes stay
+ * inside. Null when the last fix is outside, when the walk never left the spot (standing at
+ * one's own door before setting off is not coming home) or when the stay is shorter than
+ * `minStayS`.
+ */
+export function arrivalByTrack(
+  fixes: readonly ArrivalFix[],
+  inside: (at: LatLon) => boolean,
+  now: number,
+  minStayS: number,
+): TrackArrival | null {
+  const last = fixes[fixes.length - 1];
+  if (last === undefined || !inside(last)) {
+    return null;
+  }
+  let lastOutside = -1;
+  fixes.forEach((fix, i) => {
+    if (!inside(fix)) {
+      lastOutside = i;
+    }
+  });
+  const arrival = fixes[lastOutside + 1];
+  if (lastOutside < 0 || arrival === undefined) {
+    return null;
+  }
+  const stayS = Math.max(0, (now - arrival.ts) / 1000);
+  return stayS < minStayS ? null : { arrivedAt: arrival.ts, stayS };
+}
+
 export interface StartSpotOptions extends BaseArrivalOptions {
   /** The stay is "where the walk began" within this distance of the first fix. Default 80 m. */
   readonly radiusM?: number;

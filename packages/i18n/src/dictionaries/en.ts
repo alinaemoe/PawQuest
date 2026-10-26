@@ -393,6 +393,8 @@ export const en = {
     'You are home for 5 minutes: the walk ends at the moment you arrived. Mark "Home" in places for this.',
   'autofinish.title': 'Walk finished',
   'autofinish.body': 'You came to "{place}" at {time}: the walk ended then.',
+  'autofinish.bodyStart':
+    'You came back to where you set off at {time}: the walk ended then. Mark the spot as "Home" in the walk summary.',
   'replay.finishHere': 'End the walk here',
   'replay.finishedHere': 'The walk now ends at {time}',
   'replay.undo': 'Undo',

@@ -3,6 +3,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   AUTO_FINISH_STAY_S,
   autoFinishAtBase,
+  autoFinishAtHabitualStart,
+  habitualStartSpot,
+  HABITUAL_STAY_S,
   walkBaseArrival,
   walkStartSpotArrival,
   walkChronology,
@@ -296,7 +299,7 @@ describe('autoFinishAtBase', () => {
     expect(done?.placeName).toBe('Дом');
     expect(done?.walk.status).toBe('completed');
     expect(done?.walk.endedAt).toBe(done?.arrivedAt);
-    expect(done?.arrivedAt).toBeGreaterThanOrEqual(START + 100_000);
+    expect(done?.arrivedAt).toBeGreaterThanOrEqual(START + 90_000);
     expect(done?.arrivedAt).toBeLessThanOrEqual(START + 200_000);
     expect(done?.walk.durationS).toBeLessThan(220);
   });
@@ -380,5 +383,175 @@ describe('walkStartSpotArrival', () => {
   it('a walk with nothing recorded has nothing to ask', () => {
     const empty = startWalk(env.db, env.ctx, { dogId: dog.id });
     expect(walkStartSpotArrival(env.db, empty.id, START)).toBeNull();
+  });
+});
+
+describe('arrival read from the track', () => {
+  const HOME = { lat: 55.7, lon: 37.6 };
+  const home = () =>
+    createPlace(env.db, env.ctx, { name: 'Дом', category: 'home', label: 'Дом', ...HOME });
+
+  /**
+   * A walk that went 200 m away, came back and then spent `quietS` seconds at home with the
+   * fixes wandering around and, after a while, no fixes at all (the phone indoors).
+   */
+  function walkThenFlat(): { id: string; arrivalTs: number } {
+    const points: TrackPointInput[] = [];
+    let t = START;
+    for (let i = 0; i < 40; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: HOME.lat + i * STEP * 5,
+        lon: HOME.lon,
+        accuracyM: 5,
+        speedMps: 1.4,
+      });
+    }
+    for (let i = 40; i > 0; i--, t += 1000) {
+      points.push({
+        ts: t,
+        lat: HOME.lat + i * STEP * 5,
+        lon: HOME.lon,
+        accuracyM: 5,
+        speedMps: 1.4,
+      });
+    }
+    const arrivalTs = t;
+    for (let i = 0; i < 90; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: HOME.lat + Math.sin(i / 3) * 0.00002,
+        lon: HOME.lon + Math.cos(i / 4) * 0.00002,
+        accuracyM: 8,
+        speedMps: 0.2,
+      });
+    }
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    appendTrackPoints(env.db, walk.id, points);
+    return { id: walk.id, arrivalTs };
+  }
+
+  it('finds the arrival at a marked home even when the phone is quiet afterwards', () => {
+    home();
+    const { id, arrivalTs } = walkThenFlat();
+    const found = walkBaseArrival(env.db, id, arrivalTs + 3 * 3_600_000, { minStayS: 300 });
+    expect(found?.placeName).toBe('Дом');
+    expect(found?.arrivedAt).toBeGreaterThanOrEqual(arrivalTs - 15_000);
+    expect(found?.arrivedAt).toBeLessThanOrEqual(arrivalTs + 5000);
+    expect(found?.stayS).toBeGreaterThan(3 * 3600 - 20);
+  });
+
+  it('does not call it an arrival while the walk is still outside', () => {
+    home();
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    appendTrackPoints(
+      env.db,
+      walk.id,
+      Array.from({ length: 30 }, (_, i) => ({
+        ts: START + i * 1000,
+        lat: HOME.lat + i * STEP * 10,
+        lon: HOME.lon,
+        accuracyM: 5,
+        speedMps: 1.4,
+      })),
+    );
+    expect(walkBaseArrival(env.db, walk.id, START + 3_600_000, { minStayS: 300 })).toBeNull();
+  });
+});
+
+describe('autoFinishAtHabitualStart (no home marked)', () => {
+  const SPOT = { lat: 55.7, lon: 37.6 };
+
+  function loop(dayOffset: number, backS: number, running: boolean): string {
+    const points: TrackPointInput[] = [];
+    let t = START + dayOffset * 86_400_000;
+    for (let i = 0; i <= 200; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: SPOT.lat + i * STEP * 2,
+        lon: SPOT.lon,
+        accuracyM: 5,
+        speedMps: 1.4,
+      });
+    }
+    for (let i = 1; i <= 200; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: SPOT.lat + (200 - i) * STEP * 2,
+        lon: SPOT.lon,
+        accuracyM: 5,
+        speedMps: 1.4,
+      });
+    }
+    for (let i = 0; i < backS; i++, t += 1000) {
+      points.push({
+        ts: t,
+        lat: SPOT.lat + Math.sin(i / 5) * 0.00001,
+        lon: SPOT.lon,
+        accuracyM: 8,
+        speedMps: 0.1,
+      });
+    }
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    appendTrackPoints(env.db, walk.id, points);
+    if (!running) {
+      finishWalk(env.db, env.ctx, walk.id, t);
+    }
+    return walk.id;
+  }
+
+  it('after three walks from one spot, ten quiet minutes there end the walk at the arrival', () => {
+    [0, 1, 2].forEach((d) => loop(d, 0, false));
+    env.advance(10 * 86_400_000);
+    const now = START + 10 * 86_400_000;
+    const id = loop(10, HABITUAL_STAY_S + 60, true);
+    const spot = habitualStartSpot(env.db, id, now + 1000_000);
+    expect(spot).not.toBeNull();
+    const at = now + (400 + HABITUAL_STAY_S + 60) * 1000;
+    const done = spot === null ? null : autoFinishAtHabitualStart(env.db, env.ctx, id, at, spot);
+    expect(done?.walk.status).toBe('completed');
+    expect(done?.placeName).toBe('');
+    expect(done?.walk.durationS).toBeLessThan(420);
+  });
+
+  it('is nothing before the stay is long enough, before the habit exists or for a manual walk', () => {
+    [0, 1].forEach((d) => loop(d, 0, false));
+    env.advance(10 * 86_400_000);
+    const id = loop(10, 100, true);
+    expect(habitualStartSpot(env.db, id, START + 11 * 86_400_000)).toBeNull();
+    const spot = { lat: SPOT.lat, lon: SPOT.lon };
+    const at = START + 10 * 86_400_000 + 500_000;
+    expect(autoFinishAtHabitualStart(env.db, env.ctx, id, at, spot)).toBeNull();
+    const manual = createManualWalk(env.db, env.ctx, {
+      dogId: dog.id,
+      startedAt: START,
+      durationS: 600,
+    });
+    expect(autoFinishAtHabitualStart(env.db, env.ctx, manual.id, at, spot)).toBeNull();
+  });
+
+  it('a walk that never went far from the spot does not end', () => {
+    [0, 1, 2].forEach((d) => loop(d, 0, false));
+    env.advance(10 * 86_400_000);
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    const t0 = START + 10 * 86_400_000;
+    appendTrackPoints(
+      env.db,
+      walk.id,
+      Array.from({ length: 900 }, (_, i) => ({
+        ts: t0 + i * 1000,
+        lat: SPOT.lat + Math.sin(i / 9) * STEP * 30,
+        lon: SPOT.lon,
+        accuracyM: 6,
+        speedMps: 0.3,
+      })),
+    );
+    const spot = { lat: SPOT.lat, lon: SPOT.lon };
+    expect(autoFinishAtHabitualStart(env.db, env.ctx, walk.id, t0 + 900_000, spot)).toBeNull();
+  });
+
+  it('no fixes yet, no spot', () => {
+    const walk = startWalk(env.db, env.ctx, { dogId: dog.id });
+    expect(habitualStartSpot(env.db, walk.id, START)).toBeNull();
   });
 });

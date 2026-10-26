@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { EARTH_RADIUS_M, type LatLon } from '../geo/haversine';
 
 import {
+  arrivalByTrack,
   baseArrival,
   buildChronology,
   forgottenBaseStay,
@@ -471,5 +472,48 @@ describe('startSpotArrival', () => {
         minStayS: 300,
       }),
     ).toBeNull();
+  });
+});
+
+describe('arrivalByTrack', () => {
+  const home = at(0, 0);
+  const near = (p: LatLon): boolean => haversine(p, home) <= 60;
+  const haversine = (a: LatLon, b: LatLon): number => {
+    const dy = (a.lat - b.lat) * M_PER_DEG;
+    const dx = (a.lon - b.lon) * M_PER_DEG * Math.cos((LAT0 * Math.PI) / 180);
+    return Math.hypot(dx, dy);
+  };
+  /** Fixes every 10 s from the list of positions. */
+  const track = (positions: readonly LatLon[]) =>
+    positions.map((p, i) => ({ ...p, ts: T0 + i * 10_000 }));
+
+  it('the arrival is the first fix after the last one outside, however the fixes wander inside', () => {
+    const away = [at(0, 0), at(80, 0), at(200, 0), at(90, 0)];
+    const indoors = Array.from({ length: 60 }, (_, i) => at(i % 2 === 0 ? 3 : -4, i % 3));
+    const fixes = track([...away, ...indoors]);
+    const found = arrivalByTrack(fixes, near, fixes[fixes.length - 1]?.ts ?? 0, 300);
+    expect(found?.arrivedAt).toBe(T0 + 4 * 10_000);
+    expect(found?.stayS).toBe(59 * 10);
+  });
+
+  it('measures the stay to now when the phone went quiet indoors', () => {
+    const fixes = track([at(0, 0), at(150, 0), at(10, 0), at(2, 1)]);
+    const found = arrivalByTrack(fixes, near, T0 + 3 * 10_000 + 20 * 60_000, 600);
+    expect(found?.stayS).toBeGreaterThan(1200);
+  });
+
+  it('is nothing when the stay is short, the last fix is outside or the walk never left', () => {
+    const fixes = track([at(0, 0), at(150, 0), at(10, 0), at(2, 1)]);
+    expect(arrivalByTrack(fixes, near, T0 + 50_000, 300)).toBeNull();
+    expect(arrivalByTrack(track([at(0, 0), at(150, 0)]), near, T0 + 900_000, 300)).toBeNull();
+    expect(
+      arrivalByTrack(track([at(0, 0), at(5, 0), at(2, 2)]), near, T0 + 900_000, 300),
+    ).toBeNull();
+    expect(arrivalByTrack([], near, T0, 0)).toBeNull();
+  });
+
+  it('a long stay before setting off is not an arrival', () => {
+    const fixes = track([at(0, 0), at(1, 1), at(150, 0), at(8, 0)]);
+    expect(arrivalByTrack(fixes, near, T0 + 40_000 + 600_000, 300)?.arrivedAt).toBe(T0 + 30_000);
   });
 });

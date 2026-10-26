@@ -1,5 +1,7 @@
 import {
   autoFinishAtBase,
+  autoFinishAtHabitualStart,
+  habitualStartSpot,
   getRunningWalkId,
   getSettings,
   hidePrompt,
@@ -7,6 +9,7 @@ import {
   walkBaseArrival,
   walkStartSpotArrival,
   type Ctx,
+  type HabitualSpot,
   type SqlDb,
 } from '@pawquest/data';
 import { createI18n } from '@pawquest/i18n';
@@ -16,6 +19,15 @@ import { AppState } from 'react-native';
 /** The check looks at the whole track: once in this long is enough while fixes arrive every second. */
 const CHECK_EVERY_MS = 30_000;
 let lastCheck = 0;
+/** Where each running walk began, if that is where walks always begin and end; asked once per walk. */
+const habitualSpots = new Map<string, HabitualSpot | null>();
+
+function habitualSpotOf(db: SqlDb, walkId: string, now: number): HabitualSpot | null {
+  if (!habitualSpots.has(walkId)) {
+    habitualSpots.set(walkId, habitualStartSpot(db, walkId, now));
+  }
+  return habitualSpots.get(walkId) ?? null;
+}
 
 /**
  * "I came home and forgot to press finish": a running walk that stands in a base for five minutes
@@ -38,7 +50,12 @@ export async function maybeAutoFinish(
   if (walkId === null) {
     return null;
   }
-  const done = settings.autoFinishAtHome ? autoFinishAtBase(db, ctx, walkId, now) : null;
+  // a marked home first; with none marked, the spot where walks always begin and end stands in
+  let done = settings.autoFinishAtHome ? autoFinishAtBase(db, ctx, walkId, now) : null;
+  if (done === null && settings.autoFinishAtHome) {
+    const spot = habitualSpotOf(db, walkId, now);
+    done = spot === null ? null : autoFinishAtHabitualStart(db, ctx, walkId, now, spot);
+  }
   if (done === null) {
     await askToFinish(db, ctx, walkId, now, settings.language, settings.units);
     return null;
@@ -49,10 +66,13 @@ export async function maybeAutoFinish(
     await Notifications.scheduleNotificationAsync({
       content: {
         title: i18n.t('autofinish.title'),
-        body: i18n.t('autofinish.body', {
-          place: done.placeName,
-          time: i18n.formatTime(done.arrivedAt),
-        }),
+        body:
+          done.placeName === ''
+            ? i18n.t('autofinish.bodyStart', { time: i18n.formatTime(done.arrivedAt) })
+            : i18n.t('autofinish.body', {
+                place: done.placeName,
+                time: i18n.formatTime(done.arrivedAt),
+              }),
       },
       trigger: null,
     });

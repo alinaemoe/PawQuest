@@ -248,11 +248,15 @@ export { MIN_CALM_MS, weekBounds, weekRecap, type CalmMoment, type WeekRecap } f
 export {
   AUTO_FINISH_STAY_S,
   autoFinishAtBase,
+  autoFinishAtHabitualStart,
+  habitualStartSpot,
+  HABITUAL_STAY_S,
   walkBaseArrival,
   walkStartSpotArrival,
   walkChronology,
   walkCutSuggestion,
   type WalkCutSuggestion,
+  type HabitualSpot,
   type WalkBaseArrival,
   type WalkChronology,
 } from './chronology';

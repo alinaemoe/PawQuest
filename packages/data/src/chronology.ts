@@ -1,5 +1,7 @@
 import {
+  arrivalByTrack,
   baseArrival,
+  placeHolds,
   buildChronology,
   chronologyTitle,
   placeContaining,
@@ -13,11 +15,12 @@ import {
   type StartSpotOptions,
   type ChronoPlace,
   type ChronoStep,
+  type ChronoVisit,
 } from '@pawquest/core';
 
 import type { Ctx } from './ids';
 import { isBasePlace, listPlaces } from './places';
-import { staysOfWalk } from './placeSuggest';
+import { proposeBases, staysOfWalk } from './placeSuggest';
 import { finishWalk, lastTrackPoint, listTrackPoints } from './recorder';
 import type { SqlDb } from './sql';
 import { getWalk, type Walk } from './walks';
@@ -85,17 +88,71 @@ export function walkBaseArrival(
   now: number,
   options: BaseArrivalOptions = {},
 ): WalkBaseArrival | null {
+  const places = listPlaces(db);
+  const bases = places
+    .filter((p) => isBasePlace(p.category))
+    .map((p): ChronoPlace => ({
+      id: p.id,
+      name: p.name,
+      lat: p.lat,
+      lon: p.lon,
+      radiusM: p.radiusM,
+      boundary: p.boundary ?? undefined,
+    }));
+  const track = filterTrack(listTrackPoints(db, walkId)).points;
+  const last = track[track.length - 1];
+  const base =
+    last === undefined ? undefined : bases.find((b) => placeHolds(last, b, BASE_REACH_M));
+  if (base !== undefined) {
+    // read from the track: indoors the phone wanders and goes quiet, which splits the walk into
+    // many small visits, but the last fix outside the base is still the moment of arrival
+    const found = arrivalByTrack(
+      track,
+      (at) => placeHolds(at, base, BASE_REACH_M) !== null,
+      now,
+      options.minStayS ?? 900,
+    );
+    return found === null
+      ? null
+      : {
+          visit: syntheticVisit(base, found.arrivedAt, now),
+          placeId: base.id,
+          arrivedAt: found.arrivedAt,
+          stayS: found.stayS,
+          placeName: base.name,
+        };
+  }
   const chronology = walkChronology(db, walkId, now);
-  const last = lastTrackPoint(db, walkId);
-  if (chronology === null || last === null) {
+  const lastFix = lastTrackPoint(db, walkId);
+  if (chronology === null || lastFix === null) {
     return null;
   }
-  const places = listPlaces(db);
-  const bases = new Set(places.filter((p) => isBasePlace(p.category)).map((p) => p.id));
-  const found = baseArrival(chronology.steps, bases, last.ts, options);
+  const baseIds = new Set(bases.map((b) => b.id));
+  const found = baseArrival(chronology.steps, baseIds, lastFix.ts, options);
   return found === null
     ? null
     : { ...found, placeName: chronology.placeNames.get(found.placeId) ?? '' };
+}
+
+/** A place is "here" within at least this far of its centre: indoors the fixes wander. */
+const BASE_REACH_M = 50;
+
+/** The visit a track-read arrival stands for (the app uses its position). */
+function syntheticVisit(spot: ChronoPlace, from: number, to: number): ChronoVisit {
+  return {
+    kind: 'visit',
+    fromTs: from,
+    toTs: to,
+    durationS: Math.max(0, (to - from) / 1000),
+    lat: spot.lat,
+    lon: spot.lon,
+    radiusM: spot.radiusM,
+    placeId: spot.id,
+    scale: 'small',
+    gapS: 0,
+    innerCount: 0,
+    indoor: false,
+  };
 }
 
 /**
@@ -201,4 +258,65 @@ export function autoFinishAtBase(
   }
   const done = finishWalk(db, ctx, walkId, arrival.arrivedAt);
   return { walk: done, placeName: arrival.placeName, arrivedAt: arrival.arrivedAt };
+}
+
+/** The walk must have gone this far from the spot before coming back to it is "coming home". */
+const HABITUAL_AWAY_M = 150;
+/** Standing this long where walks always begin and end ends the walk (an unmarked home). */
+export const HABITUAL_STAY_S = 600;
+const HABITUAL_REACH_M = 80;
+
+export interface HabitualSpot {
+  readonly lat: number;
+  readonly lon: number;
+}
+
+/**
+ * Where this walk began, when three or more earlier walks began and ended at that spot and nothing
+ * is marked there: for an owner who never marked "Дом", this is where home is. Null otherwise.
+ * It reads many tracks, so the app asks once per walk.
+ */
+export function habitualStartSpot(db: SqlDb, walkId: string, now: number): HabitualSpot | null {
+  const first = filterTrack(listTrackPoints(db, walkId)).points[0];
+  if (first === undefined) {
+    return null;
+  }
+  const found = proposeBases(db, now).find(
+    (p) => p.placeId === null && haversineDistanceM(first, p) <= HABITUAL_REACH_M,
+  );
+  return found === undefined ? null : { lat: found.lat, lon: found.lon };
+}
+
+/**
+ * The walk ends by itself at a spot where walks always begin and end, although no home is marked:
+ * a running GPS walk that went at least 150 m away and now has stood within 80 m of the spot for
+ * ten minutes is finished at the moment of arrival. The summary then offers to mark the spot.
+ */
+export function autoFinishAtHabitualStart(
+  db: SqlDb,
+  ctx: Ctx,
+  walkId: string,
+  now: number,
+  spot: HabitualSpot,
+): { readonly walk: Walk; readonly placeName: string; readonly arrivedAt: number } | null {
+  const walk = getWalk(db, walkId);
+  if (walk?.mode !== 'gps' || walk.status !== 'active') {
+    return null;
+  }
+  const track = filterTrack(listTrackPoints(db, walkId)).points;
+  const farthest = Math.max(0, ...track.map((p) => haversineDistanceM(p, spot)));
+  if (farthest < HABITUAL_AWAY_M) {
+    return null;
+  }
+  const found = arrivalByTrack(
+    track,
+    (at) => haversineDistanceM(at, spot) <= HABITUAL_REACH_M,
+    now,
+    HABITUAL_STAY_S,
+  );
+  if (found === null) {
+    return null;
+  }
+  const done = finishWalk(db, ctx, walkId, found.arrivedAt);
+  return { walk: done, placeName: '', arrivedAt: found.arrivedAt };
 }
