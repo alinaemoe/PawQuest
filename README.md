@@ -61,12 +61,15 @@ jump to a photo, compare with a usual walk. In the app, Replay paints the route 
 and puts two walks side by side.</td>
 </tr></table>
 
-### The real app in the browser
+### The real app: four accents, light and dark
 
-<p><img src="docs/screenshots/web-demo.png" alt="Web demo running the real app code: Today, Walks, Insights" width="100%"></p>
+<p align="center"><img src="docs/screenshots/palettes.png" alt="The running app (web demo) in four accent palettes, light and dark: forest, sea, berry, sun" width="100%"></p>
 
-The demo data is a short invented history, so "Insights" honestly says there is little to analyse
-yet; a 30-day demo story and a real map in the browser are next on the list.
+Rendered from the web demo, which runs the actual app code over an invented dog (not mockups):
+every colour comes from one token set in [`packages/ui`](packages/ui/src/theme.ts), the palette is
+a single setting, and the dark scheme and the dark map style are derived from it (the map labels'
+contrast is checked by a test). The demo history is still short, so "Insights" honestly says there is little to
+analyse yet; a 30-day demo story and a real map in the browser are next on the list.
 
 ## Try it in a minute
 
@@ -78,8 +81,9 @@ pnpm run check                      # prettier + eslint + tsc + all tests with c
 pnpm --filter @pawquest/web-demo run web
 ```
 
-Open `http://localhost:8091`: the app runs on an invented dog in your browser. The design
-showcase for the not-yet-built goals and achievements section is at `?preview=rewards`.
+Open `http://localhost:8091`: the app runs on an invented dog in your browser. The look is set by
+the link, e.g. `?palette=berry&scheme=dark` (`forest`, `sea`, `berry`, `sun`; `light`, `dark`). The
+design showcase for the not-yet-built goals and achievements section is at `?preview=rewards`.
 
 Android build (needs the Android SDK; Expo Go is not supported because of background location,
 MapLibre and a native module):

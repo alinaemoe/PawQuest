@@ -38,5 +38,5 @@ export { Tile } from './Tile';
 export type { TileProps } from './Tile';
 export { ToastProvider, useToast } from './Toast';
 export type { ToastOptions, ToastProviderProps } from './Toast';
-export { NATIVE_FONT_FAMILIES, fontStyle } from './typography';
+export { NATIVE_FONT_FAMILIES, fontStyle, registerFaceNames } from './typography';
 export type { FontKind, FontWeight } from './typography';

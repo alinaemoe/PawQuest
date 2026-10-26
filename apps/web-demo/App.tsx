@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 
+import { registerFaceNames } from '@pawquest/rn-ui';
 import { AppProviders } from '../mobile/src/app/AppContext';
 import { Root } from '../mobile/src/app/Root';
 import { RewardsPreview } from './src/RewardsPreview';
 import { initRuntime } from './src/runtime';
+
+// the demo registers the faces under their own names, like the phone: the text must ask for them so
+registerFaceNames();
 
 /** The real app over the demo database. */
 export default function App() {
@@ -33,5 +37,12 @@ export default function App() {
     typeof window === 'undefined'
       ? null
       : new URLSearchParams(window.location.search).get('preview');
-  return <AppProviders>{preview === 'rewards' ? <RewardsPreview /> : <Root />}</AppProviders>;
+  // narrow screen: the app fills it; wide screen: a phone-wide column in the middle (docs/24, W7)
+  return (
+    <View style={{ flex: 1, alignItems: 'center', backgroundColor: '#dfe5e0' }}>
+      <View style={{ flex: 1, width: '100%', maxWidth: 430, overflow: 'hidden' }}>
+        <AppProviders>{preview === 'rewards' ? <RewardsPreview /> : <Root />}</AppProviders>
+      </View>
+    </View>
+  );
 }

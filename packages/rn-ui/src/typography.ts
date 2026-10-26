@@ -40,8 +40,16 @@ export const NATIVE_FONT_FAMILIES: readonly string[] = Object.values(NATIVE).fla
   Object.values(faces),
 );
 
+/** The browser build of the app registers the faces under their own names (like the phone does). */
+let registeredNames = false;
+
+/** Makes the web build ask for the registered face names (`Onest_500Medium`), as the phone does. */
+export function registerFaceNames(): void {
+  registeredNames = true;
+}
+
 export function fontStyle(kind: FontKind, weight: FontWeight = 400): TextStyle {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === 'web' && !registeredNames) {
     return { fontFamily: WEB[kind], fontWeight: String(weight) as TextStyle['fontWeight'] };
   }
   return { fontFamily: NATIVE[kind][weight] };

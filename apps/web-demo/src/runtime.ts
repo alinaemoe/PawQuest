@@ -37,6 +37,16 @@ export async function initRuntime(): Promise<void> {
   setSetting(db, ctx, 'activeDogId', dog.id);
   setSetting(db, ctx, 'language', 'ru');
   setSetting(db, ctx, 'onboardingDone', true);
+  // `?palette=sea&scheme=dark` opens the demo in that look (links for screenshots and sharing)
+  const query = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search);
+  const palette = query?.get('palette');
+  if (palette === 'forest' || palette === 'sea' || palette === 'berry' || palette === 'sun') {
+    setSetting(db, ctx, 'palette', palette);
+  }
+  const scheme = query?.get('scheme');
+  if (scheme === 'light' || scheme === 'dark') {
+    setSetting(db, ctx, 'scheme', scheme);
+  }
   instance = { db, ctx };
 }
 
